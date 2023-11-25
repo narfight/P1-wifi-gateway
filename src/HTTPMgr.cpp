@@ -61,8 +61,7 @@ bool HTTPMgr::ChekifAsAdmin()
   {
     if (!server.authenticate(conf.adminUser, conf.adminPassword))
     {
-      server.requestAuthentication(DIGEST_AUTH, "Hello", "you fail!");
-      //server.requestAuthentication();
+      server.requestAuthentication(DIGEST_AUTH, "Hello", Trad.getLangValue("WRONGPSDTXT"));
       return false;
     }
   }

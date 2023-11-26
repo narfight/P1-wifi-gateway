@@ -51,7 +51,7 @@ void HTTPMgr::start_webservices()
 
 void HTTPMgr::DoMe()
 {
-  server.handleClient(); // handle web requests
+  server.handleClient();
   MDNS.update();
 }
 

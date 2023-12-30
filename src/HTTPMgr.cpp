@@ -420,7 +420,7 @@ void HTTPMgr::handleSetupSave()
   {
     settings NewConf;
     NewConf.NeedConfig = false;
-    // TODO : check id psd1 == psd2
+    // TODO : check if psd1 == psd2
     server.arg("psd1").toCharArray(NewConf.adminPassword, sizeof(NewConf.adminPassword));
     server.arg("adminUser").toCharArray(conf.adminUser, sizeof(conf.adminUser));
     server.arg("ssid").toCharArray(NewConf.ssid, sizeof(NewConf.ssid));

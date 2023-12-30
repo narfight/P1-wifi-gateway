@@ -132,6 +132,7 @@ void PrintConfigData()
 {
   SendDebug("Current configuration :");
   SendDebugPrintf(" - ConfigVersion : %d", config_data.ConfigVersion);
+  SendDebugPrintf(" - Boot tentative : %d", config_data.BootFailed);
   // SendDebugPrintf(" - Admin password : %s", config_data.adminPassword);
   SendDebugPrintf(" - SSID : %s", config_data.ssid);
   // SendDebugPrintf(" - Wifi password : %s", config_data.password);
@@ -170,11 +171,26 @@ void setup()
   EEPROM.get(0, config_data);
 
   // Si la version de la configuration n'est celle attendu, on recet !
-  if (config_data.ConfigVersion != SETTINGVERSION)
+  if (config_data.ConfigVersion != SETTINGVERSION || config_data.BootFailed > 10)
   {
-    SendDebugPrintf("Config file version is wrong (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
-    config_data = (settings){SETTINGVERSION, true, "ssid", "password", "192.168.1.12", 8080, 1234, 1235, "sensors/power/p1meter", "192.168.1.12", 1883, "", "", 30, false, false, false, false, false, false, "adminpwd"};
+    if (config_data.ConfigVersion != SETTINGVERSION)
+    {
+      SendDebugPrintf("Config file version is wrong (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
+    }
+    else
+    {
+      SendDebugPrintf("Too many boot fail (nbr:%d), Reset config !", config_data.BootFailed);
+    }
+    config_data = (settings){SETTINGVERSION, 0, true, "ssid", "password", "192.168.1.12", 8080, 1234, 1235, "sensors/power/p1meter", "10.0.0.3", 1883, "", "", 30, false, true, false, false, false, true, "adminpwd", ""};
   }
+  else
+  {
+    config_data.BootFailed++;
+  }
+  //Save config with boot fail updated
+  EEPROM.put(0, config_data);
+  EEPROM.commit();
+
   PrintConfigData();
 
   WifiClient = new WifiMgr(config_data);
@@ -251,5 +267,13 @@ void loop()
   {
     doWatchDogs();
     WatchDogsTimer = millis() + 22000;
+  }
+  
+  if  (config_data.BootFailed != 0)
+  {
+    //reset boot-failed
+    config_data.BootFailed = 0;
+    EEPROM.put(0, config_data);
+    EEPROM.commit();
   }
 }

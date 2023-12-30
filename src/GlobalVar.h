@@ -33,11 +33,12 @@
 #define DR 4  // IO4 is Data Request
 
 #define SETTINGVERSIONNULL 0 //= no config
-#define SETTINGVERSION 1
+#define SETTINGVERSION 0
 
 struct settings
 {
   byte ConfigVersion;
+  byte BootFailed;
   bool NeedConfig = true;
   char ssid[33];
   char password[65];

@@ -30,8 +30,7 @@ const char* Language::getLangValue(const char* key)
   if (start != NULL)
   {
     start = strchr(start, ':');
-    if (start != NULL)
-    {
+    if (start != NULL) {
       start = strchr(start, '"');
       if (start != NULL)
       {
@@ -40,7 +39,7 @@ const char* Language::getLangValue(const char* key)
         if (end != NULL)
         {
           int length = end - start;
-          static char value[50]; // Assumant la taille de 50 pour les valeurs
+          char* value = new char[length + 1]; // Utilisation de la mémoire dynamique
           strncpy(value, start, length);
           value[length] = '\0';
           return value;
@@ -50,6 +49,7 @@ const char* Language::getLangValue(const char* key)
   }
   return "";
 }
+
 
 void Language::FindAndTranslateAll(String& inputText)
 {

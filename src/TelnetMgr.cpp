@@ -25,11 +25,13 @@
 
 TelnetMgr::TelnetMgr(settings &currentConf) : conf(currentConf), telnet(TELNETPORT)
 {
+    SendDebugPrintf("[TELNET] Starting");
+    delay(100);
     telnet.setNoDelay(true);
     telnet.begin();
 }
 
-void TelnetMgr::DoMe(String Diagram)
+void TelnetMgr::DoMe()
 {
     if (telnet.hasClient()) // avons nous une nouvelle connexion
     {
@@ -41,7 +43,7 @@ void TelnetMgr::DoMe(String Diagram)
             {
                 telnetClients[i] = telnet.accept();
                 telnetClients[i].printf("You are connected to the telnet. Your id session is %d\n", i);
-                SendDebugPrintf("Telnet : New session (Id:%d)", i);
+                SendDebugPrintf("[TELNET] Telnet : New session (Id:%d)", i);
                 break;
             }
         }
@@ -50,9 +52,13 @@ void TelnetMgr::DoMe(String Diagram)
         if (i == MAX_SRV_CLIENTS)
         {
             telnet.accept().printf("Server Telnet is busy with %d active connections.\n", MAX_SRV_CLIENTS);
-            SendDebugPrintf("Server Telnet is busy with %d active connections", MAX_SRV_CLIENTS);
+            SendDebugPrintf("[TELNET] Server Telnet is busy with %d active connections", MAX_SRV_CLIENTS);
         }
     }
+}
+
+void TelnetMgr::SendDataGram(String Diagram)
+{
     TelnetReporter(Diagram);
 }
 

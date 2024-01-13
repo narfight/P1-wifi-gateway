@@ -43,7 +43,8 @@ class TelnetMgr
   unsigned long NextReportTime = millis();
   public:
   explicit TelnetMgr(settings& currentConf);
-  void DoMe(String Diagram);
+  void DoMe();
+  void SendDataGram(String Diagram);
   void TelnetReporter(String Diagram);
   void SendDebug(String payload);
 };

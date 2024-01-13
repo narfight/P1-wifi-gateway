@@ -61,7 +61,7 @@ bool HTTPMgr::ChekifAsAdmin()
   {
     if (!server.authenticate(conf.adminUser, conf.adminPassword))
     {
-      server.requestAuthentication(DIGEST_AUTH, "Hello", Trad.getLangValue("WRONGPSDTXT"));
+      server.requestAuthentication();
       return false;
     }
   }
@@ -235,6 +235,7 @@ void HTTPMgr::handleFactoryReset()
 
   conf.ConfigVersion = SETTINGVERSIONNULL;
 
+  EEPROM.begin(sizeof(struct settings));
   EEPROM.put(0, conf);
   EEPROM.commit();
 
@@ -262,6 +263,7 @@ void HTTPMgr::handleWelcome()
       server.arg("adminUser").toCharArray(conf.adminUser, sizeof(conf.adminUser));
 
       SendDebug("[HTTP] New admin password");
+      EEPROM.begin(sizeof(struct settings));
       EEPROM.put(0, conf);
       EEPROM.commit();
 
@@ -422,7 +424,7 @@ void HTTPMgr::handleSetupSave()
     NewConf.NeedConfig = false;
     // TODO : check if psd1 == psd2
     server.arg("psd1").toCharArray(NewConf.adminPassword, sizeof(NewConf.adminPassword));
-    server.arg("adminUser").toCharArray(conf.adminUser, sizeof(conf.adminUser));
+    server.arg("adminUser").toCharArray(NewConf.adminUser, sizeof(conf.adminUser));
     server.arg("ssid").toCharArray(NewConf.ssid, sizeof(NewConf.ssid));
     server.arg("password").toCharArray(NewConf.password, sizeof(NewConf.password));
     server.arg("domoticzIP").toCharArray(NewConf.domoticzIP, sizeof(NewConf.domoticzIP));
@@ -457,14 +459,16 @@ void HTTPMgr::handleSetupSave()
     str += F("<p>{-ConfLedError-}</p>");
     str += F("</fieldset>");
     str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form></p>");
+
     TradAndSend(200, "text/html", str, 0);
 
+    EEPROM.begin(sizeof(struct settings));
     EEPROM.put(0, NewConf);
     EEPROM.commit();
 
     SendDebug("[HTTP] Reboot !!!");
-    delay(500);
-    ESP.reset();
+    //delay(500);
+    ESP.restart();
   }
 }
 
@@ -619,7 +623,7 @@ void HTTPMgr::TradAndSend(int code, const char *content_type, String content, in
   str += F(VERSION);
   str += F("<br><a href='https://github.com/narfight/P1-wifi-gateway' target='_blank'>Github</a>");
   str += F("</div></div></body></html>");
-
+  
   Trad.FindAndTranslateAll(str);
   server.send(code, content_type, str);
 }

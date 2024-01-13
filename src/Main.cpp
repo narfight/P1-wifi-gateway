@@ -92,7 +92,7 @@ void SendDebugPrintf(const char *format, ...)
 
 void EventOnWifi(wl_status_t from, wl_status_t to)
 {
-  SendDebugPrintf("[WIFI] Event %s -> %s", WifiClient->StatusIdToString(from), WifiClient->StatusIdToString(to));
+  SendDebugPrintf("[WIFI] Event %s -> %s", WifiClient->StatusIdToString(from).c_str(), WifiClient->StatusIdToString(to).c_str());
 }
 
 void blink(int t)
@@ -133,6 +133,7 @@ void PrintConfigData()
   SendDebug("Current configuration :");
   SendDebugPrintf(" - ConfigVersion : %d", config_data.ConfigVersion);
   SendDebugPrintf(" - Boot tentative : %d", config_data.BootFailed);
+  SendDebugPrintf(" - Admin login : %s", config_data.adminUser);
   // SendDebugPrintf(" - Admin password : %s", config_data.adminPassword);
   SendDebugPrintf(" - SSID : %s", config_data.ssid);
   // SendDebugPrintf(" - Wifi password : %s", config_data.password);
@@ -194,8 +195,17 @@ void setup()
   PrintConfigData();
 
   WifiClient = new WifiMgr(config_data);
-  MQTTClient = new MQTTMgr(WifiClient->WifiCom, config_data);
-  TelnetServer = new TelnetMgr(config_data);
+  
+  if (config_data.mqtt)
+  {
+    MQTTClient = new MQTTMgr(WifiClient->WifiCom, config_data);
+  }
+
+  if (config_data.telnet)
+  {
+    TelnetServer = new TelnetMgr(config_data);
+  }
+
   DataReaderP1 = new P1Reader(config_data);
   HTTPClient = new HTTPMgr(config_data, *TelnetServer, *MQTTClient, *DataReaderP1);
   JSONClient = new JSONMgr(config_data, *DataReaderP1);
@@ -238,9 +248,14 @@ void loop()
   DataReaderP1->DoMe();
   HTTPClient->DoMe();
 
+  if (TelnetServer != nullptr)
+  {
+    TelnetServer->DoMe();
+  }
+
   if (DataReaderP1->datagramValid && (DataReaderP1->state == DONE) && (WifiClient->WifiCom.status() == WL_CONNECTED))
   {
-    if (config_data.mqtt)
+    if (MQTTClient != nullptr)
     {
       MQTTClient->doMe();
       if (MQTTClient->MqttDelivered)
@@ -254,9 +269,9 @@ void loop()
       JSONClient->DoMe();
     }
 
-    if (config_data.telnet)
+    if (TelnetServer != nullptr)
     {
-      TelnetServer->DoMe(DataReaderP1->datagram);
+      TelnetServer->SendDataGram(DataReaderP1->datagram);
     }
 
     DataReaderP1->datagramValid = false; // reset
@@ -269,7 +284,7 @@ void loop()
     WatchDogsTimer = millis() + 22000;
   }
   
-  if  (config_data.BootFailed != 0)
+  if (config_data.BootFailed != 0)
   {
     //reset boot-failed
     config_data.BootFailed = 0;

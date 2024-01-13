@@ -170,7 +170,7 @@ void WifiMgr::SetAPMod()
 
   WiFi.mode(WIFI_AP);
   WiFi.softAP(SSID_SETUP, "");
-  SendDebugPrintf("[WIFI] Captive Portal IP : %s", WiFi.softAPIP().toString());
+  SendDebugPrintf("[WIFI] Captive Portal IP : %s", WiFi.softAPIP().toString().c_str());
   APtimer = millis();
 }
 

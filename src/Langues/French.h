@@ -103,7 +103,6 @@ const char LANG[] = R"=====(
     "ADMINPSD" : "Mot de passe",
     "ACTIONLOGIN" : "Se connecter",
     "H1WRONGPSD" : "Erreur",
-    "WRONGPSDTXT" : "Le mot de passe que vous avez entré est incorrecte.",
     "WRONGPSDBACK" : "Retour",
     "RF_RESTARTH1" : "Opération réussie",
     "RF_RESTTXT" : "Merci de vous connecter au Wifi du module une fois qu'il aura redémarré",

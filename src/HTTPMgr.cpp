@@ -29,7 +29,7 @@ HTTPMgr::HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &curre
 
 void HTTPMgr::start_webservices()
 {
-  SendDebugPrintf("[WWW] Start on port %d", WWW_PORT_HTTP);
+  MainSendDebugPrintf("[WWW] Start on port %d", WWW_PORT_HTTP);
   MDNS.begin(HOSTNAME);
 
   //  Flash OTA
@@ -92,7 +92,7 @@ void HTTPMgr::handleRoot()
 
 void HTTPMgr::ReplyErrorLogin(const String Where)
 {
-  SendDebug("[HTTP] Get wrong password from an client.");
+  MainSendDebug("[HTTP] Get wrong password from an client.");
 
   String str = F("<fieldset><legend>{-H1WRONGPSD-}</legend>");
   str += F("<p><b>{-WRONGPSDTXT-}</b><br>");
@@ -112,7 +112,7 @@ void HTTPMgr::ReplyOTAOK()
 
 void HTTPMgr::handleStyleCSS()
 {
-  SendDebug("[HTTP] Request style.css");
+  MainSendDebug("[HTTP] Request style.css");
 
   String str = F("body {text-align: center; font-family: verdana, sans-serif; background: #ffffff;}");
   str += F("h2 {text-align:center;color:#000000;}");
@@ -161,7 +161,7 @@ void HTTPMgr::handleUploadForm()
 
 void HTTPMgr::handleUploadResult()
 {
-  SendDebug("[WWW] handleUploadResult");
+  MainSendDebug("[WWW] handleUploadResult");
   if (ChekifAsAdmin())
   {
     server.sendHeader("Connection", "close");
@@ -171,20 +171,20 @@ void HTTPMgr::handleUploadResult()
 
 void HTTPMgr::handleUploadFlash()
 {
-  SendDebug("[WWW] handleUploadFlash");
+  MainSendDebug("[WWW] handleUploadFlash");
   if (ChekifAsAdmin())
   {
-    SendDebug("[WWW] handleUploadFlash-1");
+    MainSendDebug("[WWW] handleUploadFlash-1");
     HTTPUpload &upload = server.upload();
-    SendDebug("[WWW] handleUploadFlash-2");
-    SendDebug("[WWW] handleUploadFlash-3");
+    MainSendDebug("[WWW] handleUploadFlash-2");
+    MainSendDebug("[WWW] handleUploadFlash-3");
     if (upload.status == UPLOAD_FILE_START)
     {
-      SendDebug("[WWW] Start Flash !!!");
+      MainSendDebug("[WWW] Start Flash !!!");
 
       Serial.setDebugOutput(true);
       WiFiUDP::stopAll();
-      SendDebugPrintf("Update: %s\n", upload.filename.c_str());
+      MainSendDebugPrintf("Update: %s\n", upload.filename.c_str());
       uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
       if (!Update.begin(maxSketchSpace)) // start with max available size
       {
@@ -193,19 +193,19 @@ void HTTPMgr::handleUploadFlash()
     }
     else if (upload.status == UPLOAD_FILE_WRITE)
     {
-      SendDebug("[WWW] UPLOAD_FILE_WRITE");
+      MainSendDebug("[WWW] UPLOAD_FILE_WRITE");
       if (Update.write(upload.buf, upload.currentSize) != upload.currentSize)
       {
-        SendDebug("[WWW] UPLOAD_FILE_WRITE ERROR");
+        MainSendDebug("[WWW] UPLOAD_FILE_WRITE ERROR");
         Update.printError(Serial);
       }
     }
     else if (upload.status == UPLOAD_FILE_END)
     {
-      SendDebug("[WWW] UPLOAD_FILE_END");
+      MainSendDebug("[WWW] UPLOAD_FILE_END");
       if (Update.end(true)) // true to set the size to the current progress
       {
-        SendDebugPrintf("Update Success: %u\nRebooting...\n", upload.totalSize);
+        MainSendDebugPrintf("Update Success: %u\nRebooting...\n", upload.totalSize);
         ReplyOTAOK();
         ESP.restart();
       }
@@ -215,7 +215,7 @@ void HTTPMgr::handleUploadFlash()
       }
       Serial.setDebugOutput(false);
     }
-    SendDebug("[WWW] OTA OUT");
+    MainSendDebug("[WWW] OTA OUT");
     yield();
   }
 }
@@ -261,8 +261,9 @@ void HTTPMgr::handleWelcome()
       conf.NeedConfig = false;
       server.arg("psd1").toCharArray(conf.adminPassword, sizeof(conf.adminPassword));
       server.arg("adminUser").toCharArray(conf.adminUser, sizeof(conf.adminUser));
-
-      SendDebug("[HTTP] New admin password");
+      
+      conf.BootFailed = 0;
+      MainSendDebug("[HTTP] New admin password");
       EEPROM.begin(sizeof(struct settings));
       EEPROM.put(0, conf);
       EEPROM.commit();
@@ -416,7 +417,7 @@ void HTTPMgr::handleSetupSave()
     return;
   }
 
-  SendDebug("[WWW] Save new setup.");
+  MainSendDebug("[WWW] Save new setup.");
 
   if (server.method() == HTTP_POST)
   {
@@ -449,7 +450,7 @@ void HTTPMgr::handleSetupSave()
 
     NewConf.ConfigVersion = SETTINGVERSION;
 
-    SendDebug("[HTTP] save in EEPROM !!!");
+    MainSendDebug("[HTTP] save in EEPROM !!!");
 
     String str = F("<fieldset><legend>{-ConfH1-}</legend>");
     str += F("<p>{-Conf-Saved-}</p>");
@@ -466,7 +467,7 @@ void HTTPMgr::handleSetupSave()
     EEPROM.put(0, NewConf);
     EEPROM.commit();
 
-    SendDebug("[HTTP] Reboot !!!");
+    MainSendDebug("[HTTP] Reboot !!!");
     //delay(500);
     ESP.restart();
   }

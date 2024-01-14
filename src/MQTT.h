@@ -36,19 +36,16 @@ private:
   bool DSMR_Format = false; // deliver mqtt data in 'dsmr reader" format
   PubSubClient mqtt_client; // * Initiate MQTT client
   settings &conf;
-  String mtopic = "Een lange MQTT boodschap als placeholder";
+  //String mtopic = "Een lange MQTT boodschap als placeholder";
 
 public:
   bool MqttDelivered = false;
-  bool MQTT_Server_Fail = false;
   long unsigned nextMQTTreconnectAttempt = millis();
 
   explicit MQTTMgr(Client &Link, settings &currentConf);
   void doMe();
   bool mqtt_connect();
   bool IsConnected();
-  void mqtt_reconnect();
-  void callback(char *topic, byte *payload, unsigned int length);
 
   /// @brief Send a message to a broker topic
   /// @param topic

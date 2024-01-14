@@ -24,6 +24,6 @@
 #ifndef DEBUGFUNCTION_H
 #define DEBUGFUNCTION_H
 
-void SendDebug(String payload);
-void SendDebugPrintf(const char* format, ...);
+void MainSendDebug(String payload);
+void MainSendDebugPrintf(const char* format, ...);
 #endif

@@ -43,7 +43,7 @@ void P1Reader::RTS_on() // switch on Data Request
     digitalWrite(DR, HIGH); // turn on Data Request
     OEstate = true;
 
-    SendDebug("[P1] Data requested");
+    MainSendDebug("[P1] Data requested");
 }
 
 void P1Reader::RTS_off() // switch off Data Request
@@ -52,7 +52,7 @@ void P1Reader::RTS_off() // switch off Data Request
     digitalWrite(OE, HIGH); // put buffer in Tristate mode
     OEstate = false;
     nextUpdateTime = millis() + conf.interval * 1000;
-    SendDebugPrintf("[P1] Data end request. Next action in %dms", nextUpdateTime);
+    MainSendDebugPrintf("[P1] Data end request. Next action in %dms", nextUpdateTime);
 }
 
 void P1Reader::ResetnextUpdateTime()
@@ -251,7 +251,7 @@ bool P1Reader::decodeTelegram(int len)
             }
             else
             {
-                SendDebug("[P1] ERROR, invalid CRC");
+                MainSendDebug("[P1] ERROR, invalid CRC");
                 state = FAILURE;
                 currentCRC = 0;
                 RTS_off();

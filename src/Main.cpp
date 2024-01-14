@@ -52,7 +52,7 @@ HTTPMgr *HTTPClient;
 
 ADC_MODE(ADC_VCC); // allows you to monitor the internal VCC level;
 
-void SendDebug(String payload)
+void MainSendDebug(String payload)
 {
   if (MQTTClient != nullptr)
   {
@@ -65,7 +65,7 @@ void SendDebug(String payload)
   Serial.println(payload);
 }
 
-void SendDebugPrintf(const char *format, ...)
+void MainSendDebugPrintf(const char *format, ...)
 {
   const int bufferSize = 100; // Définir la taille du tampon pour stocker le message formaté
   char buffer[bufferSize];
@@ -82,17 +82,17 @@ void SendDebugPrintf(const char *format, ...)
   // Vérifier si le formatage a réussi et imprimer le message
   if (length >= 0 && length < bufferSize)
   {
-    SendDebug(buffer);
+    MainSendDebug(buffer);
   }
   else
   {
-    SendDebug("Erreur de formatage du message de débogage.");
+    MainSendDebug("Erreur de formatage du message de débogage.");
   }
 }
 
 void EventOnWifi(wl_status_t from, wl_status_t to)
 {
-  SendDebugPrintf("[WIFI] Event %s -> %s", WifiClient->StatusIdToString(from).c_str(), WifiClient->StatusIdToString(to).c_str());
+  MainSendDebugPrintf("[WIFI] Event %s -> %s", WifiClient->StatusIdToString(from).c_str(), WifiClient->StatusIdToString(to).c_str());
 }
 
 void blink(int t)
@@ -130,25 +130,25 @@ void alignToTelegram()
 
 void PrintConfigData()
 {
-  SendDebug("Current configuration :");
-  SendDebugPrintf(" - ConfigVersion : %d", config_data.ConfigVersion);
-  SendDebugPrintf(" - Boot tentative : %d", config_data.BootFailed);
-  SendDebugPrintf(" - Admin login : %s", config_data.adminUser);
-  // SendDebugPrintf(" - Admin password : %s", config_data.adminPassword);
-  SendDebugPrintf(" - SSID : %s", config_data.ssid);
-  // SendDebugPrintf(" - Wifi password : %s", config_data.password);
-  SendDebugPrintf(" - Domoticz Actif : %s", (config_data.domo) ? "Y" : "N");
-  SendDebugPrintf("   # Domoticz : %s:%u", config_data.domoticzIP, config_data.domoticzPort);
-  SendDebugPrintf("   # DomotixzGasIdx : %u", config_data.domoticzGasIdx);
-  SendDebugPrintf("   # DomotixzEnergyIdx : %u", config_data.domoticzEnergyIdx);
-  SendDebugPrintf(" - MQTT Actif : %s", (config_data.mqtt) ? "Y" : "N");
-  SendDebugPrintf("   # Send debug here : %s", (config_data.debugToMqtt) ? "Y" : "N");
-  SendDebugPrintf("   # MQTT : mqtt://%s:***@%s:%u", config_data.mqttUser, config_data.mqttIP, config_data.mqttPort);
-  SendDebugPrintf("   # MQTT Topic : %s", config_data.mqttTopic);
-  SendDebugPrintf(" - interval : %u", config_data.interval);
-  SendDebugPrintf(" - P1 In watt : %s", (config_data.watt) ? "Y" : "N");
-  SendDebugPrintf(" - TELNET Actif : %s", (config_data.telnet) ? "Y" : "N");
-  SendDebugPrintf("   # Send debug here : %s", (config_data.debugToTelnet) ? "Y" : "N");
+  MainSendDebug("Current configuration :");
+  MainSendDebugPrintf(" - ConfigVersion : %d", config_data.ConfigVersion);
+  MainSendDebugPrintf(" - Boot tentative : %d", config_data.BootFailed);
+  MainSendDebugPrintf(" - Admin login : %s", config_data.adminUser);
+  // MainSendDebugPrintf(" - Admin password : %s", config_data.adminPassword);
+  MainSendDebugPrintf(" - SSID : %s", config_data.ssid);
+  // MainSendDebugPrintf(" - Wifi password : %s", config_data.password);
+  MainSendDebugPrintf(" - Domoticz Actif : %s", (config_data.domo) ? "Y" : "N");
+  MainSendDebugPrintf("   # Domoticz : %s:%u", config_data.domoticzIP, config_data.domoticzPort);
+  MainSendDebugPrintf("   # DomotixzGasIdx : %u", config_data.domoticzGasIdx);
+  MainSendDebugPrintf("   # DomotixzEnergyIdx : %u", config_data.domoticzEnergyIdx);
+  MainSendDebugPrintf(" - MQTT Actif : %s", (config_data.mqtt) ? "Y" : "N");
+  MainSendDebugPrintf("   # Send debug here : %s", (config_data.debugToMqtt) ? "Y" : "N");
+  MainSendDebugPrintf("   # MQTT : mqtt://%s:***@%s:%u", config_data.mqttUser, config_data.mqttIP, config_data.mqttPort);
+  MainSendDebugPrintf("   # MQTT Topic : %s", config_data.mqttTopic);
+  MainSendDebugPrintf(" - interval : %u", config_data.interval);
+  MainSendDebugPrintf(" - P1 In watt : %s", (config_data.watt) ? "Y" : "N");
+  MainSendDebugPrintf(" - TELNET Actif : %s", (config_data.telnet) ? "Y" : "N");
+  MainSendDebugPrintf("   # Send debug here : %s", (config_data.debugToTelnet) ? "Y" : "N");
   delay(500);
 }
 
@@ -157,7 +157,7 @@ void setup()
   Serial.begin(115200);
   delay(50);
   Serial.println("Booting...");
-  SendDebugPrintf("Firmware: v%s", VERSION);
+  MainSendDebugPrintf("Firmware: v%s", VERSION);
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(OE, OUTPUT);    // IO16 OE on the 74AHCT1G125
@@ -166,7 +166,7 @@ void setup()
   digitalWrite(DR, LOW);  // DR low (only goes high when we want to receive data)
 
   blink(2);
-  SendDebug("Load configuration from EEprom");
+  MainSendDebug("Load configuration from EEprom");
 
   EEPROM.begin(sizeof(struct settings));
   EEPROM.get(0, config_data);
@@ -176,11 +176,11 @@ void setup()
   {
     if (config_data.ConfigVersion != SETTINGVERSION)
     {
-      SendDebugPrintf("Config file version is wrong (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
+      MainSendDebugPrintf("Config file version is wrong (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
     }
     else
     {
-      SendDebugPrintf("Too many boot fail (nbr:%d), Reset config !", config_data.BootFailed);
+      MainSendDebugPrintf("Too many boot fail (nbr:%d), Reset config !", config_data.BootFailed);
     }
     config_data = (settings){SETTINGVERSION, 0, true, "ssid", "password", "192.168.1.12", 8080, 1234, 1235, "sensors/power/p1meter", "10.0.0.3", 1883, "", "", 30, false, true, false, false, false, true, "adminpwd", ""};
   }
@@ -223,21 +223,21 @@ void doWatchDogs()
 {
   if (ESP.getFreeHeap() < 2000) // watchdog, in case we still have a memery leak
   {
-    SendDebug("[WDG] FATAL : Memory leak !");
+    MainSendDebug("[WDG] FATAL : Memory leak !");
     ESP.reset();
   }
 
   if (millis() - DataReaderP1->LastSample > 300000)
   {
     Serial.flush();
-    SendDebug("[WDG] No data in 300 sec, restarting monitoring");
+    MainSendDebug("[WDG] No data in 300 sec, restarting monitoring");
 
     DataReaderP1->ResetnextUpdateTime();
   }
 
   if (WifiClient->AsAP() && (millis() - WifiClient->APtimer > 600000))
   {
-    SendDebug("[WDG] No wifi, restart");
+    MainSendDebug("[WDG] No wifi, restart");
     ESP.reset(); // we have been in AP mode for 600 sec.
   }
 }
@@ -253,11 +253,15 @@ void loop()
     TelnetServer->DoMe();
   }
 
+  if (MQTTClient != nullptr && !WifiClient->AsAP())
+  {
+    MQTTClient->doMe();
+  }
+
   if (DataReaderP1->datagramValid && (DataReaderP1->state == DONE) && (WifiClient->WifiCom.status() == WL_CONNECTED))
   {
     if (MQTTClient != nullptr)
     {
-      MQTTClient->doMe();
       if (MQTTClient->MqttDelivered)
       {
         MQTTClient->MqttDelivered = false; // reset
@@ -284,11 +288,12 @@ void loop()
     WatchDogsTimer = millis() + 22000;
   }
   
+  //reset boot-failed
   if (config_data.BootFailed != 0)
   {
-    //reset boot-failed
     config_data.BootFailed = 0;
     EEPROM.put(0, config_data);
     EEPROM.commit();
+    MainSendDebug("Reset boot failed");
   }
 }

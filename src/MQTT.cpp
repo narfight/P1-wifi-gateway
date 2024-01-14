@@ -45,6 +45,7 @@ void MQTTMgr::doMe()
 {
   if (mqtt_connect())
   {
+    mqtt_client.loop();
     MQTT_reporter();
   }
 }
@@ -53,37 +54,28 @@ bool MQTTMgr::mqtt_connect()
 {
   if (!mqtt_client.connected())
   {
-    SendDebugPrintf("[MQTT] Connect to %s:%u", conf.mqttIP, conf.mqttPort);
-    mqtt_reconnect();
+    if (millis() > nextMQTTreconnectAttempt)
+    {
+      MainSendDebugPrintf("[MQTT] Connect to %s:%u", conf.mqttIP, conf.mqttPort);
+      
+      // Attempt to connect
+      if (mqtt_client.connect(HOSTNAME, conf.mqttUser, conf.mqttPass))
+      {
+        MainSendDebug("[MQTT] connected");
+
+        // Once connected, publish an announcement...
+        mqtt_client.publish("outTopic", "p1 gateway running");
+      }
+      else
+      {
+        MainSendDebugPrintf("[MQTT] Connection failed : rc=%d", mqtt_client.state());
+        nextMQTTreconnectAttempt = millis() + 2000; // try again in 2 seconds
+      }
+    }
   }
+  
+  //Reply with the new status
   return mqtt_client.connected();
-}
-
-void MQTTMgr::mqtt_reconnect()
-{
-  if (millis() > nextMQTTreconnectAttempt)
-  {
-    // Attempt to connect
-    if (mqtt_client.connect(HOSTNAME, conf.mqttUser, conf.mqttPass))
-    {
-      SendDebug("[MQTT] connected");
-
-      // Once connected, publish an announcement...
-      mqtt_client.publish("outTopic", "p1 gateway running");
-      // ... and resubscribe
-      mqtt_client.subscribe("inTopic");
-    }
-    else
-    {
-      SendDebugPrintf("[MQTT] Connection failed : rc=%s", mqtt_client.state());
-      nextMQTTreconnectAttempt = millis() + 2000; // try again in 2 seconds
-    }
-  }
-}
-
-void MQTTMgr::callback(char* topic, byte* payload, unsigned int length)
-{
-  //nothing here actualy
 }
 
 /// @brief Send a message to a broker topic
@@ -98,7 +90,7 @@ void MQTTMgr::send_msg(const char *topic, const char *payload)
 
     if (!mqtt_client.publish(topic, payload, false))
     {
-        SendDebugPrintf("[MQTT] Error to send to topic : %s", topic);
+        MainSendDebugPrintf("[MQTT] Error to send to topic : %s", topic);
     }
 }
 
@@ -107,23 +99,24 @@ void MQTTMgr::send_metric(String name, float metric) // added *long
   char value[20];
   dtostrf(metric, 3, 3, value);
 
-  mtopic = String(conf.mqttTopic) + "/" + name;
+  String mtopic = String(conf.mqttTopic) + "/" + name;
   send_msg(mtopic.c_str(), value); // output
 }
 
 void MQTTMgr::mqtt_send_metric(String name, char *metric)
 {
-  mtopic = String(conf.mqttTopic) + "/" + name;
+  String mtopic = String(conf.mqttTopic) + "/" + name;
   send_msg(mtopic.c_str(), metric);
 }
 
 void MQTTMgr::SendDebug(String payload)
 {
-  if (conf.debugToMqtt)
+  if (conf.debugToMqtt && mqtt_client.connected())
   {
-    char payloadArray[payload.length() + 1];  // +1 pour le caractère nul
-    payload.toCharArray(payloadArray, sizeof(payloadArray));
-    mqtt_send_metric("p1wifi/logging", payloadArray);
+    char charArray[payload.length() + 1]; // +1 pour le caractère nul
+    payload.toCharArray(charArray, sizeof(charArray));
+    charArray[sizeof(charArray) - 1] = '\0';
+    mqtt_send_metric("p1wifi/logging", charArray);
   }
 }
 

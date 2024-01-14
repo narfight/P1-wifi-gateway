@@ -107,7 +107,7 @@ void WifiMgr::Connect()
   if (strcmp(conf.ssid, "") != 0)
   {
     // Wifi configured to connect to one wifi
-    SendDebugPrintf("[WIFI] Trying to connect to '%s' wifi network", conf.ssid);
+    MainSendDebugPrintf("[WIFI] Trying to connect to '%s' wifi network", conf.ssid);
     WiFi.mode(WIFI_STA);
     WiFi.begin(conf.ssid, conf.password);
     byte tries = 0;
@@ -127,13 +127,11 @@ void WifiMgr::Connect()
     if (WiFi.getMode() == WIFI_STA && WiFi.status() == WL_CONNECTED)
     {
       WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected &event)
-                                     {
-        SendDebugPrintf("[WIFI] Perte de communication : %s", event.reason);
-        Serial.println("Déconnexion du réseau");
-        Serial.print("Raison : ");
-        Serial.println(event.reason); });
+      {
+        MainSendDebugPrintf("[WIFI] Perte de communication : %s", event.reason);
+      });
       WiFi.setAutoReconnect(true);
-      SendDebugPrintf("[WIFI] Running, IP : %s", WiFi.localIP().toString());
+      MainSendDebugPrintf("[WIFI] Running, IP : %s", WiFi.localIP().toString());
       setRFPower();
       digitalWrite(LED_BUILTIN, HIGH);
     }
@@ -145,7 +143,7 @@ void WifiMgr::Connect()
 }
 void WifiMgr::Reconnect()
 {
-  SendDebugPrintf("[WIFI] Trying to Reconnect to '%s' wifi network", conf.ssid);
+  MainSendDebugPrintf("[WIFI] Trying to Reconnect to '%s' wifi network", conf.ssid);
   WiFi.mode(WIFI_STA);
   WiFi.begin(conf.ssid, conf.password);
   byte tries = 0;
@@ -155,7 +153,7 @@ void WifiMgr::Reconnect()
     delay(500);
     if (tries++ > 30)
     {
-      SendDebug("[WIFI][FATAL] Something is terribly wrong, can't connect to wifi (anymore).");
+      MainSendDebug("[WIFI][FATAL] Something is terribly wrong, can't connect to wifi (anymore).");
       digitalWrite(LED_BUILTIN, LOW);
       delay(60000);
       ESP.reset();
@@ -165,12 +163,12 @@ void WifiMgr::Reconnect()
 
 void WifiMgr::SetAPMod()
 {
-  SendDebugPrintf("[WIFI] Setting up Captive Portal by the name '%s'", SSID_SETUP);
+  MainSendDebugPrintf("[WIFI] Setting up Captive Portal by the name '%s'", SSID_SETUP);
   digitalWrite(LED_BUILTIN, LOW);
 
   WiFi.mode(WIFI_AP);
   WiFi.softAP(SSID_SETUP, "");
-  SendDebugPrintf("[WIFI] Captive Portal IP : %s", WiFi.softAPIP().toString().c_str());
+  MainSendDebugPrintf("[WIFI] Captive Portal IP : %s", WiFi.softAPIP().toString().c_str());
   APtimer = millis();
 }
 

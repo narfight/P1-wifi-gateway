@@ -29,7 +29,7 @@ void JSONMgr::UpdateGas()
   // if we have a new value, report
   if(strncmp(P1Captor.DataReaded.gasReceived5min, prevGAS, sizeof(P1Captor.DataReaded.gasReceived5min)) != 0)
   {
-    SendDebugPrintf("New value for gas : %s", P1Captor.DataReaded.gasDomoticz);
+    MainSendDebugPrintf("New value for gas : %s", P1Captor.DataReaded.gasDomoticz);
     DomoticzJson(conf.domoticzGasIdx, 0, P1Captor.DataReaded.gasDomoticz); // gasReceived5min);
     strcpy(prevGAS, P1Captor.DataReaded.gasReceived5min); // retain current value for future reference
   }
@@ -39,7 +39,7 @@ void JSONMgr::UpdateGas()
 void JSONMgr::UpdateElectricity()
 {
   char sValue[300];
-  SendDebugPrintf("New value for Energy : %s", P1Captor.DataReaded.actualElectricityPowerRet);
+  MainSendDebugPrintf("New value for Energy : %s", P1Captor.DataReaded.actualElectricityPowerRet);
   sprintf(sValue, "%s;%s;%s;%s;%s;%s", P1Captor.DataReaded.electricityUsedTariff1, P1Captor.DataReaded.electricityUsedTariff2, P1Captor.DataReaded.electricityReturnedTariff1, P1Captor.DataReaded.electricityReturnedTariff2, P1Captor.DataReaded.actualElectricityPowerDeli, P1Captor.DataReaded.actualElectricityPowerRet);
   DomoticzJson(conf.domoticzEnergyIdx, 0, sValue);
 }
@@ -57,7 +57,7 @@ void JSONMgr::DomoticzJson(unsigned int idx, int nValue, char* sValue)
   {
     char url[255];
     sprintf(url, "http://%s:%u/json.htm?type=command&param=udevice&idx=%u&nvalue=%d&svalue=%s", conf.domoticzIP, conf.domoticzPort, idx, nValue, sValue);
-    SendDebugPrintf("[HTTP] Send GET : %s", url);
+    MainSendDebugPrintf("[HTTP] Send GET : %s", url);
     
     http.begin(client, url);
     int httpCode = http.GET();
@@ -65,7 +65,7 @@ void JSONMgr::DomoticzJson(unsigned int idx, int nValue, char* sValue)
     // httpCode will be negative on error
     if (httpCode > 0)
     { // HTTP header has been sent and Server response header has been handled
-      SendDebugPrintf("[HTTP] Send GET return : %d", httpCode);
+      MainSendDebugPrintf("[HTTP] Send GET return : %d", httpCode);
 
       if (httpCode == HTTP_CODE_OK)
       {
@@ -74,7 +74,7 @@ void JSONMgr::DomoticzJson(unsigned int idx, int nValue, char* sValue)
     }
     else
     {
-      SendDebugPrintf("[HTTP] GET failed, error: %s", http.errorToString(httpCode).c_str());
+      MainSendDebugPrintf("[HTTP] GET failed, error: %s", http.errorToString(httpCode).c_str());
     }
     http.end();
   }

@@ -25,7 +25,7 @@
 
 TelnetMgr::TelnetMgr(settings &currentConf) : conf(currentConf), telnet(TELNETPORT)
 {
-    SendDebugPrintf("[TELNET] Starting");
+    MainSendDebugPrintf("[TELNET] Starting");
     delay(100);
     telnet.setNoDelay(true);
     telnet.begin();
@@ -42,8 +42,9 @@ void TelnetMgr::DoMe()
             if (!telnetClients[i]) // equivalent to !serverClients[i].connected()
             {
                 telnetClients[i] = telnet.accept();
-                telnetClients[i].printf("You are connected to the telnet. Your id session is %d\n", i);
-                SendDebugPrintf("[TELNET] Telnet : New session (Id:%d)", i);
+                telnetClients[i].printf("You are connected to the telnet. Your id session is %d.", i);
+                telnetClients[i].println();
+                MainSendDebugPrintf("[TELNET] Telnet : New session (Id:%d)", i);
                 break;
             }
         }
@@ -52,7 +53,7 @@ void TelnetMgr::DoMe()
         if (i == MAX_SRV_CLIENTS)
         {
             telnet.accept().printf("Server Telnet is busy with %d active connections.\n", MAX_SRV_CLIENTS);
-            SendDebugPrintf("[TELNET] Server Telnet is busy with %d active connections", MAX_SRV_CLIENTS);
+            MainSendDebugPrintf("[TELNET] Server Telnet is busy with %d active connections", MAX_SRV_CLIENTS);
         }
     }
 }
@@ -70,7 +71,7 @@ void TelnetMgr::SendDebug(String payload)
     }
 
     char result[100];
-    printf(result, "%s %s", "[DEBUG]", payload.c_str());
+    snprintf(result, sizeof(result), "%s %s", "[DEBUG]", payload.c_str());
 
     for (int i = 0; i < MAX_SRV_CLIENTS; i++)
     {
@@ -113,7 +114,7 @@ void TelnetMgr::TelnetReporter(String Diagram)
             else
             {
                 // warn but ignore congested clients
-                SendDebugPrintf("[TELNET] Client %d is congested, kill connection.", i);
+                MainSendDebugPrintf("[TELNET] Client %d is congested, kill connection.", i);
                 telnetClients[i].flush();
                 telnetClients[i].stop();
             }
@@ -130,7 +131,7 @@ void TelnetMgr::TelnetReporter(String Diagram)
         }
         else
         {
-            SendDebugPrintf("[TELNET] Client %d is not available for writing.", i);
+            MainSendDebugPrintf("[TELNET] Client %d is not available for writing.", i);
         }
     }  
     yield();

@@ -38,7 +38,7 @@
 struct settings
 {
   byte ConfigVersion;
-  byte BootFailed;
+  byte BootFailed = 0;
   bool NeedConfig = true;
   char ssid[33];
   char password[65];

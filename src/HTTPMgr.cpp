@@ -32,15 +32,24 @@ void HTTPMgr::start_webservices()
   MainSendDebugPrintf("[WWW] Start on port %d", WWW_PORT_HTTP);
   MDNS.begin(HOSTNAME);
 
-  //  Flash OTA
-  httpUpdater.setup(&server);
-
   server.on("/style.css", std::bind(&HTTPMgr::handleStyleCSS, this));
   server.on("/", std::bind(&HTTPMgr::handleRoot, this));
   server.on("/welcome", std::bind(&HTTPMgr::handleWelcome, this));
   server.on("/Setup", std::bind(&HTTPMgr::handleSetup, this));
   server.on("/SetupSave", std::bind(&HTTPMgr::handleSetupSave, this));
   server.on("/update", HTTP_GET, std::bind(&HTTPMgr::handleUploadForm, this));
+  server.on("/update", HTTP_POST, [this]()
+  {
+    if (!ChekifAsAdmin())
+    {
+      return;
+    }
+
+    if (Update.hasError())
+    {
+      ReplyOTANOK(Update.getErrorString(), 3);
+    }
+  }, std::bind(&HTTPMgr::handleUploadFlash, this));
   server.on("/reset", std::bind(&HTTPMgr::handleFactoryReset, this));
   server.on("/P1", std::bind(&HTTPMgr::handleP1, this));
   server.on("/Help", std::bind(&HTTPMgr::handleHelp, this));
@@ -106,8 +115,15 @@ void HTTPMgr::ReplyErrorLogin(const String Where)
 void HTTPMgr::ReplyOTAOK()
 {
   String str = F("<fieldset><p>{-OTASUCCESS1-}</p><p>{-OTASUCCESS2-}</p><p>{-OTASUCCESS3-}</p><p>{-OTASUCCESS4-}</p><p>{-OTASUCCESS5-}</p></fieldset>");
-  TradAndSend(200, "text/html", str, 30);
-  delay(2000);
+  TradAndSend(200, "text/html", str, 15);
+}
+
+void HTTPMgr::ReplyOTANOK(const String Error, u_int ref)
+{
+  MainSendDebugPrintf("[FLASH] Error : %s (%u)", Update.getErrorString(), ref);
+  String str = F("<fieldset><p>{-OTANOTSUCCESS-} : <strong>") + Error + " (" + String(ref) + F(")</strong></p><p>{-OTASUCCESS2-}</p><p>{-OTASUCCESS3-}</p><p>{-OTASUCCESS4-}</p><p>{-OTASUCCESS5-}</p></fieldset>");
+  TradAndSend(200, "text/html", str, 15);
+  ESP.restart();
 }
 
 void HTTPMgr::handleStyleCSS()
@@ -151,7 +167,7 @@ void HTTPMgr::handleUploadForm()
   }
 
   String str = F("<fieldset><legend>{-OTAH1-}</legend>");
-  str += F("<form action='' method='post'><form method='POST' action='' enctype='multipart/form-data'>");
+  str += F("<form method='POST' action='' enctype='multipart/form-data'>");
   str += F("<p><b>{-OTAFIRMWARE-}</b><input type='file' accept='.bin,.bin.gz' name='firmware'></p>");
   str += F("<button type='submit'>{-OTABTUPDATE-}</button>");
   str += F("</form>");
@@ -159,64 +175,50 @@ void HTTPMgr::handleUploadForm()
   TradAndSend(200, "text/html", str, 0);
 }
 
-void HTTPMgr::handleUploadResult()
-{
-  MainSendDebug("[WWW] handleUploadResult");
-  if (ChekifAsAdmin())
-  {
-    server.sendHeader("Connection", "close");
-    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
-  }
-}
-
 void HTTPMgr::handleUploadFlash()
 {
-  MainSendDebug("[WWW] handleUploadFlash");
   if (ChekifAsAdmin())
   {
-    MainSendDebug("[WWW] handleUploadFlash-1");
-    HTTPUpload &upload = server.upload();
-    MainSendDebug("[WWW] handleUploadFlash-2");
-    MainSendDebug("[WWW] handleUploadFlash-3");
+    HTTPUpload& upload = server.upload();
+
     if (upload.status == UPLOAD_FILE_START)
     {
-      MainSendDebug("[WWW] Start Flash !!!");
-
-      Serial.setDebugOutput(true);
-      WiFiUDP::stopAll();
-      MainSendDebugPrintf("Update: %s\n", upload.filename.c_str());
+      Update.clearError();
+      MainSendDebugPrintf("[FLASH] Upload of '%s'", upload.filename.c_str());
       uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-      if (!Update.begin(maxSketchSpace)) // start with max available size
+      MainSendDebugPrintf("[FLASH] Space in memory : %lu", maxSketchSpace);
+      if (!Update.begin(maxSketchSpace, U_FLASH))
       {
-        Update.printError(Serial);
+        ReplyOTANOK(Update.getErrorString(), 0);
       }
     }
     else if (upload.status == UPLOAD_FILE_WRITE)
     {
-      MainSendDebug("[WWW] UPLOAD_FILE_WRITE");
+      MainSendDebug("[FLASH] UPLOAD_FILE_WRITE");
       if (Update.write(upload.buf, upload.currentSize) != upload.currentSize)
       {
-        MainSendDebug("[WWW] UPLOAD_FILE_WRITE ERROR");
-        Update.printError(Serial);
+        ReplyOTANOK(Update.getErrorString(), 1);
       }
     }
     else if (upload.status == UPLOAD_FILE_END)
     {
-      MainSendDebug("[WWW] UPLOAD_FILE_END");
       if (Update.end(true)) // true to set the size to the current progress
       {
-        MainSendDebugPrintf("Update Success: %u\nRebooting...\n", upload.totalSize);
+        MainSendDebug("[FLASH] Update Success, Rebooting...");
         ReplyOTAOK();
         ESP.restart();
       }
       else
       {
-        Update.printError(Serial);
+        ReplyOTANOK(Update.getErrorString(), 2);
       }
-      Serial.setDebugOutput(false);
     }
-    MainSendDebug("[WWW] OTA OUT");
-    yield();
+    else if(upload.status == UPLOAD_FILE_ABORTED)
+    {
+      Update.end();
+      ReplyOTANOK("Update was aborted", 3);
+    }
+    esp_yield();
   }
 }
 
@@ -423,8 +425,13 @@ void HTTPMgr::handleSetupSave()
   {
     settings NewConf;
     NewConf.NeedConfig = false;
+
     // TODO : check if psd1 == psd2
-    server.arg("psd1").toCharArray(NewConf.adminPassword, sizeof(NewConf.adminPassword));
+    if (server.arg("psd1") == server.arg("psd2"))
+    {
+      server.arg("psd1").toCharArray(NewConf.adminPassword, sizeof(NewConf.adminPassword));
+    }
+
     server.arg("adminUser").toCharArray(NewConf.adminUser, sizeof(conf.adminUser));
     server.arg("ssid").toCharArray(NewConf.ssid, sizeof(NewConf.ssid));
     server.arg("password").toCharArray(NewConf.password, sizeof(NewConf.password));
@@ -477,9 +484,14 @@ void HTTPMgr::handleP1()
 {
   String eenheid, eenheid2, eenheid3;
   if (conf.watt)
+  {
     eenheid = " kWh'></div>";
+  }
   else
+  {
     eenheid = " Wh'></div>";
+  }
+  
   if (conf.watt)
   {
     eenheid2 = " kW'></div></p>";

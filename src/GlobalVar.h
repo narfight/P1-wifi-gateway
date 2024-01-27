@@ -26,7 +26,7 @@
 
 #include <Arduino.h>
 
-#define VERSION "0.95"
+#define VERSION "0.96"
 #define HOSTNAME "p1meter"
 
 #define OE 16 // IO16 OE on the 74AHCT1G125

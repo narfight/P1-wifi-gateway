@@ -27,7 +27,6 @@
 #include <Arduino.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
-#include <ESP8266HTTPUpdateServer.h>
 #include <WiFiUdp.h>
 #include <EEPROM.h>
 #include "GlobalVar.h"
@@ -49,7 +48,6 @@ private:
   MQTTMgr &MQTT;
   P1Reader &P1Captor;
   ESP8266WebServer server;
-  ESP8266HTTPUpdateServer httpUpdater;
 
   Language Trad;
   bool ChekifAsAdmin();
@@ -61,12 +59,13 @@ private:
   void handleFactoryReset();
   void handleSetupSave();
   void handleUploadForm();
-  void handleUploadResult();
   void handleUploadFlash();
 
   void handleStyleCSS();
   
   void ReplyOTAOK();
+  void ReplyOTANOK(const String Error, u_int ref);
+
   void ReplyErrorLogin(const String Where);
   void handleP1();
   void handleHelp();

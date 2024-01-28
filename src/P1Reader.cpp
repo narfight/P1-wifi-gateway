@@ -456,7 +456,7 @@ void P1Reader::readTelegram()
       int len = Serial.readBytesUntil('\n', telegram, MAXLINELENGTH);
       telegram[len] = '\n';
       telegram[len + 1] = 0;
-      blink(1);
+      blink(1, 400);
 
       decodeTelegram(len + 1);
 

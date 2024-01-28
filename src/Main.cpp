@@ -24,6 +24,8 @@
 #define FRENCH // NEDERLANDS,SWEDISH,GERMAN,FRENCH
 #define DEBUG
 
+#define MAXBOOTFAILURE 3 //reset setting if boot fail more than this
+
 #include <Arduino.h>
 #include <EEPROM.h>
 #include "GlobalVar.h"
@@ -93,17 +95,17 @@ void MainSendDebugPrintf(const char *format, ...)
   }
 }
 
-void EventOnWifi(wl_status_t from, wl_status_t to)
+void EventOnWifi(bool Connected, wl_status_t from, wl_status_t to)
 {
-  MainSendDebugPrintf("[WIFI] Event %s -> %s", WifiClient->StatusIdToString(from).c_str(), WifiClient->StatusIdToString(to).c_str());
+  MainSendDebugPrintf("[WIFI][Connected:%s] Event %s -> %s", (WiFi.isConnected())? "Y" : "N", WifiClient->StatusIdToString(from).c_str(), WifiClient->StatusIdToString(to).c_str());
 }
 
-void blink(int t)
+void blink(int t, unsigned long speed)
 {
   for (int i = 0; i <= t; i++)
   {
     digitalWrite(LED_BUILTIN, LOW);
-    delay(200);
+    delay(speed);
     digitalWrite(LED_BUILTIN, HIGH);
   }
 }
@@ -157,7 +159,6 @@ void PrintConfigData()
 void setup()
 {
   Serial.begin(115200);
-  delay(50);
   Serial.println("Booting...");
   MainSendDebugPrintf("Firmware: v%s", VERSION);
 
@@ -167,15 +168,17 @@ void setup()
   pinMode(DR, OUTPUT);    // IO4 Data Request
   digitalWrite(DR, LOW);  // DR low (only goes high when we want to receive data)
 
-  blink(2);
   MainSendDebug("Load configuration from EEprom");
 
   EEPROM.begin(sizeof(struct settings));
   EEPROM.get(0, config_data);
 
-  // Si la version de la configuration n'est celle attendu, on recet !
-  if (config_data.ConfigVersion != SETTINGVERSION || config_data.BootFailed > 10)
+  // Si la version de la configuration n'est celle attendu, on reset !
+  if (config_data.ConfigVersion != SETTINGVERSION || config_data.BootFailed >= MAXBOOTFAILURE)
   {
+    //Show to user is reseted !
+    blink(10, 30);
+    
     if (config_data.ConfigVersion != SETTINGVERSION)
     {
       MainSendDebugPrintf("Config file version is wrong (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
@@ -194,7 +197,9 @@ void setup()
   //Save config with boot fail updated
   EEPROM.put(0, config_data);
   EEPROM.commit();
-
+  
+  blink(2, 200);
+  
   PrintConfigData();
 
   WifiClient = new WifiMgr(config_data);

@@ -31,10 +31,10 @@ void WifiMgr::DoMe()
     LastStatusEvent = WiFi.status();
     if (DelegateWifiChange != nullptr)
     { // Que si quelqu'un ecoute l'event
-      DelegateWifiChange(tmp, LastStatusEvent);
+      DelegateWifiChange(WiFi.isConnected(), tmp, LastStatusEvent);
     }
 
-    if (LastStatusEvent == WL_CONNECTED && !WiFi.isConnected())
+    if (tmp == WL_CONNECTED && !WiFi.isConnected())
     {
       Reconnect();
     }
@@ -97,7 +97,7 @@ WifiMgr::WifiMgr(settings &currentConf) : conf(currentConf)
   */
 }
 
-void WifiMgr::OnWifiEvent(void (*CallBack)(wl_status_t, wl_status_t))
+void WifiMgr::OnWifiEvent(void (*CallBack)(bool, wl_status_t, wl_status_t))
 {
   DelegateWifiChange = CallBack;
 }
@@ -141,6 +141,7 @@ void WifiMgr::Connect()
     SetAPMod();
   }
 }
+
 void WifiMgr::Reconnect()
 {
   MainSendDebugPrintf("[WIFI] Trying to Reconnect to '%s' wifi network", conf.ssid);

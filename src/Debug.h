@@ -26,5 +26,5 @@
 
 void MainSendDebug(String payload);
 void MainSendDebugPrintf(const char* format, ...);
-void blink(int t);
+void blink(int t, unsigned long speed);
 #endif

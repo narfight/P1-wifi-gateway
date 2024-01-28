@@ -40,7 +40,7 @@ class WifiMgr
 {
   private:
   settings& conf;
-  void (*DelegateWifiChange)(wl_status_t, wl_status_t) = nullptr;
+  void (*DelegateWifiChange)(bool, wl_status_t, wl_status_t) = nullptr;
   wl_status_t LastStatusEvent;
   void SetAPMod();
 
@@ -50,7 +50,7 @@ class WifiMgr
   WiFiClient WifiCom;
   void DoMe();
   String StatusIdToString(wl_status_t status);
-  void OnWifiEvent(void (*CallBack)(wl_status_t, wl_status_t));
+  void OnWifiEvent(void (*CallBack)(bool, wl_status_t, wl_status_t));
   void Connect();
 
   /// @brief Si il diffuse son propre AP et non connecté a un Wifi

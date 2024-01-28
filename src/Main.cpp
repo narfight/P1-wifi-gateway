@@ -22,6 +22,7 @@
  */
 
 #define FRENCH // NEDERLANDS,SWEDISH,GERMAN,FRENCH
+#define DEBUG
 
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -62,7 +63,9 @@ void MainSendDebug(String payload)
   {
     TelnetServer->SendDebug(payload);
   }
+  #ifdef DEBUG
   Serial.println(payload);
+  #endif
 }
 
 void MainSendDebugPrintf(const char *format, ...)
@@ -102,7 +105,6 @@ void blink(int t)
     digitalWrite(LED_BUILTIN, LOW);
     delay(200);
     digitalWrite(LED_BUILTIN, HIGH);
-    ;
   }
 }
 
@@ -134,9 +136,10 @@ void PrintConfigData()
   MainSendDebugPrintf(" - ConfigVersion : %d", config_data.ConfigVersion);
   MainSendDebugPrintf(" - Boot tentative : %d", config_data.BootFailed);
   MainSendDebugPrintf(" - Admin login : %s", config_data.adminUser);
-  // MainSendDebugPrintf(" - Admin password : %s", config_data.adminPassword);
+  #ifdef DEBUG
+  MainSendDebugPrintf(" - Admin psw : %s", config_data.adminPassword);
+  #endif
   MainSendDebugPrintf(" - SSID : %s", config_data.ssid);
-  // MainSendDebugPrintf(" - Wifi password : %s", config_data.password);
   MainSendDebugPrintf(" - Domoticz Actif : %s", (config_data.domo) ? "Y" : "N");
   MainSendDebugPrintf("   # Domoticz : %s:%u", config_data.domoticzIP, config_data.domoticzPort);
   MainSendDebugPrintf("   # DomotixzGasIdx : %u", config_data.domoticzGasIdx);
@@ -149,7 +152,6 @@ void PrintConfigData()
   MainSendDebugPrintf(" - P1 In watt : %s", (config_data.watt) ? "Y" : "N");
   MainSendDebugPrintf(" - TELNET Actif : %s", (config_data.telnet) ? "Y" : "N");
   MainSendDebugPrintf("   # Send debug here : %s", (config_data.debugToTelnet) ? "Y" : "N");
-  delay(500);
 }
 
 void setup()
@@ -188,6 +190,7 @@ void setup()
   {
     config_data.BootFailed++;
   }
+  
   //Save config with boot fail updated
   EEPROM.put(0, config_data);
   EEPROM.commit();

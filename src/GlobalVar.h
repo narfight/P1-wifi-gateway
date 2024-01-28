@@ -26,14 +26,14 @@
 
 #include <Arduino.h>
 
-#define VERSION "0.96"
+#define VERSION "0.97"
 #define HOSTNAME "p1meter"
 
 #define OE 16 // IO16 OE on the 74AHCT1G125
 #define DR 4  // IO4 is Data Request
 
 #define SETTINGVERSIONNULL 0 //= no config
-#define SETTINGVERSION 0
+#define SETTINGVERSION 1
 
 struct settings
 {
@@ -61,29 +61,4 @@ struct settings
   char adminPassword[33];
   char adminUser[33];
 };
-
-// Swedish specific
-#ifdef SWEDISH
-char cumulativeActiveImport[12];    // 1.8.0
-char cumulativeActiveExport[12];    // 2.8.0
-char cumulativeReactiveImport[12];  // 3.8.0
-char cumulativeReactiveExport[12];  // 4.8.0
-char momentaryActiveImport[12];     // 1.7.0
-char momentaryActiveExport[12];     // 2.7.0
-char momentaryReactiveImport[12];   // 3.7.0
-char momentaryReactiveExport[12];   // 4.7.0
-char momentaryReactiveImportL1[12]; // 23.7.0
-char momentaryReactiveImportL2[12]; // 43.7.0
-char momentaryReactiveImportL3[12]; // 63.7.0
-char momentaryReactiveExportL1[12]; // 24.7.0
-char momentaryReactiveExportL2[12]; // 44.7.0
-char momentaryReactiveExportL3[12]; // 64.7.0
-
-char reactivePowerL1P[9]; // Sweden uses these 6
-char reactivePowerL2P[9];
-char reactivePowerL3P[9];
-char reactivePowerL1NP[9];
-char reactivePowerL2NP[9];
-char reactivePowerL3NP[9];
-#endif
 #endif

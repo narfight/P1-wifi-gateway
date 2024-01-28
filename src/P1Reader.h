@@ -34,6 +34,7 @@
 #define CHECKSUM 3
 #define DONE 4
 #define FAILURE 5
+#define FAULT 6
 
 #define MAXLINELENGTH 2048 // 0-0:96.13.0 has a maximum lenght of 1024 chars + 11 of its identifier
 
@@ -50,46 +51,41 @@ private:
   unsigned long nextUpdateTime = millis();
   bool OEstate = false;        // 74125 OE output enable is off by default (EO signal high)
   unsigned int currentCRC = 0; // the CRC v alue of the datagram
-  bool gas22Flag = false;      // flag for parsing second gas line on dsmr2.2 meters
-  bool CRCcheckEnabled = true; // by default enable CRC checking
-  void settime();
   void RTS_on();
   void RTS_off();
-  int FindCharInArrayRev(const char array[], char c, int len);
-  int FindCharInArrayRev2(const char array[], char c, int len);
-  void getStr(char *theValue, char *buffer, int maxlen, char startchar, char endchar);
-  bool isNumber(const char *res, const int len);
-  bool decodeTelegram(int len);
-  void getStr12(char *theValue, char *buffer, int maxlen, char startchar);
-  void getValue(char *theValue, char *buffer, int maxlen, char startchar, char endchar);
-  void getGasValue(char *theValue, char *buffer, int maxlen, char startchar, char endchar);
-  void getDomoticzGasValue(char *theValue, char *buffer, int maxlen, char startchar, char endchar);
+  int dataFailureCount = 0;
+  void OBISparser(int len);
+  String readFirstParenthesisVal(int start, int end);
+  String readBetweenDoubleParenthesis(int start, int end);
+  int FindCharInArray(char array[], char c, int len);
+  void decodeTelegram(int len);
   unsigned int CRC16(unsigned int crc, unsigned char *buf, int len);
   String identifyMeter(String Name);
+  String readUntilStar(int start, int end);
 
 public:
   int state = DISABLED;
-  bool gotPowerReading = false;
-  bool gotGasReading = false;
   unsigned long LastSample = 0;
   explicit P1Reader(settings &currentConf);
   unsigned long GetnextUpdateTime();
   void DoMe();
   void readTelegram();
   void ResetnextUpdateTime();
-  int devicestate = CONFIG;          // getting basic Meter data to select correct parse rules
   char telegram[MAXLINELENGTH] = {}; // holds a single line of the datagram
   String datagram;                   // holds entire datagram for raw output
-  String meterId = "";
   String meterName = "";
   bool datagramValid = false;
   bool dataEnd = false; // signals that we have found the end char in the data (!)
   struct DataP1
   {
+    char gasReceived5min[12];
+    char gasDomoticz[12]; // Domoticz wil gas niet in decimalen?
+    String P1header;
     char P1version[8];
     int P1prot; // 4 or 5 based on P1version 1-3:0.2.8
     char P1timestamp[30] = "\0";
     char equipmentId[100] = "\0";
+    char equipmentId2[100] = "\0";
     char electricityUsedTariff1[12];
     char electricityUsedTariff2[12];
     char electricityReturnedTariff1[12];
@@ -97,12 +93,14 @@ public:
     char tariffIndicatorElectricity[8];
     char numberPowerFailuresAny[6];
     char numberLongPowerFailuresAny[6];
+    String longPowerFailuresLog;
     char numberVoltageSagsL1[7];
     char numberVoltageSagsL2[7];
     char numberVoltageSagsL3[7];
     char numberVoltageSwellsL1[7];
     char numberVoltageSwellsL2[7];
     char numberVoltageSwellsL3[7];
+    String textMessage;
     char instantaneousVoltageL1[7];
     char instantaneousVoltageL2[7];
     char instantaneousVoltageL3[7];
@@ -117,9 +115,6 @@ public:
     char activePowerL3NP[10];
     char actualElectricityPowerDeli[14];
     char actualElectricityPowerRet[14];
-    char gasReceived5min[12];
-    char gasDomoticz[12]; // Domoticz wil gas niet in decimalen?
   } DataReaded = {};
 };
-
 #endif

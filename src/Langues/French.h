@@ -37,6 +37,7 @@ const char LANG[] = R"=====(
     "MENUConf" : "Configuration",
     "MENUOTA" : "Mettre à jour le micrologiciel",
     "MENURESET" : "Retour aux paramètres d'usine",
+    "MENUPASSWORD" : "Identifiant",
     "H1DATA" : "Données",
     "ConfH1": "Wifi et configuration du module",
     "ACTIONSAVE": "Sauvegarder",

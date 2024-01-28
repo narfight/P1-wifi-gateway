@@ -26,4 +26,5 @@
 
 void MainSendDebug(String payload);
 void MainSendDebugPrintf(const char* format, ...);
+void blink(int t);
 #endif

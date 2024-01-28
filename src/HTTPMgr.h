@@ -54,7 +54,7 @@ private:
   void TradAndSend(int code, const char *content_type, String content, int refresh);
   
   void handleRoot();
-  void handleWelcome();
+  void handlePassword();
   void handleSetup();
   void handleFactoryReset();
   void handleSetupSave();

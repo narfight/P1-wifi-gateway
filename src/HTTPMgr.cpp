@@ -34,9 +34,12 @@ void HTTPMgr::start_webservices()
 
   server.on("/style.css", std::bind(&HTTPMgr::handleStyleCSS, this));
   server.on("/", std::bind(&HTTPMgr::handleRoot, this));
-  server.on("/welcome", std::bind(&HTTPMgr::handleWelcome, this));
+  server.on("/setPassword", std::bind(&HTTPMgr::handlePassword, this));
   server.on("/Setup", std::bind(&HTTPMgr::handleSetup, this));
   server.on("/SetupSave", std::bind(&HTTPMgr::handleSetupSave, this));
+  server.on("/reset", std::bind(&HTTPMgr::handleFactoryReset, this));
+  server.on("/P1", std::bind(&HTTPMgr::handleP1, this));
+  server.on("/Help", std::bind(&HTTPMgr::handleHelp, this));
   server.on("/update", HTTP_GET, std::bind(&HTTPMgr::handleUploadForm, this));
   server.on("/update", HTTP_POST, [this]()
   {
@@ -50,9 +53,6 @@ void HTTPMgr::start_webservices()
       ReplyOTANOK(Update.getErrorString(), 3);
     }
   }, std::bind(&HTTPMgr::handleUploadFlash, this));
-  server.on("/reset", std::bind(&HTTPMgr::handleFactoryReset, this));
-  server.on("/P1", std::bind(&HTTPMgr::handleP1, this));
-  server.on("/Help", std::bind(&HTTPMgr::handleHelp, this));
 
   server.begin();
   MDNS.addService("http", "tcp", WWW_PORT_HTTP);
@@ -82,7 +82,7 @@ void HTTPMgr::handleRoot()
   // You cannot use this page if is not your first boot
   if (conf.NeedConfig)
   {
-    server.sendHeader("Location", "/welcome");
+    server.sendHeader("Location", "/setPassword");
     server.send(302, "text/plain", "Redirecting");
     return;
   }
@@ -93,6 +93,7 @@ void HTTPMgr::handleRoot()
   str += F("</fieldset>");
   str += F("<fieldset><legend>{-ConfH1-}</legend>");
   str += F("<form action='/Setup' method='post'><button type='Setup'>{-MENUConf-}</button></form>");
+  str += F("<form action='/setPassword' method='post'><button type='Setup'>{-MENUPASSWORD-}</button></form>");
   str += F("<form action='/update' method='GET'><button type='submit'>{-MENUOTA-}</button></form>");
   str += F("<form action='/reset' id=\"frmRst\" method='GET'><button type='button' onclick='ConfRST()'>{-MENURESET-}</button></form>");
   str += F("<script> function ConfRST() { if (confirm(\"{-ASKCONFIRM-}\")) { document.getElementById(\"frmRst\").submit();}}</script>");
@@ -142,7 +143,7 @@ void HTTPMgr::handleStyleCSS()
   str += F("input[type=range] {width: 90%;}");
   str += F("select {background: #ffffff; color: #000000;}");
   str += F("textarea {resize: vertical; width: 98%; height: 318px; padding: 5px; overflow: auto; background: #ffffff; color: #000000;}");
-  str += F("button {border: 0; border-radius: 0.3rem; background: #97C1A9; color: #ffffff; line-height: 2.4rem; font-size: 1.2rem; width: 100%; -webkit-transition-duration: 0.4s; transition-duration: 0.4s; cursor: pointer;}");
+  str += F("button {border: 0; border-radius: 0.3rem; background: #97C1A9; color: #ffffff; line-height: 2.4rem; font-size: 1.2rem; width: 100%; -webkit-transition-duration: 0.4s; transition-duration: 0.4s; cursor: pointer;margin-top: 5px;}");
   str += F("button:hover {background: #0e70a4;}");
   str += F(".bhome {background: #55CBCD;}");
   str += F(".bhome:hover {background: #A2E1DB;}");
@@ -235,6 +236,8 @@ void HTTPMgr::handleFactoryReset()
   str += F("</fieldset>");
   TradAndSend(200, "text/html", str, 0);
 
+  MainSendDebug("Reset factory and reboot...");
+
   conf.ConfigVersion = SETTINGVERSIONNULL;
 
   EEPROM.begin(sizeof(struct settings));
@@ -245,14 +248,16 @@ void HTTPMgr::handleFactoryReset()
   ESP.reset();
 }
 
-void HTTPMgr::handleWelcome()
+void HTTPMgr::handlePassword()
 {
-  // You cannot use this page if is not your first boot
-  if (!conf.NeedConfig)
+  if (!conf.NeedConfig) // if need config, don't ask password
   {
+    if (!ChekifAsAdmin())
+    {
     server.sendHeader("Location", "/");
     server.send(302, "text/plain", "Redirecting");
     return;
+    }
   }
 
   // Is the new password ?
@@ -271,20 +276,21 @@ void HTTPMgr::handleWelcome()
       EEPROM.commit();
 
       // Move to full setup !
-      server.sendHeader("Location", "/Setup");
+      server.sendHeader("Location", "/");
       server.send(302, "text/plain", "Redirecting");
       return;
     }
   }
 
-  String str = F("<form action=\"/welcome\" method=\"POST\" onsubmit=\"return Check()\"><fieldset>");
+  String str = F("<form action=\"/setPassword\" method=\"POST\" onsubmit=\"return Check()\"><fieldset>");
   str += F("<fieldset><legend>{-H1Welcome-}</legend>");
-  str += F("<label for=\"adminUser\">{-PSWDLOGIN-} :</label><input type=\"text\" name=\"adminUser\" maxlength=\"32\"><br />");
-  str += F("<label for=\"psd1\">{-PSWD1-} :</label><input type=\"password\" name=\"psd1\" maxlength=\"32\"><br />");
-  str += F("<label for=\"psd2\">{-PSWD2-} :</label><input type=\"password\" name=\"psd2\" maxlength=\"32\"><br />");
+  str += F("<label for=\"adminUser\">{-PSWDLOGIN-} :</label><input type=\"text\" name=\"adminUser\" id=\"adminUser\" maxlength=\"32\" value=\"");
+  str += conf.adminUser;
+  str += F("\"><br />");
+  str += F("<label for=\"psd1\">{-PSWD1-} :</label><input type=\"password\" name=\"psd1\" id=\"psd1\" maxlength=\"32\"><br />");
+  str += F("<label for=\"psd2\">{-PSWD2-} :</label><input type=\"password\" name=\"psd2\" id=\"psd2\" maxlength=\"32\"><br />");
   str += F("<span id=\"passwordError\" class=\"error\"></span>");
-  str += F("<button type='submit'>{-ACTIONLOGIN-}</button></form>");
-  str += F("<script>function Check() {if (document.getElementById(\"psd1\").value !== document.getElementById(\"psd2\").value) {document.getElementById(\"passwordError\").innerHTML = \"{-PSWDERROR-}\";return false;}return true;}</script>");
+  str += F("<button type='submit'>{-ConfSave-}</button></form>");
   str += F("</fieldset>");
   TradAndSend(200, "text/html", str, 0);
 }
@@ -296,21 +302,12 @@ void HTTPMgr::handleSetup()
     return;
   }
 
-  String str = F("<form action='/SetupSave' method='POST' onsubmit=\"return Check()\">");
-  str += F("<fieldset><legend>{-H1Welcome-}</legend>");
-  str += F("<label for=\"adminUser\">{-PSWDLOGIN-} :</label><input type=\"text\" name=\"adminUser\" maxlength=\"32\" value='");
-  str += conf.adminUser;
-  str += F("'><br />");
-  str += F("<label for=\"psd1\">{-PSWD1-} :</label><input type=\"password\" name=\"psd1\" maxlength=\"32\"><br />");
-  str += F("<label for=\"psd2\">{-PSWD2-} :</label><input type=\"password\" name=\"psd2\" maxlength=\"32\"><br />");
-  str += F("<script>function Check() {if (document.getElementById(\"psd1\").value !== document.getElementById(\"psd2\").value) {document.getElementById(\"passwordError\").innerHTML = \"{-PSWDERROR-}\";return false;}return true;}</script>");
-  str += F("</fieldset>");
-
+  String str = F("<form action='/SetupSave' method='POST'>");
   str += F("<fieldset><legend>{-ConfWIFIH2-}</legend>");
-  str += F("<label for=\"ssid\">{-ConfSSID-} :</label><input type='text' name='ssid' maxlength=\"32\" value='");
+  str += F("<label for=\"ssid\">{-ConfSSID-} :</label><input type='text' name='ssid' id='ssid' maxlength=\"32\" value='");
   str += conf.ssid;
   str += F("'><br />");
-  str += F("<label for=\"password\">{-ConfWIFIPWD-} :</label><input type='password' maxlength=\"64\" name='password' value='");
+  str += F("<label for=\"password\">{-ConfWIFIPWD-} :</label><input type='password' maxlength=\"64\" name='password' id='password' value='");
   str += conf.password;
   str += F("'><br />");
   str += F("</fieldset>");
@@ -326,16 +323,16 @@ void HTTPMgr::handleSetup()
   {
     str += F("><br />");
   }
-  str += F("<label for=\"domoticzIP\">{-ConfDMTZIP-} :</label><input type='text' name='domoticzIP' maxlength=\"29\" value='");
+  str += F("<label for=\"domoticzIP\">{-ConfDMTZIP-} :</label><input type='text' name='domoticzIP' id='domoticzIP' maxlength=\"29\" value='");
   str += conf.domoticzIP;
   str += F("'><br />");
-  str += F("<label for=\"domoticzPort\">{-ConfDMTZPORT-} :</label><input type='number' min='1' max='65535' name='domoticzPort' value='");
+  str += F("<label for=\"domoticzPort\">{-ConfDMTZPORT-} :</label><input type='number' min='1' max='65535' id='domoticzPort' name='domoticzPort' value='");
   str += conf.domoticzPort;
   str += F("'><br />");
-  str += F("<label for=\"domoticzGasIdx\">{-ConfDMTZGIdx-} :</label><input type='number' min='1' name='domoticzGasIdx' value='");
+  str += F("<label for=\"domoticzGasIdx\">{-ConfDMTZGIdx-} :</label><input type='number' min='1' id='domoticzGasIdx' name='domoticzGasIdx' value='");
   str += conf.domoticzGasIdx;
   str += F("'><br />");
-  str += F("<label for=\"domoticzEnergyIdx\">{-ConfDMTZEIdx-} :</label><input type='number' min='1' name='domoticzEnergyIdx' value='");
+  str += F("<label for=\"domoticzEnergyIdx\">{-ConfDMTZEIdx-} :</label><input type='number' min='1' id='domoticzEnergyIdx' name='domoticzEnergyIdx' value='");
   str += conf.domoticzEnergyIdx;
   str += F("'>");
   str += F("</fieldset>");
@@ -351,22 +348,22 @@ void HTTPMgr::handleSetup()
     str += F("><br />");
   }
 
-  str += F("<label for=\"mqttIP\">{-ConfMQTTIP-} :</label><input type='text' name='mqttIP' maxlength=\"29\" value='");
+  str += F("<label for=\"mqttIP\">{-ConfMQTTIP-} :</label><input type='text' id='mqttIP' name='mqttIP' maxlength=\"29\" value='");
   str += conf.mqttIP;
   str += F("'><br />");
-  str += F("<label for=\"mqttPort\">{-ConfMQTTPORT-} :</label><input type='number' min='1' max='65535' name='mqttPort' value='");
+  str += F("<label for=\"mqttPort\">{-ConfMQTTPORT-} :</label><input type='number' min='1' max='65535' id='mqttPort' name='mqttPort' value='");
   str += conf.mqttPort;
   str += F("'><br />");
-  str += F("<label for=\"mqttUser\">{-ConfMQTTUsr-} :</label><input type='text' name='mqttUser' maxlength=\"31\" value='");
+  str += F("<label for=\"mqttUser\">{-ConfMQTTUsr-} :</label><input type='text' id='mqttUser' name='mqttUser' maxlength=\"31\" value='");
   str += conf.mqttUser;
   str += F("'><br />");
-  str += F("<label for=\"mqttPass\">{-ConfMQTTPSW-} :</label><input type='password' name='mqttPass' maxlength=\"31\" value='");
+  str += F("<label for=\"mqttPass\">{-ConfMQTTPSW-} :</label><input type='password' id='mqttPass' name='mqttPass' maxlength=\"31\" value='");
   str += conf.mqttPass;
   str += F("'><br />");
-  str += F("<label for=\"mqttTopic\">{-ConfMQTTRoot-} :</label><input type='text' name='mqttTopic' maxlength=\"49\" value='");
+  str += F("<label for=\"mqttTopic\">{-ConfMQTTRoot-} :</label><input type='text' id='mqttTopic' name='mqttTopic' maxlength=\"49\" value='");
   str += conf.mqttTopic;
   str += F("'><br />");
-  str += F("<label for=\"interval\">{-ConfMQTTIntr-} :</label><input type='number' min='10' name='interval' value='");
+  str += F("<label for=\"interval\">{-ConfMQTTIntr-} :</label><input type='number' min='10' id='interval' name='interval' value='");
   str += conf.interval;
   str += F("'><br />");
   str += F("<label for=\"watt\">{-ConfMQTTKW-} :</label><input type='checkbox' name='watt' id='watt' ");
@@ -425,12 +422,8 @@ void HTTPMgr::handleSetupSave()
   {
     settings NewConf;
     NewConf.NeedConfig = false;
-
-    // TODO : check if psd1 == psd2
-    if (server.arg("psd1") == server.arg("psd2"))
-    {
-      server.arg("psd1").toCharArray(NewConf.adminPassword, sizeof(NewConf.adminPassword));
-    }
+    strcpy(NewConf.adminPassword, conf.adminPassword);
+    strcpy(NewConf.adminUser, conf.adminUser);
 
     server.arg("adminUser").toCharArray(NewConf.adminUser, sizeof(conf.adminUser));
     server.arg("ssid").toCharArray(NewConf.ssid, sizeof(NewConf.ssid));

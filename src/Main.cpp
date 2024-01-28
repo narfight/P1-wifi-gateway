@@ -107,6 +107,7 @@ void blink(int t, unsigned long speed)
     digitalWrite(LED_BUILTIN, LOW);
     delay(speed);
     digitalWrite(LED_BUILTIN, HIGH);
+    delay(speed);
   }
 }
 
@@ -175,10 +176,7 @@ void setup()
 
   // Si la version de la configuration n'est celle attendu, on reset !
   if (config_data.ConfigVersion != SETTINGVERSION || config_data.BootFailed >= MAXBOOTFAILURE)
-  {
-    //Show to user is reseted !
-    blink(10, 30);
-    
+  {    
     if (config_data.ConfigVersion != SETTINGVERSION)
     {
       MainSendDebugPrintf("Config file version is wrong (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
@@ -187,6 +185,10 @@ void setup()
     {
       MainSendDebugPrintf("Too many boot fail (nbr:%d), Reset config !", config_data.BootFailed);
     }
+
+    //Show to user is reseted !
+    blink(20, 50UL);
+
     config_data = (settings){SETTINGVERSION, 0, true, "ssid", "password", "192.168.1.12", 8080, 1234, 1235, "sensors/power/p1meter", "10.0.0.3", 1883, "", "", 30, false, true, false, false, false, true, "adminpwd", ""};
   }
   else
@@ -198,7 +200,7 @@ void setup()
   EEPROM.put(0, config_data);
   EEPROM.commit();
   
-  blink(2, 200);
+  blink(2, 200UL);
   
   PrintConfigData();
 

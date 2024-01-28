@@ -95,20 +95,14 @@ void MainSendDebugPrintf(const char *format, ...)
   }
 }
 
-void EventOnWifi(bool Connected, wl_status_t from, wl_status_t to)
-{
-  MainSendDebugPrintf("[WIFI][Connected:%s] Event %s -> %s", (WiFi.isConnected())? "Y" : "N", WifiClient->StatusIdToString(from).c_str(), WifiClient->StatusIdToString(to).c_str());
-}
-
 void blink(int t, unsigned long speed)
 {
   for (int i = 0; i <= t; i++)
   {
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(speed);
-    digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     delay(speed);
   }
+  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 void alignToTelegram()
@@ -189,7 +183,7 @@ void setup()
     //Show to user is reseted !
     blink(20, 50UL);
 
-    config_data = (settings){SETTINGVERSION, 0, true, "ssid", "password", "192.168.1.12", 8080, 1234, 1235, "sensors/power/p1meter", "10.0.0.3", 1883, "", "", 30, false, true, false, false, false, true, "adminpwd", ""};
+    config_data = (settings){SETTINGVERSION, 0, true, "ssid", "password", "192.168.1.12", 8080, 1234, 1235, "sensors/power/p1meter", "10.0.0.3", 1883, "", "", 30, false, true, false, false, false, true, "", ""};
   }
   else
   {
@@ -224,7 +218,6 @@ void setup()
   DataReaderP1->state = WAITING; // signal that we are waiting for a valid start char (aka /)
   WatchDogsTimer = millis();
 
-  WifiClient->OnWifiEvent(EventOnWifi);
   WifiClient->Connect();
   HTTPClient->start_webservices();
 }
@@ -263,12 +256,12 @@ void loop()
     TelnetServer->DoMe();
   }
 
-  if (MQTTClient != nullptr && !WifiClient->AsAP())
+  if (MQTTClient != nullptr && WifiClient->IsConnected())
   {
     MQTTClient->doMe();
   }
 
-  if (DataReaderP1->datagramValid && (DataReaderP1->state == DONE) && (WifiClient->WifiCom.status() == WL_CONNECTED))
+  if (DataReaderP1->datagramValid && (DataReaderP1->state == DONE) && WifiClient->IsConnected())
   {
     if (MQTTClient != nullptr)
     {

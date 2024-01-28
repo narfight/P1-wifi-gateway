@@ -29,6 +29,9 @@ void WifiMgr::DoMe()
   {
     wl_status_t tmp = LastStatusEvent;
     LastStatusEvent = WiFi.status();
+    
+    MainSendDebugPrintf("[WIFI][Connected:%s] Event %s -> %s", (WiFi.isConnected())? "Y" : "N", StatusIdToString(tmp).c_str(), StatusIdToString(LastStatusEvent).c_str());
+    
     if (DelegateWifiChange != nullptr)
     { // Que si quelqu'un ecoute l'event
       DelegateWifiChange(WiFi.isConnected(), tmp, LastStatusEvent);
@@ -84,17 +87,10 @@ String WifiMgr::StatusIdToString(wl_status_t status)
 WifiMgr::WifiMgr(settings &currentConf) : conf(currentConf)
 {
   LastStatusEvent = WL_IDLE_STATUS;
-  WiFi.disconnect(true);
-  WiFi.setAutoConnect(false);
+  WiFi.persistent(true);
+  WiFi.setAutoConnect(true);
+  WiFi.setAutoReconnect(true);
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
-
-  /*const uint32_t sleepTime = 15000; // sleep sleepTime millisecs
-
-  WiFi.forceSleepBegin(sleepTime * 1000000L); // In uS. Must be same length as your delay
-  delay(10);                                  // it doesn't always go to sleep unless you delay(10); yield() wasn't reliable
-  delay(sleepTime);                           // Hang out at 15mA for (sleeptime) seconds
-  WiFi.forceSleepWake();                      // Wifi on
-  */
 }
 
 void WifiMgr::OnWifiEvent(void (*CallBack)(bool, wl_status_t, wl_status_t))
@@ -154,12 +150,16 @@ void WifiMgr::Reconnect()
     delay(500);
     if (tries++ > 30)
     {
-      MainSendDebug("[WIFI][FATAL] Something is terribly wrong, can't connect to wifi (anymore).");
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(60000);
-      ESP.reset();
+      MainSendDebugPrintf("[WIFI] '%s' is down !", conf.ssid);
+      SetAPMod();
+      return;
     }
   }
+}
+
+bool WifiMgr::IsConnected()
+{
+  return WiFi.isConnected();
 }
 
 void WifiMgr::SetAPMod()

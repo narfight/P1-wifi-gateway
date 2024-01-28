@@ -51,6 +51,7 @@ class WifiMgr
   void DoMe();
   String StatusIdToString(wl_status_t status);
   void OnWifiEvent(void (*CallBack)(bool, wl_status_t, wl_status_t));
+  bool IsConnected();
   void Connect();
 
   /// @brief Si il diffuse son propre AP et non connecté a un Wifi

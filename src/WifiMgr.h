@@ -25,6 +25,7 @@
 #define WIFIMGR
 
 #define SSID_SETUP "P1_setup_"
+#define INTERVAL_SCAN_SSID_MS 10000
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -44,6 +45,9 @@ class WifiMgr
   wl_status_t LastStatusEvent;
   void SetAPMod();
   char* genererSSID();
+  bool FindThesSSID();
+  unsigned long LastScanSSID = millis(); //Last time when the scan of SSID was do
+  unsigned long OfflineSince = 0; //Number of ms since wifi don't connected before switch to AP
 
   public:
   explicit WifiMgr(settings& currentConf);

@@ -31,18 +31,55 @@ void WifiMgr::DoMe()
     LastStatusEvent = WiFi.status();
     
     MainSendDebugPrintf("[WIFI][Connected:%s] Event %s -> %s", (WiFi.isConnected())? "Y" : "N", StatusIdToString(tmp).c_str(), StatusIdToString(LastStatusEvent).c_str());
-    
+
+    if (LastStatusEvent == WL_NO_SSID_AVAIL)
+    {
+      SetAPMod();
+      return;
+    }
+
     if (DelegateWifiChange != nullptr)
     { // Que si quelqu'un ecoute l'event
       DelegateWifiChange(WiFi.isConnected(), tmp, LastStatusEvent);
     }
+  }
 
-    if (tmp == WL_CONNECTED && !WiFi.isConnected())
+  if (AsAP() && (millis() - LastScanSSID) > INTERVAL_SCAN_SSID_MS)
+  {
+    LastScanSSID = millis();
+    //en mode AP, scan les SSID pour savoir si il peut se connecter
+    if (FindThesSSID())
     {
       Reconnect();
     }
   }
 }
+
+bool WifiMgr::FindThesSSID()
+{
+  MainSendDebugPrintf("[WIFI] Looking for the SSID : %s", conf.ssid);
+  
+  // Scan des réseaux WiFi
+  int numNetworks = WiFi.scanNetworks();
+
+  if (numNetworks == 0)
+  {
+    return false;
+  }
+
+  // Parcourir la liste des réseaux WiFi
+  for (int i = 0; i < numNetworks; ++i)
+  {
+    // Vérifier si le réseau recherché est présent
+    if (strcmp(WiFi.SSID(i).c_str(), conf.ssid) == 0)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 
 /// @brief Traduit l'id de status en string
 /// @param status
@@ -178,7 +215,6 @@ char* WifiMgr::genererSSID()
   return resultatChar;
 }
 
-
 void WifiMgr::SetAPMod()
 {
   char* ssid = genererSSID();
@@ -197,7 +233,7 @@ void WifiMgr::SetAPMod()
 /// @return True si c'est en mode AP
 bool WifiMgr::AsAP()
 {
-  return (WiFi.getMode() == WIFI_AP);
+  return (WiFi.getMode() != WIFI_STA);
 }
 
 /// @brief

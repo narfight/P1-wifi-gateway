@@ -8,7 +8,7 @@ Firmware de remontée d'information pour le module P1 Reader (voir https://githu
 
 Télécharger la dernière version du firmware dans les builds et utilisé l'interface web du module pour envoyer le nouveau firmware.
 
-Le module va créer un WiFi "P1_setup" pour le configurer. Il aura l'IP 192.168.4.1. Vous pouvez donc aller sur http://192.168.4.1 pour configurer le module.
+Le module va créer un WiFi "P1_setup_XXXX" pour le configurer. Il aura l'IP 192.168.4.1. Vous pouvez donc aller sur http://192.168.4.1 pour configurer le module.
 
 A la première connexion, le module va vous demander un login et un mot de passe. Si vous laisser les champs de mot de passe vide, le module ne sera pas protégé.
 

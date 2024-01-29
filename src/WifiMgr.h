@@ -24,7 +24,7 @@
 #ifndef WIFIMGR
 #define WIFIMGR
 
-#define SSID_SETUP "P1_setup"
+#define SSID_SETUP "P1_setup_"
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -43,6 +43,7 @@ class WifiMgr
   void (*DelegateWifiChange)(bool, wl_status_t, wl_status_t) = nullptr;
   wl_status_t LastStatusEvent;
   void SetAPMod();
+  char* genererSSID();
 
   public:
   explicit WifiMgr(settings& currentConf);

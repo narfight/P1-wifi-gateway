@@ -162,15 +162,35 @@ bool WifiMgr::IsConnected()
   return WiFi.isConnected();
 }
 
+char* WifiMgr::genererSSID()
+{
+  // Lire l'adresse MAC du module WiFi
+  String adresseMAC = WiFi.macAddress();
+
+  // Concaténer "SSID_SETUP" avec les 4 derniers caractères de l'adresse MAC
+  String resultat = SSID_SETUP + WiFi.macAddress().substring(adresseMAC.length() - 5);
+  resultat.replace(":", "");
+
+  // Convertir la chaîne String en tableau de caractères (char[])
+  char* resultatChar = new char[resultat.length() + 1];
+  resultat.toCharArray(resultatChar, resultat.length() + 1);
+
+  return resultatChar;
+}
+
+
 void WifiMgr::SetAPMod()
 {
-  MainSendDebugPrintf("[WIFI] Setting up Captive Portal by the name '%s'", SSID_SETUP);
+  char* ssid = genererSSID();
+  MainSendDebugPrintf("[WIFI] Setting up Captive Portal by the name '%s'", ssid);
   digitalWrite(LED_BUILTIN, LOW);
 
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(SSID_SETUP, "");
+  WiFi.softAP(ssid, "");
   MainSendDebugPrintf("[WIFI] Captive Portal IP : %s", WiFi.softAPIP().toString().c_str());
   APtimer = millis();
+
+  delete[] ssid;
 }
 
 /// @brief Si il diffuse son propre AP et non connecté a un Wifi

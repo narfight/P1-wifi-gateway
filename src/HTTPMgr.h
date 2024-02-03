@@ -51,8 +51,9 @@ private:
 
   Language Trad;
   bool ChekifAsAdmin();
-  void TradAndSend(int code, const char *content_type, String content, int refresh);
-  
+  void TradAndSend(int code, const char *content_type, String content, bool refresh);
+  String nettoyerInputText(String inputText);
+  String GetAnimWait();
   void handleRoot();
   void handlePassword();
   void handleSetup();

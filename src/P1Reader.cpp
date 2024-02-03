@@ -191,7 +191,7 @@ void P1Reader::decodeTelegram(int len)
       }
       else
       {
-        MainSendDebug("[P1] ===INVALID CRC FOUND!===");
+        MainSendDebug("[P1] INVALID CRC FOUND");
         dataFailureCount++;
         state = FAILURE;
         return;
@@ -292,6 +292,8 @@ void P1Reader::OBISparser(int len)
   }
 
   idx = inString.toInt();
+  MainSendDebugPrintf("[P1] Read line : %d", idx);
+  
   switch (idx)
   {
   case 0:
@@ -417,7 +419,7 @@ void P1Reader::OBISparser(int len)
     }
     break;
   default:
-    MainSendDebug("[P1] Unrecognized line !");
+    MainSendDebugPrintf("[P1] Unrecognized line n°%d !", idx);
     break;
   }
   // clear the string for new input:

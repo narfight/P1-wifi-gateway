@@ -22,7 +22,7 @@
  */
 
 #define FRENCH // NEDERLANDS,SWEDISH,GERMAN,FRENCH
-#define DEBUG
+//#define DEBUG
 
 #define MAXBOOTFAILURE 3 //reset setting if boot fail more than this
 
@@ -184,7 +184,7 @@ void setup()
     //Show to user is reseted !
     blink(20, 50UL);
 
-    config_data = (settings){SETTINGVERSION, 0, true, "", "", "192.168.1.12", 8080, 1234, 1235, "sensors/power/p1meter", "10.0.0.3", 1883, "", "", 30, false, true, false, false, false, true, "", ""};
+    config_data = (settings){SETTINGVERSION, 0, true, "", "", "192.168.1.12", 8080, 1234, 1235, "sensors/power/p1meter", "10.0.0.3", 1883, "", "", 60, false, true, false, false, false, true, "", ""};
   }
   else
   {

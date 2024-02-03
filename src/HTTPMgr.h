@@ -67,7 +67,6 @@ private:
   void ReplyOTAOK();
   void ReplyOTANOK(const String Error, u_int ref);
 
-  void ReplyErrorLogin(const String Where);
   void handleP1();
   void handleHelp();
 };

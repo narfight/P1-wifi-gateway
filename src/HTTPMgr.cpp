@@ -64,19 +64,6 @@ void HTTPMgr::DoMe()
   MDNS.update();
 }
 
-bool HTTPMgr::ChekifAsAdmin()
-{
-  if (strlen(conf.adminPassword) != 0)
-  {
-    if (!server.authenticate(conf.adminUser, conf.adminPassword))
-    {
-      server.requestAuthentication();
-      return false;
-    }
-  }
-  return true;
-}
-
 void HTTPMgr::handleRoot()
 {
   // You cannot use this page if is not your first boot
@@ -98,19 +85,6 @@ void HTTPMgr::handleRoot()
   str += F("<form action='/reset' id=\"frmRst\" method='GET'><button type='button' onclick='ConfRST()'>{-MENURESET-}</button></form>");
   str += F("<script> function ConfRST() { if (confirm(\"{-ASKCONFIRM-}\")) { document.getElementById(\"frmRst\").submit();}}</script></fieldset>");
   TradAndSend(200, "text/html", str, false);
-}
-
-void HTTPMgr::ReplyErrorLogin(const String Where)
-{
-  MainSendDebug("[HTTP] Get wrong password from an client.");
-
-  String str = F("<fieldset><legend>{-H1WRONGPSD-}</legend>");
-  str += F("<p><b>{-WRONGPSDTXT-}</b><br>");
-  str += F("</fieldset>");
-  str += F("<form action='");
-  str += Where;
-  str += F("' method='POST'><button class='bhome'>{-WRONGPSDBACK-}</button></form></p>");
-  TradAndSend(401, "text/html", str, false);
 }
 
 void HTTPMgr::ReplyOTAOK()
@@ -225,11 +199,6 @@ void HTTPMgr::handleUploadFlash()
   }
 }
 
-String HTTPMgr::GetAnimWait()
-{
-  return F("<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'><circle cx='50' cy='50' r='40' stroke='#ccc' stroke-width='4' fill='none' /><circle cx='50' cy='10' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='1s' repeatCount='indefinite' /></circle><circle cx='90' cy='50' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='2s' repeatCount='indefinite' /></circle><circle cx='50' cy='90' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='3s' repeatCount='indefinite' /></circle><circle cx='10' cy='50' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='4s' repeatCount='indefinite' /></circle></svg>");
-}
-
 void HTTPMgr::handleFactoryReset()
 {
   if (!ChekifAsAdmin())
@@ -298,12 +267,6 @@ void HTTPMgr::handlePassword()
   str += F("</fieldset><button type='submit'>{-ConfSave-}</button></form>");
   str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
   TradAndSend(200, "text/html", str, false);
-}
-
-String HTTPMgr::nettoyerInputText(String inputText)
-{
-    inputText.replace("'",  "&apos;");
-    return inputText;
 }
 
 void HTTPMgr::handleSetup()
@@ -600,6 +563,32 @@ void HTTPMgr::handleHelp()
   str += F("<p>{-HLPTXT6-}</p>");
   str += F("<p>{-HLPTXT7-}</p>");
   TradAndSend(200, "text/html", str, false);
+}
+
+/// @brief Check and ask login to login
+/// @return true if logged
+bool HTTPMgr::ChekifAsAdmin()
+{
+  if (strlen(conf.adminPassword) != 0)
+  {
+    if (!server.authenticate(conf.adminUser, conf.adminPassword))
+    {
+      server.requestAuthentication();
+      return false;
+    }
+  }
+  return true;
+}
+
+String HTTPMgr::nettoyerInputText(String inputText)
+{
+    inputText.replace("'",  "&apos;");
+    return inputText;
+}
+
+String HTTPMgr::GetAnimWait()
+{
+  return F("<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'><circle cx='50' cy='50' r='40' stroke='#ccc' stroke-width='4' fill='none' /><circle cx='50' cy='10' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='1s' repeatCount='indefinite' /></circle><circle cx='90' cy='50' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='2s' repeatCount='indefinite' /></circle><circle cx='50' cy='90' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='3s' repeatCount='indefinite' /></circle><circle cx='10' cy='50' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='4s' repeatCount='indefinite' /></circle></svg>");
 }
 
 void HTTPMgr::TradAndSend(int code, const char *content_type, String content, bool refresh)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Ronald Leenes
+ * Copyright (c) 2023 Jean-Pierre sneyers
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,646 +14,290 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-
- * @file P1WG_IDE_2.ino
- * @author Ronald Leenes
+ * Additionally, please note that the original source code of this file
+ * may contain portions of code derived from (or inspired by)
+ * previous works by:
  *
- * @brief This file contains the main file for the P1 wifi gatewway
- *
- * @see http://esp8266thingies.nl
+ * Ronald Leenes (https://github.com/romix123/P1-wifi-gateway and http://esp8266thingies.nl)
+ */
 
- * P1 wifi gateway 2022
- *
- * Deze software brengt verschillende componenten bij elkaar in een handzaam
-pakket.
- *
- * De software draait op een ESP8285 of ESP8266 en heeft een bescheiden
-voetafdruk.
- *
- * De data processing is gebaseerd op:
-http://domoticx.com/p1-poort-slimme-meter-data-naar-domoticz-esp8266/
- * De captive portal is gebaseerd op een van de ESP8266 voorbeelden, de OTA
-eenheid eveneens.
- *
- * De module levert data aan een host via JSON of MQTT messages, maar kan ook
-via de webinterface van de module of via telnet worden uitgelezen
- *
- * De module zal bij opstarten eerst de buffercondensator laden.
- * Vervolgens knippert hij 2x en zal eerst proberen te koppelen aan je wifi
-netwerk. Gedurende dat proces zal de LED knipperen
- * met een periode van 0.5 Hz.
- * Wanneer geen verbinding kan worden gemaakt start de modiule een Access point
-onder de naam P1_Setup
- * Verbind met dit netwerk en surf naar 192.168.4.1
- *
- * Het menuscherm van de module verschijnt dan. Vul daar SSID en wachtwoord van
-je wifi netwerk in.
- * Daaronder vul je gegevens van de ontvangede server in (IP en poortnummer).
-Dit kan je DOmotociz server zijn
- * In dat geval moet je ook het IDx dat Domoticz maakt voor een Gas device en
-een Energy device invoeren.
- * Tenslotte geef je aan per hoeveel seconde je data naar de server wilt laten
-sturen.
- * DSMR4 meters hanteren een meetinterval van 10 sec. SMR5 meters leveren iedere
-seconde data. Dat lijkt me wat veel en
- * kost de module ook veel stroom waardoor het maar de vraag is of hij
-parasitair (door de meter gevoed) kan werken.
- * Ik raad een interval van 15 sec of hoger aan. Het interval dat je hier
-invoert zal niet altijd synchroon lopen met
- * het data interval van de meter, ga er dus niet van uit dat je exact iedere x
-seconden een meetwaarde ziet in DOmoticz.
- * Tussen metingen 'slaapt' de module (de modem wordt afgeschakeld waardoor het
-stroomverbruik van zo'n 70mA terugvalt naar 15 mA).
- * Dit geeft de bufferelco tijd omm op te laden voor de stroompiekjes die de
-wifi zender van de module produceert
- * (en het bespaart hoe dan ook wat stroom (die weliswaar door je
-energieleverancier wordt betaald, maar toch). Alle kleine
- * beetjes helpen..
- *
- *  informatie, vragen, suggesties ed richten aan romix@macuser.nl
- *
- *
- *
- *  versie: 1.2
- *  datum:  26 Nov 2023
- *  auteur: Ronald Leenes
- *
+#define FRENCH // NEDERLANDS,SWEDISH,GERMAN,FRENCH
+//#define DEBUG
 
-    1.2: serious overhaul of decoder routine.
+#define MAXBOOTFAILURE 3 //reset setting if boot fail more than this
 
-    1.1.e: fixed passwd length related issues (adminpass, SSID, MQTT), worked on
-wifi persistance, disabled wifi powermanagment
- *  1.1d: moved codebase to IDE 2.2, small fixes, added webdebug
-
- *  1.1c: clean-up. Telnet can now accept 10 sessions at the same time. Restart
-when max is reached.
- *  1.1bf: kludge to fix empty ret value. Somehow the value is overwritten by
-something. Relocating defs for actualElectricityPowerDeli and Ret seems to fix
-it ofr now
- *  1.1bea: extended field length for actualElectricityPowerDeli[12] and
-actualElectricityPowerRet[12];
- *  1.1be: added support for ISKRA /ISK5\2M550E-1011 (which terminates 1-0.2.7.0
-and 1-0:22.7.0 without *, using kW instead)
- *  1.1bd: added 3 phase consumption in webdashboard
- *          fixe 3 phase voltage in webdashboard
- *  1.1b    cleaning up, bug fixes, cosmetic changes
- *  1.1adc
- *  1.1ad: bug fixes and graph improvements
- *  1.1aa: bug fixes
- *  1.1: implemented graphs
- *
- *
- *  ud: fixed refreshheader
- *  ua: fixed setup field issue
- *  u:
- *    password on Setup and Firmware Update
- *    made mqtt re-connect non-blocking
- *    incorporated "DSMR Reader" mqtt topics
- *    fixed hardboot daycounters reset
- *    fixed sending empty MQTT messages
- *
- *  t: improvements on powermanagement, overall (minor) cleanup
- *  ta: fix for Telnet reporting
- *
- *  s: added German localisation
- *        Added mqtt output for Swedish specific OBIS codes
- *
- *  r: speed improvements and streamlining of the parser
- *      localisations for: NL, SE
- *
- *  q: added daily values
- *  p: incorporated equipmentID in mqtt set
- *  o: fixed gas output, fixed mqtt reconnect
- *  n: empty call to SetupSave now redirects to main menu instead of resetting
-settings ;-)
- *      fixed kWh/Wh inversion
- *  m: setupsave fix, relocate to p1wifi.local na 60 sec
- *      mqtt - kw/W fix
- *  l: wifireconnect after wifi loss
- *  k: fixed big BUG, softAP would not produce accessible webserver.
- *  j: raw data on port 23
- *      major code rewrite
- *      implemented data reporting methods:
- *        parsed data: json, mqtt, p1wifi.local/P1
- *        raw data: telnet on port 23, p1wifi.local/Data
- *
- *  i:  extended max line length for TD210-D meters, which have a really loong
-1-0:99.97.0 line
- *  h:  extended mqtt set with instant powers, voltages, actual tarif group.
-power outages, power drops
- *  g: fixed mqtt
- *
- *  Generic ESP8285 module
-*   Flash Size: 2mb (FS: 128Kb, OTA: –960Kb)
-*
-
-*/
-
-
-#include "Arduino.h"
-#include "prototypes.h"
-void readTelegram();
-
-bool zapfiles = false;
-
-String version = "1.2 – NL";
-#define NEDERLANDS
-#define HOSTNAME "p1meter"
-#define FSystem 1 // 0= LittleFS 1 = SPIFFS
-
-#define GRAPH 1
-#define V3
-#define DEBUG 0 // 2//1//0 1 is on serial only, 2 is serial + telnet,
-#define DEBUG2 0
-#define WIFIPOWERSAFE 0
-
-#define ESMR5 1
-//#define SLEEP_ENABLED
-
-const uint32_t wakeTime = 90000;  // stay awake wakeTime millisecs
-const uint32_t sleepTime = 15000; // sleep sleepTime millisecs
-
-#if DEBUG2 == 1
-#define debug2(x) Serial.print(x)
-#define debug2ln(x) Serial.println(x)
-#else
-#define debug2(x)
-#define debug2ln(x)
-#endif
-
-#if DEBUG == 1
-const char *host = "P1test";
-#define BLED LED_BUILTIN
-#define debug(x) Serial.print(x)
-#define debugf(x) Serial.printf(x)
-#define debugff(x, y) Serial.printf(x, y)
-#define debugfff(x, y, z) Serial.printf(x, y, z)
-#define debugln(x) Serial.println(x)
-#elif DEBUG == 2
-const char *host = "P1test";
-#define BLED LED_BUILTIN
-#define debug(x)                                                               \
-  Serial.print(x);                                                             \
-  if (telnetDebugConnected)                                                    \
-  telnetD(String(x))
-#define debugf(x) Serial.printf(x)
-#define debugff(x, y) Serial.printf(x, y)
-#define debugfff(x, y, z) Serial.printf(x, y, z)
-#define debugln(x)                                                             \
-  Serial.println(x);                                                           \
-  if (telnetDebugConnected)                                                    \
-  telnetDLn(String(x))
-#elif DEBUG == 3
-const char *host = "P1home";
-#define BLED LED_BUILTIN
-#define debug(x)
-#define debugln(x)
-#define debugf(x)
-#define debugff(x, y)
-#define debugfff(x, y, z)
-#else
-const char *host = "P1wifi";
-#define BLED LED_BUILTIN
-#define debug(x)
-#define debugln(x)
-#define debugf(x)
-#define debugff(x, y)
-#define debugfff(x, y, z)
-#endif
-
-#define errorHalt(msg)                                                         \
-  {                                                                            \
-    debugln(F(msg));                                                           \
-    return;                                                                    \
-  }
-
-#define NUM(off, mult)                                                         \
-  ((P1timestamp[(off)] - '0') *                                                \
-   (mult)) // macro for getting time out of timestamp, see decoder
-
-#define ToggleLED digitalWrite(BLED, !digitalRead(BLED));
-#define LEDoff digitalWrite(BLED, HIGH);
-#define LEDon digitalWrite(BLED, LOW);
-#define OE 16 // IO16 OE on the 74AHCT1G125
-#define DR 4  // IO4 is Data Request
-
-#include "lang.h"
-#include "vars.h"
-
-#include <TZ.h>
-#define MYTZ TZ_Europe_Amsterdam
-#include "MyAlarm.h"
-#include "TimeLib.h"
-#include <coredecls.h> // settimeofday_cb()
-
-#include "CRC16.h"
-#include <ESP8266HTTPClient.h>
-#include <ESP8266WiFi.h>
-#include <WiFiUdp.h>
-
-#if GRAPH == 1
-//#include "lfs.h"
-#if FSystem == 0
-#include <LittleFS.h>
-#define FST LittleFS
-#elif FSystem == 1
-#include "FS.h" //SPIFFS
-#define FST SPIFFS
-#endif
-File file;
-#endif
-
-// van ESP8266WiFi/examples/WiFiShutdown/WiFiShutdown.ino
-#ifndef RTC_config_data_SLOT_WIFI_STATE
-#define RTC_config_data_SLOT_WIFI_STATE 33u
-#endif
-#include <include/WiFiState.h> // WiFiState structure details
-WiFiState WiFistate;
-
-// van captive portal
-/*  ============================================================================================================
-
-    Captive Portal based on:
-    https://gitlab.com/MrDIYca/code-samples/-/raw/master/esp8266_setup_portal.ino
-
-    For more info, please watch my video at https://youtu.be/1VW-z4ibMXI
-    MrDIY.ca
-  ==============================================================================================================
-*/
+#include <Arduino.h>
 #include <EEPROM.h>
+#include "GlobalVar.h"
+#include "Language.h"
 
-#include <ESP8266WebServer.h>
-ESP8266WebServer server(80);
+unsigned long WatchDogsTimer = 0;
 
-WiFiEventHandler wifiConnectHandler;
-WiFiEventHandler wifiDisconnectHandler;
+settings config_data;
 
-#include <ESP8266mDNS.h>
-#include <WiFiClient.h>
+#include "WifiMgr.h"
+WifiMgr *WifiClient;
 
-// mqtt stuff .
-// https://github.com/ict-one-nl/P1-Meter-ESP8266-MQTT/blob/master/P1Meter/P1Meter.ino
-#include "PubSubClient.h"
-WiFiClient espClient;                // * Initiate WIFI client
-PubSubClient mqtt_client(espClient); // * Initiate MQTT client
+#include "MQTT.h"
+MQTTMgr *MQTTClient;
 
-// end mqtt stuff
+#include "TelnetMgr.h"
+TelnetMgr *TelnetServer;
 
-//// Raw data server
-WiFiServer telnet(port);
-WiFiClient telnetClients[MAX_SRV_CLIENTS];
+#include "P1Reader.h"
+P1Reader *DataReaderP1;
+
+#include "JSONMgr.h"
+JSONMgr *JSONClient;
+
+#include "HTTPMgr.h"
+HTTPMgr *HTTPClient;
 
 ADC_MODE(ADC_VCC); // allows you to monitor the internal VCC level;
 
-void setup() {
-
-  wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
-  wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
-
-  WiFi.mode(WIFI_OFF);
-  WiFi.forceSleepBegin();
-  delay(1);
-  pinMode(BLED, OUTPUT);
-  Serial.begin(115200);
-  debugln("Serial.begin(115200);");
-  debugln("wifi uit");
-  FlashSize = ESP.getFlashChipRealSize();
-
-  // Try to read WiFi settings from RTC memory
-
-  if (ESP.rtcUserMemoryRead(0, (uint32_t *)&rtcData, sizeof(rtcData))) {
-    // Calculate the CRC of what we just read from RTC memory, but skip the
-    // first 4 bytes as that's the checksum itself.
-    uint32_t crc =
-        calculateCRC32(((uint8_t *)&rtcData) + 4, sizeof(rtcData) - 4);
-    if (crc == rtcData.crc32) {
-      rtcValid = true;
-    }
+void MainSendDebug(String payload)
+{
+  if (MQTTClient != nullptr)
+  {
+    MQTTClient->SendDebug(payload);
   }
+  if (TelnetServer != nullptr)
+  {
+    TelnetServer->SendDebug(payload);
+  }
+  #ifdef DEBUG
+  Serial.println(payload);
+  #endif
+}
 
-  // WiFi.forceSleepBegin(sleepTime * 1000000L); //In uS. Must be same length as
-  // your delay delay(10); // it doesn't always go to sleep unless you
-  // delay(10); yield() wasn't reliable delay(sleepTime); //Hang out at 15mA for
-  // (sleeptime) seconds WiFi.forceSleepWake(); // Wifi on
+void MainSendDebugPrintf(const char *format, ...)
+{
+  const int bufferSize = 100; // Définir la taille du tampon pour stocker le message formaté
+  char buffer[bufferSize];
 
+  // Utiliser la liste d'arguments variables
+  va_list args;
+  va_start(args, format);
+
+  // Formater la chaîne avec vsnprintf
+  int length = vsnprintf(buffer, bufferSize, format, args);
+
+  va_end(args);
+
+  // Vérifier si le formatage a réussi et imprimer le message
+  if (length >= 0 && length < bufferSize)
+  {
+    MainSendDebug(buffer);
+  }
+  else
+  {
+    MainSendDebug("Erreur de formatage du message de débogage.");
+  }
+}
+
+void blink(int t, unsigned long speed)
+{
+  for (int i = 0; i <= t; i++)
+  {
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    delay(speed);
+  }
+  digitalWrite(LED_BUILTIN, HIGH);
+}
+
+void alignToTelegram()
+{
+  // make sure we don't drop into the middle of a telegram on boot. Read whatever is in the stream until we find the end char !
+  // then read until EOL and flsuh serial, return to loop to pick up the first complete telegram.
+
+  if (Serial.available() > 0)
+  {
+    while (Serial.available())
+    {
+      int inByte = Serial.read();
+      if (inByte == '!')
+      {
+        break;
+      }
+    }
+
+    char buf[10];
+    Serial.readBytesUntil('\n', buf, 9);
+    Serial.flush();
+  }
+}
+
+void PrintConfigData()
+{
+  MainSendDebug("Current configuration :");
+  MainSendDebugPrintf(" - ConfigVersion : %d", config_data.ConfigVersion);
+  MainSendDebugPrintf(" - Boot tentative : %d", config_data.BootFailed);
+  MainSendDebugPrintf(" - Admin login : %s", config_data.adminUser);
+  #ifdef DEBUG
+  MainSendDebugPrintf(" - Admin psw : %s", config_data.adminPassword);
+  #endif
+  MainSendDebugPrintf(" - SSID : %s", config_data.ssid);
+  MainSendDebugPrintf(" - Domoticz Actif : %s", (config_data.domo) ? "Y" : "N");
+  MainSendDebugPrintf("   # Domoticz : %s:%u", config_data.domoticzIP, config_data.domoticzPort);
+  MainSendDebugPrintf("   # DomotixzGasIdx : %u", config_data.domoticzGasIdx);
+  MainSendDebugPrintf("   # DomotixzEnergyIdx : %u", config_data.domoticzEnergyIdx);
+  MainSendDebugPrintf(" - MQTT Actif : %s", (config_data.mqtt) ? "Y" : "N");
+  MainSendDebugPrintf("   # Send debug here : %s", (config_data.debugToMqtt) ? "Y" : "N");
+  MainSendDebugPrintf("   # MQTT : mqtt://%s:***@%s:%u", config_data.mqttUser, config_data.mqttIP, config_data.mqttPort);
+  MainSendDebugPrintf("   # MQTT Topic : %s", config_data.mqttTopic);
+  MainSendDebugPrintf(" - interval : %u", config_data.interval);
+  MainSendDebugPrintf(" - P1 In watt : %s", (config_data.watt) ? "Y" : "N");
+  MainSendDebugPrintf(" - TELNET Actif : %s", (config_data.telnet) ? "Y" : "N");
+  MainSendDebugPrintf("   # Send debug here : %s", (config_data.debugToTelnet) ? "Y" : "N");
+  delay(20);
+}
+
+void setup()
+{
+  Serial.begin(115200);
+  Serial.println("Booting...");
+  MainSendDebugPrintf("Firmware: v%s", VERSION);
+
+  pinMode(LED_BUILTIN, OUTPUT);
   pinMode(OE, OUTPUT);    // IO16 OE on the 74AHCT1G125
-  digitalWrite(OE, HIGH); //  Put(Keep) OE in Tristate mode
+  digitalWrite(OE, HIGH); // Put(Keep) OE in Tristate mode
   pinMode(DR, OUTPUT);    // IO4 Data Request
-  digitalWrite(DR,
-               LOW); //  DR low (only goes high when we want to receive data)
+  digitalWrite(DR, LOW);  // DR low (only goes high when we want to receive data)
 
-  blink(2);
-  debugln("Booting");
-  debugln("Done with Cap charging … ");
-  debugln("Let's go …");
-  // Start connection WiFi
-  // Switch Radio back On
-  WiFi.forceSleepWake();
-  delay(1);
+  MainSendDebug("Load configuration from EEprom");
 
   EEPROM.begin(sizeof(struct settings));
   EEPROM.get(0, config_data);
 
-  if (config_data.dataSet[0] != 'j') {
-    config_data = (settings){"n",
-                             "orbi",
-                             "Moesmate",
-                             "-",
-                             "8080",
-                             "1234",
-                             "1235",
-                             "sensors/power/p1meter",
-                             "192.168.1.123",
-                             "1883",
-                             "mqtt",
-                             "VerySecret",
-                             "30",
-                             "j",
-                             "j",
-                             "n",
-                             "n",
-                             "n",
-                             "adminpwd"};
-  }
+  // Si la version de la configuration n'est celle attendu, on reset !
+  if (config_data.ConfigVersion != SETTINGVERSION || config_data.BootFailed >= MAXBOOTFAILURE)
+  {    
+    if (config_data.ConfigVersion != SETTINGVERSION)
+    {
+      MainSendDebugPrintf("Config file version is wrong (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
+    }
+    else
+    {
+      MainSendDebugPrintf("Too many boot fail (nbr:%d), Reset config !", config_data.BootFailed);
+    }
 
-  (config_data.watt[0] == 'j') ? reportInDecimals = false
-                               : reportInDecimals = true;
-  (config_data.domo[0] == 'j') ? Json = true : Json = false;
-  (config_data.mqtt[0] == 'j') ? Mqtt = true : Mqtt = false;
-  //(config_data.telnet[0] =='j') ? Telnet = true : Telnet = false;
-  Telnet = true;
-  (config_data.debug[0] == 'j') ? MQTT_debug = true : MQTT_debug = false;
-  if (strcmp(config_data.mqttTopic, "dsmr") ==
-      0) { // auto detext need to report in 'dsmr reader' mqtt format
-    mqtt_dsmr = true;
-    // reportInDecimals = true;
-  } else {
-    mqtt_dsmr = false;
-    // reportInDecimals = false;
-  }
+    //Show to user is reseted !
+    blink(20, 50UL);
 
-  debugln("EEprom read: done");
+    config_data = (settings){SETTINGVERSION, 0, true, "", "", "192.168.1.12", 8080, 1234, 1235, "sensors/power/p1meter", "10.0.0.3", 1883, "", "", 60, false, true, false, false, false, true, "", ""};
+  }
+  else
+  {
+    config_data.BootFailed++;
+  }
+  
+  //Save config with boot fail updated
+  EEPROM.put(0, config_data);
+  EEPROM.commit();
+  
+  blink(2, 200UL);
+  
   PrintConfigData();
 
-  interval = atoi(config_data.interval) * 1000;
-  debug("interval: ");
-  debugln(String(interval));
-
-  debugln("Trying to connect to your wifi network:");
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(config_data.ssid, config_data.password);
-  //-----------Now we replace the normally used "WiFi.begin();" with a precedure
-  //using connection data stored by us
-  if (rtcValid) {
-    // The RTC data was good, make a quick connection
-    WiFi.begin(config_data.ssid, config_data.password, rtcData.channel,
-               rtcData.ap_mac, true);
-    debugln("RTC wifi quick start.");
-  } else {
-    // The RTC data was not valid, so make a regular connection
-    WiFi.begin(config_data.ssid, config_data.password);
-    debugln("Regular wifi start.");
+  WifiClient = new WifiMgr(config_data);
+  
+  if (config_data.mqtt)
+  {
+    MQTTClient = new MQTTMgr(WifiClient->WifiCom, config_data);
   }
 
-  byte tries = 0;
-  while (WiFi.status() != WL_CONNECTED) {
-    ToggleLED delay(300);
-    debug("o");
-    if (tries++ > 30) {
-      debugln("");
-      debugln("Setting up Captive Portal by the name 'P1_setup'");
-      LEDon WiFi.mode(WIFI_AP);
-      softAp = WiFi.softAP("P1_Setup", "");
-      APtimer = millis();
-      breaking = true;
-      break;
-    }
-  }
-  debugln("");
-  debugln("Set up wifi, either in STA or AP mode");
-  if (softAp) {
-    debugln("running in AP mode, all handles will be initiated");
-    start_webservices();
+  if (config_data.telnet)
+  {
+    TelnetServer = new TelnetMgr(config_data);
   }
 
-  if (WiFi.status() == WL_CONNECTED) {
-    //-----
-    // Write current connection info back to RTC
-    rtcData.channel = WiFi.channel();
-    memcpy(rtcData.ap_mac, WiFi.BSSID(),
-           6); // Copy 6 bytes of BSSID (AP's MAC address)
-    rtcData.crc32 =
-        calculateCRC32(((uint8_t *)&rtcData) + 4, sizeof(rtcData) - 4);
-    ESP.rtcUserMemoryWrite(0, (uint32_t *)&rtcData, sizeof(rtcData));
+  DataReaderP1 = new P1Reader(config_data);
+  HTTPClient = new HTTPMgr(config_data, *TelnetServer, *MQTTClient, *DataReaderP1);
+  JSONClient = new JSONMgr(config_data, *DataReaderP1);
 
-    WiFi.setAutoReconnect(true);
-    WiFi.persistent(true);
-    debugln("HTTP server running.");
-    debug("IP address: ");
-    // debugln(WiFi.localIP());
-#if WIFIPOWERSAFE == 1
-    setRFPower();
-#endif
-    wifiSta = true;
-    debugln("wifi running in Sta (normal) mode");
-    LEDoff
-#ifdef SLEEP_ENABLED
-    modemSleep();
-    modemWake();
-#else
-    start_services();
-#endif
+  alignToTelegram();
+  DataReaderP1->state = WAITING; // signal that we are waiting for a valid start char (aka /)
+  WatchDogsTimer = millis();
 
-    // handle Files
-    debug("Mounting file system ... ");
-    if (!FST.begin()) {
-      debugln("FST mount failed");
-      debug("Formatting file system ... ");
-      FST.format();
-      if (!FST.begin()) {
-        debugln("FST mount failed AGAIN");
-      } else {
-        debugln("done.");
-        if (zapfiles)
-          zapFiles();
-      }
-    } else
-      debugln("done.");
-
-    debugln("Reading logdata:");
-    File logData = FST.open("/logData.txt", "r");
-    if (logData) {
-      logData.read((byte *)&log_data, sizeof(log_data) / sizeof(byte));
-      logData.close();
-    } else {
-      debugln("Failed to open logData.txt for reading");
-      needToInitLogVars = true;
-      needToInitLogVarsGas = true;
-    }
-    if (zapfiles)
-      zapFiles();
-
-    // debugln("Something is terribly wrong, no network connection");
-    timerAlarm.stopService();
-    settimeofday_cb(timeIsSet_cb);
-    configTime(MYTZ, "pool.ntp.org");
-
-    debugln("All systems are go...");
-    alignToTelegram();
-    nextUpdateTime = nextMQTTreconnectAttempt = EverSoOften = TenSecBeat =
-        millis();
-
-    monitoring = true; // start monitoring data
-    time_to_sleep =
-        millis() + wakeTime; // we go to sleep wakeTime seconds from now
-    datagram.reserve(1500);
-    statusMsg.reserve(200);
-  } // WL connected
-  state = WAITING; // signal that we are waiting for a valid start char (aka /)
-
+  WifiClient->Connect();
+  HTTPClient->start_webservices();
 }
 
+void doWatchDogs()
+{
+  if (ESP.getFreeHeap() < 2000) // watchdog, in case we still have a memery leak
+  {
+    MainSendDebug("[WDG] FATAL : Memory leak !");
+    ESP.reset();
+  }
 
-void readTelegram() {
-  if (Serial.available()) {
-    memset(telegram, 0, sizeof(telegram));
-    while (Serial.available()) {
-      int len = Serial.readBytesUntil('\n', telegram, MAXLINELENGTH);
-      telegram[len] = '\n';
-      telegram[len+1] = 0;
-      ToggleLED
+  if (millis() - DataReaderP1->LastSample > 300000)
+  {
+    Serial.flush();
+    MainSendDebug("[WDG] No data in 300 sec, restarting monitoring");
 
-      debug("STATE: ");
-      debug(state);
-      debug(" >> ");
-      for (int i = 0; i <len; i++) debug(telegram[i]);
+    DataReaderP1->ResetnextUpdateTime();
+  }
 
-      decodeLine(len+1);
-
-      debug(" << - ");
-      debugln(state);
-
-      switch (state){
-        case DISABLED: // should not occur
-          break;
-        case WAITING:
-          currentCRC = 0;
-          break;
-        case READING:
-          break;
-        case CHECKSUM:
-          break;
-        case DONE:
-          Serial.flush();
-          RTS_off();
-          break;
-        case FAILURE:
-          debugln("kicked out of decode loop (invalid CRC or no CRC!)"); // if there is no checksum, (state=Failure && dataEnd)
-          RTS_off();
-          nextUpdateTime = millis() + interval; // set trigger for next round
-          datagram = "";   // empty datagram and
-          telegram[0] = 0; // telegram (probably uncessesary beacuse Serial.ReadBytesUntil will clear telegram buffer)
-          break;
-        case FAULT:
-          debugln("FAULT");
-          statusMsg = ("FAULT in reading data");
-          state = WAITING;
-          break;
-        default:
-          break;
-      }
-    }
-    LEDoff
+  if (WifiClient->AsAP() && (millis() - WifiClient->APtimer > 600000))
+  {
+    MainSendDebug("[WDG] No wifi, restart");
+    ESP.reset(); // we have been in AP mode for 600 sec.
   }
 }
 
-void loop() {
-  if ((millis() > nextUpdateTime)) { // && monitoring){
-    if (!OEstate) {                  // OE is disabled  == false
-      Serial.flush();
-      state = WAITING;
-      RTS_on();
+void loop()
+{
+  WifiClient->DoMe();
+  DataReaderP1->DoMe();
+  HTTPClient->DoMe();
+
+  if (TelnetServer != nullptr)
+  {
+    TelnetServer->DoMe();
+  }
+
+  if (MQTTClient != nullptr && WifiClient->IsConnected())
+  {
+    MQTTClient->doMe();
+  }
+
+  if (DataReaderP1->datagramValid && (DataReaderP1->state == DONE) && WifiClient->IsConnected())
+  {
+    if (MQTTClient != nullptr)
+    {
+      if (MQTTClient->MqttDelivered)
+      {
+        MQTTClient->MqttDelivered = false; // reset
+      }
     }
-  } // update window
-  if (OEstate)
-    readTelegram();
 
-#ifdef SLEEP_ENABLED
-  if ((millis() > time_to_sleep) && !atsleep &&
-      wifiSta) { // not currently sleeping and sleeptime
-    modemSleep();
-  }
-  if (wifiSta && (millis() > time_to_wake) &&
-      (WiFi.status() !=
-       WL_CONNECTED)) { // time to wake, if we're not already awake
-    modemWake();
-  }
-#endif
-
-  if (datagramValid && (state == DONE) && (WiFi.status() == WL_CONNECTED)) {
-    if (Mqtt) {
-      doMQTT();
-      // if (MqttDelivered) {
-      //    MqttDelivered = false;  // reset
-      // }
+    if (config_data.domo)
+    {
+      JSONClient->DoMe();
     }
-    if (Json)
-      doJSON();
-    if (Telnet)
-      TelnetReporter();
-    if (MQTT_debug)
-      MQTT_Debug();
-    datagramValid = false; // reset
-    state = WAITING;
-  }
 
-  if (softAp || (WiFi.status() == WL_CONNECTED)) {
-    server.handleClient(); // handle web requests
-    MDNS.update();
-    //      if (Telnet) telnetloop();// telnet.loop();
-  }
-
-  if (millis() > FiveSecBeat) {
-    if (Telnet && wifiSta)
-      telnetloop();
-    FiveSecBeat = millis() + 5000;
-    switch (WiFi.status()) {
-    case WL_NO_SSID_AVAIL:
-      wifiStatus = "SSID onbereikbaar: ";
-      break;
-    case WL_CONNECTED:
-      wifiStatus = "SSID connected: ";
-      break;
-    case WL_CONNECT_FAILED:
-      wifiStatus = "Connection failed: ";
-      break;
+    if (TelnetServer != nullptr)
+    {
+      TelnetServer->SendDataGram(DataReaderP1->datagram);
     }
-    wifiStatus += timestampkaal();
+
+    DataReaderP1->datagramValid = false; // reset
+    DataReaderP1->state = WAITING;
   }
 
-  if (millis() > EverSoOften) {
-    checkCounters();
-    resetFlags();
+  if (millis() > WatchDogsTimer)
+  {
     doWatchDogs();
-    EverSoOften = millis() + 22000;
+    WatchDogsTimer = millis() + 22000;
   }
-
-  if ((state == FAILURE) && (dataFailureCount == 10)){ // last resort if we get keeping kicked out by bad data
-    mqtt_client.disconnect();
-    ESP.restart();
+  
+  //reset boot-failed
+  if (config_data.BootFailed != 0)
+  {
+    config_data.BootFailed = 0;
+    EEPROM.put(0, config_data);
+    EEPROM.commit();
+    MainSendDebug("Reset boot failed");
   }
-  timerAlarm.update();
 }
-
-#include "JSON.h"
-#include "MQTT.h"
-#include "TELNET.h"
-#include "decoder.h"
-#include "functions.h"
-#include "graph.h"
-#include "logging.h"
-#include "newMQTT.h"
-#include "p1debug.h"
-#include "webserver.h"
-#include "webserverNL.h"
-#include "wifi_functions.h"

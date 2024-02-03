@@ -19,41 +19,33 @@
  * previous works by:
  *
  * Ronald Leenes (https://github.com/romix123/P1-wifi-gateway and http://esp8266thingies.nl)
- * MQTT part based on https://github.com/daniel-jong/esp8266_p1meter/blob/master/esp8266_p1meter/esp8266_p1meter.ino
  */
 
-#ifndef MQTT_H
-#define MQTT_H
+#ifndef TelnetMgr_H
+#define TelnetMgr_H
+
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include "Debug.h"
 #include "GlobalVar.h"
-#include <WiFiClient.h>
-#include <PubSubClient.h>
 
-class MQTTMgr
+#define MAX_SRV_CLIENTS 5
+#define STACK_PROTECTOR 1512  // bytes
+#define TELNETPORT 23
+#define TELNET_REPPORT_INTERVAL_SEC 10
+
+class TelnetMgr
 {
-private:
-  unsigned long LastReportinMillis = 0;
-  bool DSMR_Format = false; // deliver mqtt data in 'dsmr reader" format
-  PubSubClient mqtt_client; // * Initiate MQTT client
-  settings &conf;
-  //String mtopic = "Een lange MQTT boodschap als placeholder";
-
-public:
-  bool MqttDelivered = false;
-  long unsigned nextMQTTreconnectAttempt = millis();
-
-  explicit MQTTMgr(Client &Link, settings &currentConf);
-  void doMe();
-  bool mqtt_connect();
-  bool IsConnected();
-
-  /// @brief Send a message to a broker topic
-  /// @param topic
-  /// @param payload
-  void send_msg(const char *topic, const char *payload);
-  void send_metric(String name, float metric);
-  void mqtt_send_metric(String name, char *metric);
-  void MQTT_reporter();
+  private:
+  settings& conf;
+  WiFiServer telnet;
+  WiFiClient telnetClients[MAX_SRV_CLIENTS];
+  unsigned long NextReportTime = millis();
+  public:
+  explicit TelnetMgr(settings& currentConf);
+  void DoMe();
+  void SendDataGram(String Diagram);
+  void TelnetReporter(String Diagram);
   void SendDebug(String payload);
 };
 #endif

@@ -26,7 +26,7 @@
 TelnetMgr::TelnetMgr(settings &currentConf) : conf(currentConf), telnet(TELNETPORT)
 {
     MainSendDebugPrintf("[TELNET] Starting");
-    delay(100);
+    Yield_Delay(100);
     telnet.setNoDelay(true);
     telnet.begin();
 }

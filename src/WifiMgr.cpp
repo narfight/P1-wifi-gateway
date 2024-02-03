@@ -147,7 +147,7 @@ void WifiMgr::Connect()
     while (WiFi.status() != WL_CONNECTED)
     {
       digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-      delay(300);
+      Yield_Delay(300);
 
       if (tries++ > 30)
       {
@@ -184,7 +184,7 @@ void WifiMgr::Reconnect()
   while (WiFi.status() != WL_CONNECTED)
   {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    delay(500);
+    Yield_Delay(500);
     if (tries++ > 30)
     {
       MainSendDebugPrintf("[WIFI] '%s' is down !", conf.ssid);

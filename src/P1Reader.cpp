@@ -437,7 +437,7 @@ void P1Reader::DoMe()
   {
     if (!OEstate)
     {
-      RTS_on();
+      //RTS_on();
       Serial.flush();
     }
   }

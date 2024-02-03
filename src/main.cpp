@@ -95,6 +95,18 @@ void MainSendDebugPrintf(const char *format, ...)
   }
 }
 
+/// @brief Non-blocking delay using yield() to yield control back to the CPU.
+/// @param ms Time delay in ms
+void Yield_Delay(unsigned long ms)
+{
+  unsigned long WaitUnitl = millis() + ms;
+
+  while(millis() <= WaitUnitl)
+  {
+    yield();
+  }
+}
+
 void blink(int t, unsigned long speed)
 {
   for (int i = 0; i <= t; i++)
@@ -149,7 +161,7 @@ void PrintConfigData()
   MainSendDebugPrintf(" - P1 In watt : %s", (config_data.watt) ? "Y" : "N");
   MainSendDebugPrintf(" - TELNET Actif : %s", (config_data.telnet) ? "Y" : "N");
   MainSendDebugPrintf("   # Send debug here : %s", (config_data.debugToTelnet) ? "Y" : "N");
-  delay(20);
+  Yield_Delay(20);
 }
 
 void setup()

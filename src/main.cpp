@@ -117,28 +117,6 @@ void blink(int t, unsigned long speed)
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
-void alignToTelegram()
-{
-  // make sure we don't drop into the middle of a telegram on boot. Read whatever is in the stream until we find the end char !
-  // then read until EOL and flsuh serial, return to loop to pick up the first complete telegram.
-
-  if (Serial.available() > 0)
-  {
-    while (Serial.available())
-    {
-      int inByte = Serial.read();
-      if (inByte == '!')
-      {
-        break;
-      }
-    }
-
-    char buf[10];
-    Serial.readBytesUntil('\n', buf, 9);
-    Serial.flush();
-  }
-}
-
 void PrintConfigData()
 {
   MainSendDebug("Current configuration :");
@@ -166,8 +144,10 @@ void PrintConfigData()
 
 void setup()
 {
+  #ifdef DEBUG
   Serial.begin(115200);
   Serial.println("Booting...");
+  #endif
   MainSendDebugPrintf("Firmware: v%s", VERSION);
 
   pinMode(LED_BUILTIN, OUTPUT);
@@ -227,8 +207,6 @@ void setup()
   HTTPClient = new HTTPMgr(config_data, *TelnetServer, *MQTTClient, *DataReaderP1);
   JSONClient = new JSONMgr(config_data, *DataReaderP1);
 
-  alignToTelegram();
-  DataReaderP1->state = WAITING; // signal that we are waiting for a valid start char (aka /)
   WatchDogsTimer = millis();
 
   WifiClient->Connect();
@@ -245,9 +223,8 @@ void doWatchDogs()
 
   if (millis() - DataReaderP1->LastSample > 300000)
   {
-    Serial.flush();
     MainSendDebug("[WDG] No data in 300 sec, restarting monitoring");
-
+    
     DataReaderP1->ResetnextUpdateTime();
   }
 

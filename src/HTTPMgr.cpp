@@ -102,6 +102,8 @@ void HTTPMgr::ReplyOTANOK(const String Error, u_int ref)
   str += GetAnimWait();
   str += F("</fieldset>");
   TradAndSend("text/html", str, true);
+  
+  Yield_Delay(1000);
   ESP.restart();
 }
 
@@ -183,6 +185,7 @@ void HTTPMgr::handleUploadFlash()
       {
         MainSendDebug("[FLASH] Update Success, Rebooting...");
         ReplyOTAOK();
+        Yield_Delay(1000);
         ESP.restart();
       }
       else

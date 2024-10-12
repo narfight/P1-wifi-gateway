@@ -48,9 +48,15 @@ void HTTPMgr::start_webservices()
       return;
     }
 
-    if (Update.hasError())
+    if (UpdateResultFailed)
     {
-      ReplyOTANOK(Update.getErrorString(), 3);
+      ReplyOTANOK(UpdateMsg.c_str(), UpdateErrorCode);
+      UpdateResultFailed = false;
+      UpdateMsg = "";
+    }
+    else
+    {
+        ReplyOTAOK();
     }
   }, std::bind(&HTTPMgr::handleUploadFlash, this));
 
@@ -89,22 +95,20 @@ void HTTPMgr::handleRoot()
 
 void HTTPMgr::ReplyOTAOK()
 {
+  MainSendDebug("[FLASH] Ok, reboot now");
   String str = F("<fieldset><p>{-OTASUCCESS1-}</p><p>{-OTASUCCESS2-}</p><p>{-OTASUCCESS3-}</p><p>{-OTASUCCESS4-}</p><p>{-OTASUCCESS5-}</p>");
   str += GetAnimWait();
   str += F("</fieldset>");
   TradAndSend("text/html", str, true);
 }
 
-void HTTPMgr::ReplyOTANOK(const String Error, u_int ref)
+void HTTPMgr::ReplyOTANOK(String Error, u_int ref)
 {
-  MainSendDebugPrintf("[FLASH] Error : %s (%u)", Update.getErrorString(), ref);
+  MainSendDebugPrintf("[FLASH] Error : %s (%u)", Error.c_str(), ref);
   String str = F("<fieldset><p>{-OTANOTSUCCESS-} : <strong>") + Error + " (" + String(ref) + F(")</strong></p><p>{-OTASUCCESS2-}</p><p>{-OTASUCCESS3-}</p><p>{-OTASUCCESS4-}</p><p>{-OTASUCCESS5-}</p>");
   str += GetAnimWait();
   str += F("</fieldset>");
   TradAndSend("text/html", str, true);
-  
-  Yield_Delay(1000);
-  ESP.restart();
 }
 
 void HTTPMgr::handleStyleCSS()
@@ -115,8 +119,8 @@ void HTTPMgr::handleStyleCSS()
   String etag = "W/\"" + String(VERSION) + "\"";
   if (server.header("If-None-Match") == etag)
   {
-      server.send(304);
-      return;
+    server.send(304);
+    return;
   }
 
   String str = F("body {text-align: center; font-family: verdana, sans-serif; background: #ffffff;}");
@@ -170,43 +174,68 @@ void HTTPMgr::handleUploadFlash()
   {
     HTTPUpload& upload = server.upload();
 
+    if (UpdateResultFailed)
+    {
+      //on a un souci avec cette mise à jour, on ignore l'upload
+      return;
+    }
+
     if (upload.status == UPLOAD_FILE_START)
     {
       Update.clearError();
-      MainSendDebugPrintf("[FLASH] Upload of '%s'", upload.filename.c_str());
+      
+      //check size en space
       uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-      MainSendDebugPrintf("[FLASH] Space in memory : %lu", maxSketchSpace);
+      MainSendDebugPrintf("[FLASH] Upload of '%s' (%lu octet)", upload.filename.c_str(), upload.contentLength);
+      MainSendDebugPrintf("[FLASH] Space in memory : %lu octect", maxSketchSpace);
+
+      if (upload.contentLength > maxSketchSpace)
+      {
+        UpdateResultFailed = true; // true = erreur d'update
+        UpdateMsg = "Not enough space for update"; // Message d'erreur de la mise à jour
+        UpdateErrorCode = 4;
+        return;
+      }
+
       if (!Update.begin(maxSketchSpace, U_FLASH))
       {
-        ReplyOTANOK(Update.getErrorString(), 0);
+        UpdateResultFailed = true; // true = erreur d'update
+        UpdateMsg = Update.getErrorString(); // Message d'erreur de la mise à jour
+        UpdateErrorCode = 0;
+        return;
       }
     }
     else if (upload.status == UPLOAD_FILE_WRITE)
     {
-      MainSendDebug("[FLASH] UPLOAD_FILE_WRITE");
       if (Update.write(upload.buf, upload.currentSize) != upload.currentSize)
       {
-        ReplyOTANOK(Update.getErrorString(), 1);
+        UpdateResultFailed = true; // true = erreur d'update
+        UpdateMsg = Update.getErrorString(); // Message d'erreur de la mise à jour
+        UpdateErrorCode = 1;
+        return;
       }
     }
     else if (upload.status == UPLOAD_FILE_END)
     {
       if (Update.end(true)) // true to set the size to the current progress
       {
-        MainSendDebug("[FLASH] Update Success, Rebooting...");
-        ReplyOTAOK();
-        Yield_Delay(1000);
-        ESP.restart();
+        //fin du flash, tout est bon :-)
+        return;
       }
       else
       {
-        ReplyOTANOK(Update.getErrorString(), 2);
+        UpdateResultFailed = true; // true = erreur d'update
+        UpdateMsg = Update.getErrorString(); // Message d'erreur de la mise à jour
+        UpdateErrorCode = 1;
+        return;
       }
     }
     else if(upload.status == UPLOAD_FILE_ABORTED)
     {
-      Update.end();
-      ReplyOTANOK("Update was aborted", 3);
+        UpdateResultFailed = true; // true = erreur d'update
+        UpdateMsg = "Update was aborted"; // Message d'erreur de la mise à jour
+        UpdateErrorCode = 3;
+        return;
     }
     yield();
   }

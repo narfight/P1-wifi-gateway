@@ -67,6 +67,10 @@ private:
   void ReplyOTAOK();
   void ReplyOTANOK(const String Error, u_int ref);
 
+  bool UpdateResultFailed = false; // true = erreur d'update
+  String UpdateMsg; // Message d'erreur de la mise à jour
+  uint UpdateErrorCode; //code d'erreur
+
   void handleP1();
   void handleHelp();
 };

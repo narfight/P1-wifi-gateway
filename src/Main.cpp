@@ -238,7 +238,7 @@ void doWatchDogs()
     ESP.reset();
   }
 
-  if (millis() - DataReaderP1->LastSample > 300000)
+  /*if (millis() - DataReaderP1->LastSample > 300000)
   {
     MainSendDebug("[WDG] No data in 300 sec, restarting monitoring");
     
@@ -249,7 +249,7 @@ void doWatchDogs()
   {
     MainSendDebug("[WDG] No wifi, restart");
     ESP.reset(); // we have been in AP mode for 600 sec.
-  }
+  }*/
 }
 
 void loop()

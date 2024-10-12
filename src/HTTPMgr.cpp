@@ -64,19 +64,6 @@ void HTTPMgr::DoMe()
   MDNS.update();
 }
 
-bool HTTPMgr::ChekifAsAdmin()
-{
-  if (strlen(conf.adminPassword) != 0)
-  {
-    if (!server.authenticate(conf.adminUser, conf.adminPassword))
-    {
-      server.requestAuthentication();
-      return false;
-    }
-  }
-  return true;
-}
-
 void HTTPMgr::handleRoot()
 {
   // You cannot use this page if is not your first boot
@@ -97,20 +84,7 @@ void HTTPMgr::handleRoot()
   str += F("<form action='/update' method='GET'><button type='submit'>{-MENUOTA-}</button></form>");
   str += F("<form action='/reset' id=\"frmRst\" method='GET'><button type='button' onclick='ConfRST()'>{-MENURESET-}</button></form>");
   str += F("<script> function ConfRST() { if (confirm(\"{-ASKCONFIRM-}\")) { document.getElementById(\"frmRst\").submit();}}</script></fieldset>");
-  TradAndSend(200, "text/html", str, false);
-}
-
-void HTTPMgr::ReplyErrorLogin(const String Where)
-{
-  MainSendDebug("[HTTP] Get wrong password from an client.");
-
-  String str = F("<fieldset><legend>{-H1WRONGPSD-}</legend>");
-  str += F("<p><b>{-WRONGPSDTXT-}</b><br>");
-  str += F("</fieldset>");
-  str += F("<form action='");
-  str += Where;
-  str += F("' method='POST'><button class='bhome'>{-WRONGPSDBACK-}</button></form></p>");
-  TradAndSend(401, "text/html", str, false);
+  TradAndSend("text/html", str, false);
 }
 
 void HTTPMgr::ReplyOTAOK()
@@ -118,7 +92,7 @@ void HTTPMgr::ReplyOTAOK()
   String str = F("<fieldset><p>{-OTASUCCESS1-}</p><p>{-OTASUCCESS2-}</p><p>{-OTASUCCESS3-}</p><p>{-OTASUCCESS4-}</p><p>{-OTASUCCESS5-}</p>");
   str += GetAnimWait();
   str += F("</fieldset>");
-  TradAndSend(200, "text/html", str, true);
+  TradAndSend("text/html", str, true);
 }
 
 void HTTPMgr::ReplyOTANOK(const String Error, u_int ref)
@@ -127,7 +101,9 @@ void HTTPMgr::ReplyOTANOK(const String Error, u_int ref)
   String str = F("<fieldset><p>{-OTANOTSUCCESS-} : <strong>") + Error + " (" + String(ref) + F(")</strong></p><p>{-OTASUCCESS2-}</p><p>{-OTASUCCESS3-}</p><p>{-OTASUCCESS4-}</p><p>{-OTASUCCESS5-}</p>");
   str += GetAnimWait();
   str += F("</fieldset>");
-  TradAndSend(200, "text/html", str, true);
+  TradAndSend("text/html", str, true);
+  
+  Yield_Delay(1000);
   ESP.restart();
 }
 
@@ -175,7 +151,7 @@ void HTTPMgr::handleUploadForm()
   str += F("<p><label for=\"firmware\">{-OTAFIRMWARE-} :</label><input type='file' accept='.bin,.bin.gz' id='firmware' name='firmware'></p>");
   str += F("</fieldset><button type='submit'>{-OTABTUPDATE-}</button></form>");
   str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
-  TradAndSend(200, "text/html", str, false);
+  TradAndSend("text/html", str, false);
 }
 
 void HTTPMgr::handleUploadFlash()
@@ -209,6 +185,7 @@ void HTTPMgr::handleUploadFlash()
       {
         MainSendDebug("[FLASH] Update Success, Rebooting...");
         ReplyOTAOK();
+        Yield_Delay(1000);
         ESP.restart();
       }
       else
@@ -221,13 +198,8 @@ void HTTPMgr::handleUploadFlash()
       Update.end();
       ReplyOTANOK("Update was aborted", 3);
     }
-    esp_yield();
+    yield();
   }
-}
-
-String HTTPMgr::GetAnimWait()
-{
-  return F("<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'><circle cx='50' cy='50' r='40' stroke='#ccc' stroke-width='4' fill='none' /><circle cx='50' cy='10' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='1s' repeatCount='indefinite' /></circle><circle cx='90' cy='50' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='2s' repeatCount='indefinite' /></circle><circle cx='50' cy='90' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='3s' repeatCount='indefinite' /></circle><circle cx='10' cy='50' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='4s' repeatCount='indefinite' /></circle></svg>");
 }
 
 void HTTPMgr::handleFactoryReset()
@@ -241,7 +213,7 @@ void HTTPMgr::handleFactoryReset()
   str += F("<p>{-RF_RESTTXT-}</p>");
   str += GetAnimWait();
   str += F("</fieldset>");
-  TradAndSend(200, "text/html", str, true);
+  TradAndSend("text/html", str, true);
 
   MainSendDebug("Reset factory and reboot...");
 
@@ -251,7 +223,7 @@ void HTTPMgr::handleFactoryReset()
   EEPROM.put(0, conf);
   EEPROM.commit();
 
-  delay(500);
+  Yield_Delay(1000);
   ESP.reset();
 }
 
@@ -297,13 +269,7 @@ void HTTPMgr::handlePassword()
   str += F("<span id=\"passwordError\" class=\"error\"></span>");
   str += F("</fieldset><button type='submit'>{-ConfSave-}</button></form>");
   str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
-  TradAndSend(200, "text/html", str, false);
-}
-
-String HTTPMgr::nettoyerInputText(String inputText)
-{
-    inputText.replace("'",  "&apos;");
-    return inputText;
+  TradAndSend("text/html", str, false);
 }
 
 void HTTPMgr::handleSetup()
@@ -417,7 +383,7 @@ void HTTPMgr::handleSetup()
   str += F("<span id=\"passwordError\" class=\"error\"></span>");
   str += F("<button type='submit'>{-ACTIONSAVE-}</button></form>");
   str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
-  TradAndSend(200, "text/html", str, false);
+  TradAndSend("text/html", str, false);
 }
 
 void HTTPMgr::handleSetupSave()
@@ -472,14 +438,14 @@ void HTTPMgr::handleSetupSave()
     str += GetAnimWait();
     str += F("</fieldset>");
 
-    TradAndSend(200, "text/html", str, true);
+    TradAndSend("text/html", str, true);
 
     EEPROM.begin(sizeof(struct settings));
     EEPROM.put(0, NewConf);
     EEPROM.commit();
 
     MainSendDebug("[HTTP] Reboot !!!");
-    //delay(500);
+    Yield_Delay(1000);
     ESP.restart();
   }
 }
@@ -586,7 +552,7 @@ void HTTPMgr::handleP1()
   str += " m3'></div></div></p>";
   str += F("</fieldset></form>");
   str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
-  TradAndSend(200, "text/html", str, false);
+  TradAndSend("text/html", str, false);
 }
 
 void HTTPMgr::handleHelp()
@@ -599,21 +565,47 @@ void HTTPMgr::handleHelp()
   str += F("<p>{-HLPTXT5-}</p>");
   str += F("<p>{-HLPTXT6-}</p>");
   str += F("<p>{-HLPTXT7-}</p>");
-  TradAndSend(200, "text/html", str, false);
+  TradAndSend("text/html", str, false);
 }
 
-void HTTPMgr::TradAndSend(int code, const char *content_type, String content, bool refresh)
+/// @brief Check and ask login to login
+/// @return true if logged
+bool HTTPMgr::ChekifAsAdmin()
+{
+  if (strlen(conf.adminPassword) != 0)
+  {
+    if (!server.authenticate(conf.adminUser, conf.adminPassword))
+    {
+      server.requestAuthentication();
+      return false;
+    }
+  }
+  return true;
+}
+
+String HTTPMgr::nettoyerInputText(String inputText)
+{
+    inputText.replace("'",  "&apos;");
+    return inputText;
+}
+
+String HTTPMgr::GetAnimWait()
+{
+  return F("<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'><circle cx='50' cy='50' r='40' stroke='#ccc' stroke-width='4' fill='none' /><circle cx='50' cy='10' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='1s' repeatCount='indefinite' /></circle><circle cx='90' cy='50' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='2s' repeatCount='indefinite' /></circle><circle cx='50' cy='90' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='3s' repeatCount='indefinite' /></circle><circle cx='10' cy='50' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='4s' repeatCount='indefinite' /></circle></svg>");
+}
+
+void HTTPMgr::TradAndSend(const char *content_type, String content, bool refresh)
 {
   // HEADER
   String str = F("<!DOCTYPE html><html lang='{-HEADERLG-}'><head>");
 
   if (refresh)
   {
-    str += F("<script>function chk() {fetch('http://' + window.location.hostname).then(response => {if (response.ok) {setTimeout(function () {window.location.href = '/';}, 3000);}}).catch(ex =>{});}</script>");
+    str += F("<script>function chk() {fetch('http://' + window.location.hostname).then(response => {if (response.ok) {setTimeout(function () {window.location.href = '/';}, 3000);}}).catch(ex =>{});};setTimeout(setInterval(chk, 3000), 3000);</script>");
   }
 
   str += F("<meta charset='utf-8'><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,user-scalable=no\"/>");
-  str += F("<title>Slimme meter</title>");
+  str += F("<title>P1 wifi-gateway</title>");
   str += F("<link rel='stylesheet' type='text/css' href='style.css'></head>");
   str += F("<body><div style='text-align:left;display:inline-block;color:#000000;width:600px;'><h2>P1 wifi-gateway</h2>");
   str += F("<p class=\"help\"><a href='/Help' target='_blank'>{-HLPH1-}</a>");
@@ -637,12 +629,12 @@ void HTTPMgr::TradAndSend(int code, const char *content_type, String content, bo
   str += F("{-OTAFIRMWARE-} : ");
   str += F(VERSION);
   str += F("<br><a href='https://github.com/narfight/P1-wifi-gateway' target='_blank'>Github</a>");
-  if (refresh)
+  /*if (refresh)
   {
     str += F("<script>setTimeout(setInterval(chk, 2000), 4000);</script>");
-  }
+  }*/
   str += F("</div></div></body></html>");
   
   Trad.FindAndTranslateAll(str);
-  server.send(code, content_type, str);
+  server.send(200, content_type, str);
 }

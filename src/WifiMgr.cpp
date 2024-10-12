@@ -44,10 +44,10 @@ void WifiMgr::DoMe()
     }
   }
 
-  if (AsAP() && (millis() - LastScanSSID) > INTERVAL_SCAN_SSID_MS)
+  if (AsAP() && (millis() - LastScanSSID) > INTERVAL_SCAN_SSID_MS && conf.ssid[0] != '\0')
   {
     LastScanSSID = millis();
-    //en mode AP, scan les SSID pour savoir si il peut se connecter
+    //en mode AP, scan les SSID pour savoir si il peut se connecter seulement si un SSID est donné
     if (FindThesSSID())
     {
       Reconnect();
@@ -147,7 +147,7 @@ void WifiMgr::Connect()
     while (WiFi.status() != WL_CONNECTED)
     {
       digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-      delay(300);
+      Yield_Delay(300);
 
       if (tries++ > 30)
       {
@@ -184,7 +184,7 @@ void WifiMgr::Reconnect()
   while (WiFi.status() != WL_CONNECTED)
   {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    delay(500);
+    Yield_Delay(500);
     if (tries++ > 30)
     {
       MainSendDebugPrintf("[WIFI] '%s' is down !", conf.ssid);

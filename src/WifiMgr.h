@@ -30,6 +30,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include "GlobalVar.h"
+#include "Debug.h"
 
 // van ESP8266WiFi/examples/WiFiShutdown/WiFiShutdown.ino
 #ifndef RTC_config_data_SLOT_WIFI_STATE

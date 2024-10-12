@@ -26,7 +26,7 @@
 TelnetMgr::TelnetMgr(settings &currentConf) : conf(currentConf), telnet(TELNETPORT)
 {
     MainSendDebugPrintf("[TELNET] Starting");
-    delay(100);
+    Yield_Delay(100);
     telnet.setNoDelay(true);
     telnet.begin();
 }
@@ -56,6 +56,23 @@ void TelnetMgr::DoMe()
             MainSendDebugPrintf("[TELNET] Server Telnet is busy with %d active connections", MAX_SRV_CLIENTS);
         }
     }
+
+    /*for (int i = 0; i < MAX_SRV_CLIENTS; i++)
+    {
+        if (telnetClients[i])
+        {
+            if (telnetClients[i].available())
+            {
+                char buffer[1];
+                int bytesRead = telnetClients[i].read(buffer, sizeof(buffer));
+                if (bytesRead > 0)
+                {
+                    buffer[bytesRead] = '\0';
+                    MainSendDebug(buffer);
+                }
+            }
+        }
+    }*/
 }
 
 void TelnetMgr::SendDataGram(String Diagram)

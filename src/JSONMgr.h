@@ -28,6 +28,7 @@
 #include "GlobalVar.h"
 #include <ESP8266HTTPClient.h>
 #include "P1Reader.h"
+#include "Debug.h"
 
 class JSONMgr
 {

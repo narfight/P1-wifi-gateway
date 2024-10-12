@@ -27,11 +27,14 @@ P1Reader::P1Reader(settings &currentConf) : conf(currentConf)
 {
   Serial.begin(115200);
   datagram.reserve(1500);
+
+  alignToTelegram();
 }
 
 void P1Reader::RTS_on() // switch on Data Request
 {
-  digitalWrite(OE, LOW);  // enable buffer
+  state = WAITING; // signal that we are waiting for a valid start char (aka /)
+  digitalWrite(OE, LOW); // enable buffer
   digitalWrite(DR, HIGH); // turn on Data Request
   OEstate = true;
 
@@ -41,21 +44,42 @@ void P1Reader::RTS_on() // switch on Data Request
 void P1Reader::RTS_off() // switch off Data Request
 {
   Serial.flush();
-  digitalWrite(DR, LOW);  // turn off Data Request
+  digitalWrite(DR, LOW); // turn off Data Request
   digitalWrite(OE, HIGH); // put buffer in Tristate mode
+  state = WAITING;
   OEstate = false;
   nextUpdateTime = millis() + conf.interval * 1000;
-  datagram = "";                        // empty datagram and
-  telegram[0] = 0;                      // telegram (probably uncessesary beacuse Serial.ReadBytesUntil will clear telegram buffer)
-
+  datagram = "";  // empty datagram and
+ 
   MainSendDebugPrintf("[P1] Data end request. Next action in %dms", nextUpdateTime);
 }
 
 void P1Reader::ResetnextUpdateTime()
 {
-  nextUpdateTime = millis() + 10000;
-  state = WAITING;
-  OEstate = false;
+  LastSample = millis();
+  RTS_off(); // switch off Data Request
+}
+
+/// @brief Make sure we don't drop into the middle of a telegram on boot. Read whatever
+/// is in the stream until we find the end char !
+/// then read until EOL and flsuh serial, return to loop to pick up the first complete telegram.
+void P1Reader::alignToTelegram()
+{
+  if (Serial.available() > 0)
+  {
+    while (Serial.available())
+    {
+      int inByte = Serial.read();
+      if (inByte == '!')
+      {
+        break;
+      }
+    }
+
+    char buf[10];
+    Serial.readBytesUntil('\n', buf, 9);
+    Serial.flush();
+  }
 }
 
 int P1Reader::FindCharInArray(char array[], char c, int len)
@@ -119,6 +143,7 @@ String P1Reader::identifyMeter(String Name)
 
 void P1Reader::decodeTelegram(int len)
 {
+  unsigned int currentCRC = 0; // the CRC value of the datagram
   int startChar = FindCharInArray(telegram, '/', len);
   int endChar = FindCharInArray(telegram, '!', len);
   bool validCRCFound = false;
@@ -127,6 +152,7 @@ void P1Reader::decodeTelegram(int len)
   {
     if (startChar >= 0)
     { // start found. Reset CRC calculation
+      MainSendDebug("[P1] Start of datagram found");
       currentCRC = CRC16(0x0000, (unsigned char *)telegram + startChar, len - startChar);
       // and reset datagram
       datagram = "";
@@ -157,6 +183,7 @@ void P1Reader::decodeTelegram(int len)
   {
     if (endChar >= 0)
     { // we have found the endchar !
+      MainSendDebug("[P1] End of datagram found");
       state = CHECKSUM;
       // add to crc calc
       dataEnd = true; // we're at the end of the data stream, so mark (for raw data output) We don't know if the data is valid, we will test this below.
@@ -167,9 +194,10 @@ void P1Reader::decodeTelegram(int len)
       if (datagram.length() < 2048)
       {
         for (int cnt = 0; cnt < len; cnt++)
+        {
           datagram += telegram[cnt];
-        datagram += "\r";
-        datagram += "\n";
+        }
+        datagram += "\r\n";
       }
       else
       {
@@ -437,14 +465,17 @@ void P1Reader::DoMe()
   {
     if (!OEstate)
     {
-      RTS_on();
       Serial.flush();
+      RTS_on();
     }
   }
 
   if (OEstate)
   {
+    nextUpdateTime = millis() + conf.interval * 1000;
+    MainSendDebug("[P1] Read Telegram");
     readTelegram();
+    OEstate = false;
   }
 }
 
@@ -452,22 +483,34 @@ void P1Reader::readTelegram()
 {
   if (Serial.available())
   {
+    unsigned long TimeOutRead = millis() + 10000; //max read time : 10s
+
     memset(telegram, 0, sizeof(telegram));
     while (Serial.available())
     {
+      if (millis() > TimeOutRead)
+      {
+        MainSendDebug("[P1] error, timeout on serial");
+        RTS_off();
+        return;
+      }
+
+      //int len = Serial.read(telegram, MAXLINELENGTH);
       int len = Serial.readBytesUntil('\n', telegram, MAXLINELENGTH);
       telegram[len] = '\n';
       telegram[len + 1] = 0;
+      
+      MainSendDebugPrintf("[P1] Data readed : %s", String(telegram));
+      
       blink(1, 400);
 
       decodeTelegram(len + 1);
 
       switch (state)
       {
-      case DISABLED: // should not occur
+      case DISABLED:
         break;
       case WAITING:
-        currentCRC = 0;
         break;
       case READING:
         break;
@@ -488,6 +531,7 @@ void P1Reader::readTelegram()
       default:
         break;
       }
+      yield();
     }
     digitalWrite(LED_BUILTIN, HIGH);
   }

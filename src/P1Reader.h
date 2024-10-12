@@ -24,10 +24,6 @@
 #ifndef P1READER_H
 #define P1READER_H
 
-#define CONFIG 0
-#define GOTMETER 1
-#define RUNNING 2
-
 #define DISABLED 0
 #define WAITING 1
 #define READING 2
@@ -38,21 +34,20 @@
 
 #define MAXLINELENGTH 2048 // 0-0:96.13.0 has a maximum lenght of 1024 chars + 11 of its identifier
 
-#define NUMP1TIMER(off, mult) ((DataReaded.P1timestamp[(off)] - '0') * (mult)) // macro for getting time out of timestamp, see decoder
-
 #include <Arduino.h>
 #include <TimeLib.h>
 #include "GlobalVar.h"
+#include "Debug.h"
 
 class P1Reader
 {
 private:
   settings &conf;
-  unsigned long nextUpdateTime = millis();
-  bool OEstate = false;        // 74125 OE output enable is off by default (EO signal high)
-  unsigned int currentCRC = 0; // the CRC v alue of the datagram
+  unsigned long nextUpdateTime = millis() + 5000; //wait 5s before read datagram
+  bool OEstate = false; // 74125 OE output enable is off by default (EO signal high)
   void RTS_on();
   void RTS_off();
+  void alignToTelegram();
   int dataFailureCount = 0;
   void OBISparser(int len);
   String readFirstParenthesisVal(int start, int end);

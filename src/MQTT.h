@@ -28,6 +28,8 @@
 #include "GlobalVar.h"
 #include <WiFiClient.h>
 #include <PubSubClient.h>
+#include "Debug.h"
+#include "P1Reader.h"
 
 class MQTTMgr
 {
@@ -36,13 +38,14 @@ private:
   bool DSMR_Format = false; // deliver mqtt data in 'dsmr reader" format
   PubSubClient mqtt_client; // * Initiate MQTT client
   settings &conf;
+  P1Reader &DataReaderP1;
   //String mtopic = "Een lange MQTT boodschap als placeholder";
 
 public:
   bool MqttDelivered = false;
   long unsigned nextMQTTreconnectAttempt = millis();
 
-  explicit MQTTMgr(Client &Link, settings &currentConf);
+  explicit MQTTMgr(Client &Link, settings &currentConf, P1Reader &currentP1);
   void doMe();
   bool mqtt_connect();
   bool IsConnected();

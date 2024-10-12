@@ -22,7 +22,7 @@
  */
 
 #define FRENCH // NEDERLANDS,SWEDISH,GERMAN,FRENCH
-//#define DEBUG
+#define DEBUG
 
 #define MAXBOOTFAILURE 3 //reset setting if boot fail more than this
 
@@ -57,6 +57,9 @@ ADC_MODE(ADC_VCC); // allows you to monitor the internal VCC level;
 
 void MainSendDebug(String payload)
 {
+  #ifdef DEBUG
+  Serial.println(payload);
+  #endif
   if (MQTTClient != nullptr)
   {
     MQTTClient->SendDebug(payload);
@@ -65,33 +68,58 @@ void MainSendDebug(String payload)
   {
     TelnetServer->SendDebug(payload);
   }
-  #ifdef DEBUG
-  Serial.println(payload);
-  #endif
 }
 
 void MainSendDebugPrintf(const char *format, ...)
 {
-  const int bufferSize = 100; // Définir la taille du tampon pour stocker le message formaté
-  char buffer[bufferSize];
+    const int initialBufferSize = 128;
+    const int maxBufferSize = 1024;
+    char* buffer = nullptr;
+    int bufferSize = initialBufferSize;
+    int length = 0;
+    va_list args;
 
-  // Utiliser la liste d'arguments variables
-  va_list args;
-  va_start(args, format);
+    do
+    {
+        delete[] buffer;  // Safe to call on nullptr in first iteration
+        buffer = new char[bufferSize];
+        
+        va_start(args, format);
+        length = vsnprintf(buffer, bufferSize, format, args);
+        va_end(args);
 
-  // Formater la chaîne avec vsnprintf
-  int length = vsnprintf(buffer, bufferSize, format, args);
+        if (length < 0)
+        {
+            MainSendDebug("Error: Invalid format string in MainSendDebugPrintf");
+            delete[] buffer;
+            return;
+        }
 
-  va_end(args);
+        if (length >= bufferSize)
+        {
+            bufferSize *= 2;  // Double the buffer size
+            if (bufferSize > maxBufferSize)
+            {
+                MainSendDebug("Error: Debug message too long in MainSendDebugPrintf");
+                delete[] buffer;
+                return;
+            }
+        }
+    } while (length >= bufferSize);
 
-  // Vérifier si le formatage a réussi et imprimer le message
-  if (length >= 0 && length < bufferSize)
-  {
     MainSendDebug(buffer);
-  }
-  else
+    delete[] buffer;
+}
+
+/// @brief Non-blocking delay using yield() to yield control back to the CPU.
+/// @param ms Time delay in ms
+void Yield_Delay(unsigned long ms)
+{
+  unsigned long WaitUnitl = millis() + ms;
+
+  while(millis() <= WaitUnitl)
   {
-    MainSendDebug("Erreur de formatage du message de débogage.");
+    yield();
   }
 }
 
@@ -103,28 +131,6 @@ void blink(int t, unsigned long speed)
     delay(speed);
   }
   digitalWrite(LED_BUILTIN, HIGH);
-}
-
-void alignToTelegram()
-{
-  // make sure we don't drop into the middle of a telegram on boot. Read whatever is in the stream until we find the end char !
-  // then read until EOL and flsuh serial, return to loop to pick up the first complete telegram.
-
-  if (Serial.available() > 0)
-  {
-    while (Serial.available())
-    {
-      int inByte = Serial.read();
-      if (inByte == '!')
-      {
-        break;
-      }
-    }
-
-    char buf[10];
-    Serial.readBytesUntil('\n', buf, 9);
-    Serial.flush();
-  }
 }
 
 void PrintConfigData()
@@ -149,13 +155,15 @@ void PrintConfigData()
   MainSendDebugPrintf(" - P1 In watt : %s", (config_data.watt) ? "Y" : "N");
   MainSendDebugPrintf(" - TELNET Actif : %s", (config_data.telnet) ? "Y" : "N");
   MainSendDebugPrintf("   # Send debug here : %s", (config_data.debugToTelnet) ? "Y" : "N");
-  delay(20);
+  Yield_Delay(20);
 }
 
 void setup()
 {
+  #ifdef DEBUG
   Serial.begin(115200);
   Serial.println("Booting...");
+  #endif
   MainSendDebugPrintf("Firmware: v%s", VERSION);
 
   pinMode(LED_BUILTIN, OUTPUT);
@@ -201,22 +209,21 @@ void setup()
 
   WifiClient = new WifiMgr(config_data);
   
-  if (config_data.mqtt)
-  {
-    MQTTClient = new MQTTMgr(WifiClient->WifiCom, config_data);
-  }
-
   if (config_data.telnet)
   {
     TelnetServer = new TelnetMgr(config_data);
   }
 
   DataReaderP1 = new P1Reader(config_data);
+
+  if (config_data.mqtt)
+  {
+    MQTTClient = new MQTTMgr(WifiClient->WifiCom, config_data, *DataReaderP1);
+  }
+
   HTTPClient = new HTTPMgr(config_data, *TelnetServer, *MQTTClient, *DataReaderP1);
   JSONClient = new JSONMgr(config_data, *DataReaderP1);
 
-  alignToTelegram();
-  DataReaderP1->state = WAITING; // signal that we are waiting for a valid start char (aka /)
   WatchDogsTimer = millis();
 
   WifiClient->Connect();
@@ -233,9 +240,8 @@ void doWatchDogs()
 
   if (millis() - DataReaderP1->LastSample > 300000)
   {
-    Serial.flush();
     MainSendDebug("[WDG] No data in 300 sec, restarting monitoring");
-
+    
     DataReaderP1->ResetnextUpdateTime();
   }
 

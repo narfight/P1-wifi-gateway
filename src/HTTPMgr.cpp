@@ -111,6 +111,14 @@ void HTTPMgr::handleStyleCSS()
 {
   MainSendDebug("[HTTP] Request style.css");
 
+  //Gestion du cache sur base de la version du firmware
+  String etag = "W/\"" + String(VERSION) + "\"";
+  if (server.header("If-None-Match") == etag)
+  {
+      server.send(304);
+      return;
+  }
+
   String str = F("body {text-align: center; font-family: verdana, sans-serif; background: #ffffff;}");
   str += F("h2 {text-align:center;color:#000000;}");
   str += F("div, fieldset, input {padding: 5px; font-size: 1em}");
@@ -133,8 +141,10 @@ void HTTPMgr::handleStyleCSS()
   str += F("input.c7 {text-align:right; color:#97C1A9}");
   str += F("svg {display: block;margin: auto;}");
 
-  // Cache pendant 10 heure (en secondes)
-  server.sendHeader("Cache-Control", "max-age=36000");
+  // Cache
+  server.sendHeader("ETag", etag);
+  server.sendHeader("Cache-Control", "max-age=86400");
+  
   // no translate for CSS
   server.send(200, "text/css", str);
 }

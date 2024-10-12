@@ -42,7 +42,7 @@ class WifiMgr
 {
   private:
   settings& conf;
-  void (*DelegateWifiChange)(bool, wl_status_t, wl_status_t) = nullptr;
+  std::function<void(bool, wl_status_t, wl_status_t)> DelegateWifiChange;
   wl_status_t LastStatusEvent;
   void SetAPMod();
   char* genererSSID();
@@ -56,7 +56,8 @@ class WifiMgr
   WiFiClient WifiCom;
   void DoMe();
   String StatusIdToString(wl_status_t status);
-  void OnWifiEvent(void (*CallBack)(bool, wl_status_t, wl_status_t));
+  String CurrentIP();
+  void OnWifiEvent(std::function<void(bool, wl_status_t, wl_status_t)> CallBack);
   bool IsConnected();
   void Connect();
 

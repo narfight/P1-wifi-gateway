@@ -24,9 +24,14 @@
 
 #include <MQTT.h>
 
-MQTTMgr::MQTTMgr(Client& Link, settings &currentConf, P1Reader &currentP1) : conf(currentConf), DataReaderP1(currentP1)
+MQTTMgr::MQTTMgr(settings &currentConf, WifiMgr &currentLink, P1Reader &currentP1) : conf(currentConf), WifiClient(currentLink), DataReaderP1(currentP1)
 {
-  mqtt_client.setClient(Link);
+  WifiClient.OnWifiEvent([this](bool b, wl_status_t s1, wl_status_t s2)
+  {
+      this->send_msg("State/IP", this->WifiClient.CurrentIP().c_str());
+  });
+  
+  mqtt_client.setClient(WifiClient.WifiCom);
   mqtt_client.setServer(conf.mqttIP, conf.mqttPort);
 
   // auto detext need to report in 'dsmr reader' mqtt format
@@ -64,7 +69,9 @@ bool MQTTMgr::mqtt_connect()
         MainSendDebug("[MQTT] connected");
 
         // Once connected, publish an announcement...
-        mqtt_client.publish("outTopic", "p1 gateway running");
+        mqtt_send_metric("State/Payload", "p1 gateway running");
+        mqtt_send_metric("State/Version", VERSION);
+        mqtt_send_metric("State/IP", WifiClient.CurrentIP().c_str());
       }
       else
       {
@@ -103,7 +110,7 @@ void MQTTMgr::send_metric(String name, float metric) // added *long
   send_msg(mtopic.c_str(), value); // output
 }
 
-void MQTTMgr::mqtt_send_metric(String name, char *metric)
+void MQTTMgr::mqtt_send_metric(String name, const char *metric)
 {
   String mtopic = String(conf.mqttTopic) + "/" + name;
   send_msg(mtopic.c_str(), metric);
@@ -116,7 +123,7 @@ void MQTTMgr::SendDebug(String payload)
     char charArray[payload.length() + 1]; // +1 pour le caractère nul
     payload.toCharArray(charArray, sizeof(charArray));
     charArray[sizeof(charArray) - 1] = '\0';
-    mqtt_send_metric("p1wifi/logging", charArray);
+    mqtt_send_metric("State/Logging", charArray);
   }
 }
 

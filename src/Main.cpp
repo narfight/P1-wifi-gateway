@@ -218,7 +218,7 @@ void setup()
 
   if (config_data.mqtt)
   {
-    MQTTClient = new MQTTMgr(WifiClient->WifiCom, config_data, *DataReaderP1);
+    MQTTClient = new MQTTMgr(config_data, *WifiClient, *DataReaderP1);
   }
 
   HTTPClient = new HTTPMgr(config_data, *TelnetServer, *MQTTClient, *DataReaderP1);

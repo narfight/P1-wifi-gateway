@@ -54,6 +54,10 @@ void WifiMgr::DoMe()
     }
   }
 }
+String WifiMgr::CurrentIP()
+{
+  return WiFi.localIP().toString();
+}
 
 bool WifiMgr::FindThesSSID()
 {
@@ -130,10 +134,11 @@ WifiMgr::WifiMgr(settings &currentConf) : conf(currentConf)
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
 }
 
-void WifiMgr::OnWifiEvent(void (*CallBack)(bool, wl_status_t, wl_status_t))
+void WifiMgr::OnWifiEvent(std::function<void(bool, wl_status_t, wl_status_t)> CallBack)
 {
   DelegateWifiChange = CallBack;
 }
+
 
 void WifiMgr::Connect()
 {

@@ -100,6 +100,8 @@ void HTTPMgr::ReplyOTAOK()
   str += GetAnimWait();
   str += F("</fieldset>");
   TradAndSend("text/html", str, true);
+  Yield_Delay(1000);
+  ESP.restart();
 }
 
 void HTTPMgr::ReplyOTANOK(String Error, u_int ref)
@@ -109,6 +111,8 @@ void HTTPMgr::ReplyOTANOK(String Error, u_int ref)
   str += GetAnimWait();
   str += F("</fieldset>");
   TradAndSend("text/html", str, true);
+  Yield_Delay(1000);
+  ESP.restart();
 }
 
 void HTTPMgr::handleStyleCSS()

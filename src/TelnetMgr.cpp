@@ -69,6 +69,11 @@ bool TelnetMgr::authenticateClient(WiFiClient &client, int clientId)
 
 bool TelnetMgr::readWithTimeout(WiFiClient &client, const char* prompt, unsigned long timeout)
 {
+    while (client.available()) // flush tout se qui est dans le cache
+    {
+        client.read();
+    }
+
     client.print(prompt);
     unsigned long start = millis();
     while (!client.available() && millis() - start < timeout)

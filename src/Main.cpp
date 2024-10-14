@@ -22,7 +22,7 @@
  */
 
 #define FRENCH // NEDERLANDS,SWEDISH,GERMAN,FRENCH
-#define DEBUG
+#define DEBUG_SERIAL
 
 #define MAXBOOTFAILURE 3 //reset setting if boot fail more than this
 
@@ -57,7 +57,7 @@ ADC_MODE(ADC_VCC); // allows you to monitor the internal VCC level;
 
 void MainSendDebug(String payload)
 {
-  #ifdef DEBUG
+  #ifdef DEBUG_SERIAL
   Serial.println(payload);
   #endif
   if (MQTTClient != nullptr)
@@ -139,9 +139,7 @@ void PrintConfigData()
   MainSendDebugPrintf(" - ConfigVersion : %d", config_data.ConfigVersion);
   MainSendDebugPrintf(" - Boot tentative : %d", config_data.BootFailed);
   MainSendDebugPrintf(" - Admin login : %s", config_data.adminUser);
-  #ifdef DEBUG
-  MainSendDebugPrintf(" - Admin psw : %s", config_data.adminPassword);
-  #endif
+  //MainSendDebugPrintf(" - Admin psw : %s", config_data.adminPassword);
   MainSendDebugPrintf(" - SSID : %s", config_data.ssid);
   MainSendDebugPrintf(" - Domoticz Actif : %s", (config_data.domo) ? "Y" : "N");
   MainSendDebugPrintf("   # Domoticz : %s:%u", config_data.domoticzIP, config_data.domoticzPort);
@@ -160,7 +158,7 @@ void PrintConfigData()
 
 void setup()
 {
-  #ifdef DEBUG
+  #ifdef DEBUG_SERIAL
   Serial.begin(115200);
   Serial.println("Booting...");
   #endif

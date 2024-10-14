@@ -33,6 +33,12 @@ TelnetMgr::TelnetMgr(settings &currentConf) : conf(currentConf), telnet(TELNETPO
 
 bool TelnetMgr::authenticateClient(WiFiClient &client, int clientId)
 {
+    if (strlen(conf.adminPassword) == 0)
+    {
+        //No password defined, no need request auth to client
+        return true;
+    }
+
     const unsigned long AUTH_TIMEOUT = 30000; // 30 secondes
     const int MAX_ATTEMPTS = 3;
 
@@ -142,7 +148,7 @@ void TelnetMgr::handleNewConnections()
         int i = findFreeClientSlot();
         if (i < MAX_SRV_CLIENTS)
         {
-            telnetClients[i] = telnet.available();
+            telnetClients[i] = telnet.accept();
             if (authenticateClient(telnetClients[i], i))
             {
                 telnetClients[i].printf("Welcome! Your session ID is %d.\n", i);
@@ -155,7 +161,7 @@ void TelnetMgr::handleNewConnections()
         }
         else
         {
-            telnet.available().println("Server is busy. Try again later.");
+            telnet.accept().println("Server is busy. Try again later.");
             MainSendDebugPrintf("[TELNET] Server is busy with %d active connections", MAX_SRV_CLIENTS);
         }
     }

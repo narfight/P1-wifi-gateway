@@ -162,7 +162,7 @@ void setup()
   Serial.begin(115200);
   Serial.println("Booting...");
   #endif
-  MainSendDebugPrintf("Firmware: v%s", VERSION);
+  MainSendDebugPrintf("Firmware: v%s.%u", VERSION, BUILD_DATE);
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(OE, OUTPUT);    // IO16 OE on the 74AHCT1G125

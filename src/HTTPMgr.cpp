@@ -669,8 +669,10 @@ void HTTPMgr::TradAndSend(const char *content_type, String content, bool refresh
       str += F("MQTT link: Not connected ");
     }
   }
-  str += F("{-OTAFIRMWARE-} : ");
+  str += F("{-OTAFIRMWARE-} : v");
   str += F(VERSION);
+  str += ".";
+  str += BUILD_DATE;
   str += F("<br><a href='https://github.com/narfight/P1-wifi-gateway' target='_blank'>Github</a>");
   /*if (refresh)
   {

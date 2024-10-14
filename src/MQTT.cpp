@@ -28,7 +28,11 @@ MQTTMgr::MQTTMgr(settings &currentConf, WifiMgr &currentLink, P1Reader &currentP
 {
   WifiClient.OnWifiEvent([this](bool b, wl_status_t s1, wl_status_t s2)
   {
-      this->send_msg("State/IP", this->WifiClient.CurrentIP().c_str());
+      if (b)
+      {
+        Yield_Delay(200);
+        this->send_msg("State/IP", this->WifiClient.CurrentIP().c_str());
+      }
   });
   
   mqtt_client.setClient(WifiClient.WifiCom);

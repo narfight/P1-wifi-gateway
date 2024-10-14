@@ -34,7 +34,7 @@ void WifiMgr::DoMe()
 
     if (LastStatusEvent == WL_NO_SSID_AVAIL)
     {
-      SetAPMod();
+      Connect(); // on relance les tentatives
       return;
     }
 
@@ -147,7 +147,9 @@ void WifiMgr::Connect()
     // Wifi configured to connect to one wifi
     MainSendDebugPrintf("[WIFI] Trying to connect to '%s' wifi network", conf.ssid);
     WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
     WiFi.begin(conf.ssid, conf.password);
+
     byte tries = 0;
     while (WiFi.status() != WL_CONNECTED)
     {

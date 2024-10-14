@@ -30,8 +30,7 @@ MQTTMgr::MQTTMgr(settings &currentConf, WifiMgr &currentLink, P1Reader &currentP
   {
       if (b)
       {
-        Yield_Delay(200);
-        this->send_msg("State/IP", this->WifiClient.CurrentIP().c_str());
+        nextMQTTreconnectAttempt = 0;
       }
   });
   

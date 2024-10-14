@@ -116,17 +116,24 @@ void TelnetMgr::processCommand(int clientId, const String &command)
     else if (command == "reboot")
     {
         MainSendDebugPrintf("[TELNET] User request reboot !");
+        telnetClients[clientId].println("Reboot !");
         Yield_Delay(1000);
         ESP.restart();
     }
     else if (command == "help") 
     {
-        telnetClients[clientId].println("Available commands: exit, reboot, help");
+        commandeHelp(clientId);
     }
     else
     {
-        telnetClients[clientId].println("Unknown command. Type 'help' for available commands.");
+        telnetClients[clientId].println("Unknown command.");
+        commandeHelp(clientId);
     }
+    telnetClients[clientId].printf("%s>", HOSTNAME);
+}
+void TelnetMgr::commandeHelp(int clientId)
+{
+    telnetClients[clientId].println("Available commands: exit, reboot, help");
 }
 
 bool TelnetMgr::isClientAuthenticated(int clientId)
@@ -153,6 +160,7 @@ void TelnetMgr::handleNewConnections()
             {
                 telnetClients[i].printf("Welcome! Your session ID is %d.\n", i);
                 MainSendDebugPrintf("[TELNET] New authenticated session (Id:%d)", i);
+                telnetClients[i].printf("%s>", HOSTNAME);
             }
             else
             {

@@ -52,6 +52,7 @@ class TelnetMgr
   WiFiClient telnetClients[MAX_SRV_CLIENTS];
   void handleClientActivity();
   void processCommand(int clientId, const String &command);
+  void commandeHelp(int clientId);
   void closeConnection(int clientId);
   unsigned long NextReportTime = millis();
   public:

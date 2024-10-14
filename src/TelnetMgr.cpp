@@ -31,48 +31,161 @@ TelnetMgr::TelnetMgr(settings &currentConf) : conf(currentConf), telnet(TELNETPO
     telnet.begin();
 }
 
-void TelnetMgr::DoMe()
+bool TelnetMgr::authenticateClient(WiFiClient &client, int clientId)
 {
-    if (telnet.hasClient()) // avons nous une nouvelle connexion
+    const unsigned long AUTH_TIMEOUT = 30000; // 30 secondes
+    const int MAX_ATTEMPTS = 3;
+
+    for (int attempt = 0; attempt < MAX_ATTEMPTS; ++attempt)
     {
-        // find free/disconnected spot
-        int i;
-        for (i = 0; i < MAX_SRV_CLIENTS; i++)
-        {
-            if (!telnetClients[i]) // equivalent to !serverClients[i].connected()
-            {
-                telnetClients[i] = telnet.accept();
-                telnetClients[i].printf("You are connected to the telnet. Your id session is %d.", i);
-                telnetClients[i].println();
-                MainSendDebugPrintf("[TELNET] Telnet : New session (Id:%d)", i);
-                break;
-            }
+        if (!readWithTimeout(client, "Login: ", AUTH_TIMEOUT)) return false;
+        String username = client.readStringUntil('\n');
+        username.trim();
+
+        if (!readWithTimeout(client, "Password: ", AUTH_TIMEOUT)) return false;
+        String password = client.readStringUntil('\n');
+        password.trim();
+
+        if (username == conf.adminUser && password == conf.adminPassword) {
+            client.println("Authentication successful.");
+            authenticatedClients[clientId] = true;
+            lastActivityTime[clientId] = millis();
+            return true;
         }
-        
-        // no free/disconnected spot so reject
-        if (i == MAX_SRV_CLIENTS)
-        {
-            telnet.accept().printf("Server Telnet is busy with %d active connections.\n", MAX_SRV_CLIENTS);
-            MainSendDebugPrintf("[TELNET] Server Telnet is busy with %d active connections", MAX_SRV_CLIENTS);
-        }
+
+        client.printf("Authentication failed. %d attempts remaining.\n", MAX_ATTEMPTS - attempt - 1);
+        Yield_Delay(1000 * (attempt + 1)); // Délai croissant entre les tentatives
     }
 
-    /*for (int i = 0; i < MAX_SRV_CLIENTS; i++)
+    client.println("Max attempts reached. Connection closed.");
+    return false;
+}
+
+bool TelnetMgr::readWithTimeout(WiFiClient &client, const char* prompt, unsigned long timeout)
+{
+    client.print(prompt);
+    unsigned long start = millis();
+    while (!client.available() && millis() - start < timeout)
     {
-        if (telnetClients[i])
+        Yield_Delay(10);
+    }
+
+    if (millis() - start >= timeout)
+    {
+        client.println("Timeout. Connection closed.");
+        return false;
+    }
+    return true;
+}
+
+void TelnetMgr::handleClientActivity()
+{
+    for (int i = 0; i < MAX_SRV_CLIENTS; i++)
+    {
+        if (telnetClients[i] && telnetClients[i].available())
         {
-            if (telnetClients[i].available())
+            String command = telnetClients[i].readStringUntil('\n');
+            command.trim();
+            processCommand(i, command);
+            lastActivityTime[i] = millis();
+        }
+    }
+}
+
+void TelnetMgr::closeConnection(int clientId)
+{
+    telnetClients[clientId].stop();
+    authenticatedClients.erase(clientId);
+    lastActivityTime.erase(clientId);
+    MainSendDebugPrintf("[TELNET] Closed connection for client %d", clientId);
+}
+
+void TelnetMgr::processCommand(int clientId, const String &command)
+{
+    if (command == "exit")
+    {
+        telnetClients[clientId].println("Goodbye!");
+        closeConnection(clientId);
+    }
+    else if (command == "reboot")
+    {
+        MainSendDebugPrintf("[TELNET] User request reboot !");
+        Yield_Delay(1000);
+        ESP.restart();
+    }
+    else if (command == "help") 
+    {
+        telnetClients[clientId].println("Available commands: exit, reboot, help");
+    }
+    else
+    {
+        telnetClients[clientId].println("Unknown command. Type 'help' for available commands.");
+    }
+}
+
+bool TelnetMgr::isClientAuthenticated(int clientId)
+{
+    return authenticatedClients.find(clientId) != authenticatedClients.end() && authenticatedClients[clientId];
+}
+
+void TelnetMgr::DoMe()
+{
+    handleClientActivity();
+    checkInactiveClients();
+    handleNewConnections();
+}
+
+void TelnetMgr::handleNewConnections()
+{
+    if (telnet.hasClient())
+    {
+        int i = findFreeClientSlot();
+        if (i < MAX_SRV_CLIENTS)
+        {
+            telnetClients[i] = telnet.available();
+            if (authenticateClient(telnetClients[i], i))
             {
-                char buffer[1];
-                int bytesRead = telnetClients[i].read(buffer, sizeof(buffer));
-                if (bytesRead > 0)
-                {
-                    buffer[bytesRead] = '\0';
-                    MainSendDebug(buffer);
-                }
+                telnetClients[i].printf("Welcome! Your session ID is %d.\n", i);
+                MainSendDebugPrintf("[TELNET] New authenticated session (Id:%d)", i);
+            }
+            else
+            {
+                closeConnection(i);
             }
         }
-    }*/
+        else
+        {
+            telnet.available().println("Server is busy. Try again later.");
+            MainSendDebugPrintf("[TELNET] Server is busy with %d active connections", MAX_SRV_CLIENTS);
+        }
+    }
+}
+
+int TelnetMgr::findFreeClientSlot()
+{
+    for (int i = 0; i < MAX_SRV_CLIENTS; i++)
+    {
+        if (!telnetClients[i] || !telnetClients[i].connected())
+        {
+            return i;
+        }
+    }
+    return MAX_SRV_CLIENTS;
+}
+
+void TelnetMgr::checkInactiveClients()
+{
+    const unsigned long INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+    unsigned long currentTime = millis();
+
+    for (int i = 0; i < MAX_SRV_CLIENTS; i++)
+    {
+        if (telnetClients[i] && (currentTime - lastActivityTime[i] > INACTIVITY_TIMEOUT))
+        {
+            telnetClients[i].println("Session timeout due to inactivity.");
+            closeConnection(i);
+        }
+    }
 }
 
 void TelnetMgr::SendDataGram(String Diagram)

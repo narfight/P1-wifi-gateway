@@ -28,6 +28,8 @@
 #include <ESP8266WiFi.h>
 #include "Debug.h"
 #include "GlobalVar.h"
+#include <map>
+//#include <string>
 
 #define MAX_SRV_CLIENTS 5
 #define STACK_PROTECTOR 1512  // bytes
@@ -38,8 +40,19 @@ class TelnetMgr
 {
   private:
   settings& conf;
+  std::map<int, bool> authenticatedClients;
+  std::map<int, unsigned long> lastActivityTime;
+  void handleNewConnections();
+  int findFreeClientSlot();
+  void checkInactiveClients();
+  bool authenticateClient(WiFiClient &client, int clientId);
+  bool readWithTimeout(WiFiClient &client, const char* prompt, unsigned long timeout);
+  bool isClientAuthenticated(int clientId);
   WiFiServer telnet;
   WiFiClient telnetClients[MAX_SRV_CLIENTS];
+  void handleClientActivity();
+  void processCommand(int clientId, const String &command);
+  void closeConnection(int clientId);
   unsigned long NextReportTime = millis();
   public:
   explicit TelnetMgr(settings& currentConf);

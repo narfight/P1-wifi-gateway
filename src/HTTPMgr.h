@@ -61,7 +61,7 @@ private:
   void handleSetupSave();
   void handleUploadForm();
   void handleUploadFlash();
-
+  void handleFavicon();
   void handleStyleCSS();
   
   void ReplyOTAOK();

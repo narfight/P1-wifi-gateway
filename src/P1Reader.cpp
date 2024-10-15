@@ -495,12 +495,11 @@ void P1Reader::readTelegram()
         return;
       }
 
-      //int len = Serial.read(telegram, MAXLINELENGTH);
       int len = Serial.readBytesUntil('\n', telegram, MAXLINELENGTH);
       telegram[len] = '\n';
       telegram[len + 1] = 0;
       
-      MainSendDebugPrintf("[P1] Data readed : %s", String(telegram));
+      MainSendDebugPrintf("[P1] Data readed : %s", telegram);
       
       blink(1, 400);
 

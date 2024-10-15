@@ -471,7 +471,6 @@ void HTTPMgr::handleSetupSave()
     strcpy(NewConf.adminPassword, conf.adminPassword);
     strcpy(NewConf.adminUser, conf.adminUser);
 
-    server.arg("adminUser").toCharArray(NewConf.adminUser, sizeof(conf.adminUser));
     server.arg("ssid").toCharArray(NewConf.ssid, sizeof(NewConf.ssid));
     server.arg("password").toCharArray(NewConf.password, sizeof(NewConf.password));
     server.arg("domoticzIP").toCharArray(NewConf.domoticzIP, sizeof(NewConf.domoticzIP));

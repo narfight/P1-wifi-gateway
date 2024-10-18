@@ -70,7 +70,7 @@ private:
 
   bool UpdateResultFailed = false; // true = erreur d'update
   String UpdateMsg; // Message d'erreur de la mise à jour
-  uint UpdateErrorCode; //code d'erreur
+  uint UpdateErrorCode = 0; //code d'erreur
 
   void handleP1();
   void handleHelp();

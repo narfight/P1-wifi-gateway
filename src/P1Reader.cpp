@@ -28,8 +28,6 @@ P1Reader::P1Reader(settings &currentConf) : conf(currentConf)
   Serial.setRxBufferSize(MAXLINELENGTH-2);
   Serial.begin(SERIALSPEED);
   datagram.reserve(1500);
-
-  alignToTelegram();
 }
 
 void P1Reader::RTS_on() // switch on Data Request
@@ -53,39 +51,12 @@ void P1Reader::RTS_off() // switch off Data Request
   state = WAITING;
   OEstate = false;
   nextUpdateTime = millis() + conf.interval * 1000;
-  datagram = "";  // empty datagram and
 }
 
 void P1Reader::ResetnextUpdateTime()
 {
   LastSample = millis();
   RTS_off(); // switch off Data Request
-}
-
-/// @brief Make sure we don't drop into the middle of a telegram on boot. Read whatever
-/// is in the stream until we find the end char !
-/// then read until EOL and flsuh serial, return to loop to pick up the first complete telegram.
-void P1Reader::alignToTelegram()
-{
-  if (Serial.available() == 0)
-  {
-    return;
-  }
-
-  // Find the '!' character
-  while (Serial.available() && Serial.read() != '!')
-  {
-
-  }
-
-  // Read until EOL
-  Serial.readStringUntil('\n');
-
-  // Clear any remaining data in the buffer
-  while (Serial.available())
-  {
-    Serial.read();
-  }
 }
 
 int P1Reader::FindCharInArray(char array[], char c, int len)
@@ -100,7 +71,7 @@ int P1Reader::FindCharInArray(char array[], char c, int len)
   return -1;
 }
 
-unsigned int P1Reader::CRC16(unsigned int crc, unsigned char *buf, int len)
+/*unsigned int P1Reader::CRC16(unsigned int crc, unsigned char *buf, int len)
 {
   for (int pos = 0; pos < len; pos++)
   {
@@ -120,7 +91,7 @@ unsigned int P1Reader::CRC16(unsigned int crc, unsigned char *buf, int len)
     }
   }
   return crc;
-}
+}*/
 
 String P1Reader::identifyMeter(String Name)
 {
@@ -149,10 +120,11 @@ String P1Reader::identifyMeter(String Name)
 
 void P1Reader::decodeTelegram(int len)
 {
-  unsigned int currentCRC = 0; // the CRC value of the datagram
+  //unsigned int currentCRC = 0; // the CRC value of the datagram
+  //bool validCRCFound = false;
+  
   int startChar = FindCharInArray(telegram, '/', len);
   int endChar = FindCharInArray(telegram, '!', len);
-  bool validCRCFound = false;
 
   if (state == WAITING) // we're waiting for a valid start sequence, if this line is not it, just return
   {
@@ -160,8 +132,8 @@ void P1Reader::decodeTelegram(int len)
     { // start found. Reset CRC calculation
       MainSendDebug("[P1] Start of datagram found");
 
-      currentCRC = CRC16(0x0000, (unsigned char *)telegram + startChar, len - startChar);
-      // and reset datagram
+      //currentCRC = CRC16(0x0000, (unsigned char *)telegram + startChar, len - startChar);
+      // reset datagram
       datagram = "";
       datagramValid = false;
       dataEnd = false;
@@ -191,13 +163,15 @@ void P1Reader::decodeTelegram(int len)
     if (endChar >= 0)
     { // we have found the endchar !
       MainSendDebug("[P1] End of datagram found");
-      state = CHECKSUM;
+      //state = CHECKSUM;
       // add to crc calc
       dataEnd = true; // we're at the end of the data stream, so mark (for raw data output) We don't know if the data is valid, we will test this below.
                       //  gas22Flag=false;        // assume we have also collected the Gas value
-      currentCRC = CRC16(currentCRC, (unsigned char *)telegram + endChar, 1);
-      char messageCRC[4];
-      strncpy(messageCRC, telegram + endChar + 1, 4);
+      
+      //currentCRC = CRC16(currentCRC, (unsigned char *)telegram + endChar, 1);
+      //char messageCRC[4];
+      //strncpy(messageCRC, telegram + endChar + 1, 4);
+      
       if (datagram.length() < 2048)
       {
         for (int cnt = 0; cnt < len; cnt++)
@@ -213,28 +187,28 @@ void P1Reader::decodeTelegram(int len)
         return;
       }
 
-      validCRCFound = (strtol(messageCRC, NULL, 16) == (long)currentCRC);
+      //validCRCFound = (strtol(messageCRC, NULL, 16) == (long)currentCRC);
 
-      if (validCRCFound)
-      {
+      //if (validCRCFound)
+      //{
         state = DONE;
         datagramValid = true;
-        dataFailureCount = 0;
+        //dataFailureCount = 0;
         LastSample = millis();
         //      gotPowerReading = true; // we at least got electricty readings. Not all setups have a gas meter attached, so gotGasReading is handled when we actually get gasIds coming in
         return;
-      }
-      else
+      //}
+      /*else
       {
         MainSendDebug("[P1] INVALID CRC FOUND");
-        dataFailureCount++;
+        //dataFailureCount++;
         state = FAILURE;
         return;
-      }
+      }*/
     }
     else
     { // no endchar, so normal line, process
-      currentCRC = CRC16(currentCRC, (unsigned char *)telegram, len);
+      //currentCRC = CRC16(currentCRC, (unsigned char *)telegram, len);
       for (int cnt = 0; cnt < len; cnt++)
       {
         datagram += telegram[cnt];
@@ -514,8 +488,8 @@ void P1Reader::readTelegram()
         break;
       case READING:
         break;
-      case CHECKSUM:
-        break;
+      //case CHECKSUM:
+       // break;
       case DONE:
         RTS_off();
         break;

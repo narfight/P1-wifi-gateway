@@ -131,6 +131,8 @@ void TelnetMgr::processCommand(int clientId, const String &command)
     }
     else if (command == "raw") 
     {
+        telnetClients[clientId].println("Datagram :");
+        telnetClients[clientId].println(P1Captor.datagram.length());
         telnetClients[clientId].println(P1Captor.datagram);
     }
     else

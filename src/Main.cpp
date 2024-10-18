@@ -207,13 +207,12 @@ void setup()
   PrintConfigData();
 
   WifiClient = new WifiMgr(config_data);
-  
+  DataReaderP1 = new P1Reader(config_data);
+
   if (config_data.telnet)
   {
     TelnetServer = new TelnetMgr(config_data,*DataReaderP1);
   }
-
-  DataReaderP1 = new P1Reader(config_data);
 
   if (config_data.mqtt)
   {

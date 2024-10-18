@@ -27,7 +27,7 @@
 #define DISABLED 0
 #define WAITING 1
 #define READING 2
-#define CHECKSUM 3
+//#define CHECKSUM 3
 #define DONE 4
 #define FAILURE 5
 #define FAULT 6
@@ -47,14 +47,14 @@ private:
   bool OEstate = false; // 74125 OE output enable is off by default (EO signal high)
   void RTS_on();
   void RTS_off();
-  void alignToTelegram();
-  int dataFailureCount = 0;
+
+  //int dataFailureCount = 0;
   void OBISparser(int len);
   String readFirstParenthesisVal(int start, int end);
   String readBetweenDoubleParenthesis(int start, int end);
   int FindCharInArray(char array[], char c, int len);
   void decodeTelegram(int len);
-  unsigned int CRC16(unsigned int crc, unsigned char *buf, int len);
+  //unsigned int CRC16(unsigned int crc, unsigned char *buf, int len);
   String identifyMeter(String Name);
   String readUntilStar(int start, int end);
 

@@ -23,7 +23,7 @@
 
 #include "TelnetMgr.h"
 
-TelnetMgr::TelnetMgr(settings &currentConf) : conf(currentConf), telnet(TELNETPORT)
+TelnetMgr::TelnetMgr(settings &currentConf, P1Reader &currentP1) : conf(currentConf), P1Captor(currentP1), telnet(TELNETPORT)
 {
     MainSendDebugPrintf("[TELNET] Starting");
     Yield_Delay(100);
@@ -33,6 +33,11 @@ TelnetMgr::TelnetMgr(settings &currentConf) : conf(currentConf), telnet(TELNETPO
 
 bool TelnetMgr::authenticateClient(WiFiClient &client, int clientId)
 {
+    while (client.available()) // flush tout se qui est dans le cache
+    {
+        client.read();
+    }
+
     if (strlen(conf.adminPassword) == 0)
     {
         //No password defined, no need request auth to client
@@ -69,11 +74,6 @@ bool TelnetMgr::authenticateClient(WiFiClient &client, int clientId)
 
 bool TelnetMgr::readWithTimeout(WiFiClient &client, const char* prompt, unsigned long timeout)
 {
-    while (client.available()) // flush tout se qui est dans le cache
-    {
-        client.read();
-    }
-
     client.print(prompt);
     unsigned long start = millis();
     while (!client.available() && millis() - start < timeout)
@@ -129,16 +129,21 @@ void TelnetMgr::processCommand(int clientId, const String &command)
     {
         commandeHelp(clientId);
     }
+    else if (command == "raw") 
+    {
+        telnetClients[clientId].println(P1Captor.datagram);
+    }
     else
     {
-        telnetClients[clientId].println("Unknown command.");
+        telnetClients[clientId].printf("Unknown command : %s", command);
+        telnetClients[clientId].println();
         commandeHelp(clientId);
     }
     telnetClients[clientId].printf("%s>", HOSTNAME);
 }
 void TelnetMgr::commandeHelp(int clientId)
 {
-    telnetClients[clientId].println("Available commands: exit, reboot, help");
+    telnetClients[clientId].println("Available commands: exit, raw, reboot, help");
 }
 
 bool TelnetMgr::isClientAuthenticated(int clientId)
@@ -209,33 +214,6 @@ void TelnetMgr::checkInactiveClients()
 
 void TelnetMgr::SendDataGram(String Diagram)
 {
-    TelnetReporter(Diagram);
-}
-
-void TelnetMgr::SendDebug(String payload)
-{
-    if (!conf.debugToTelnet)
-    {
-        return;
-    }
-
-    char result[100];
-    snprintf(result, sizeof(result), "%s %s", "[DEBUG]", payload.c_str());
-
-    for (int i = 0; i < MAX_SRV_CLIENTS; i++)
-    {
-        if (telnetClients[i])
-        {
-            if (telnetClients[i].availableForWrite() > 0)
-            {
-                telnetClients[i].println(result);
-            }
-        }
-    }
-}
-
-void TelnetMgr::TelnetReporter(String Diagram)
-{
     if (millis() < NextReportTime)
     {
         return;
@@ -284,4 +262,26 @@ void TelnetMgr::TelnetReporter(String Diagram)
         }
     }  
     yield();
+}
+
+void TelnetMgr::SendDebug(String payload)
+{
+    if (!conf.debugToTelnet)
+    {
+        return;
+    }
+
+    char result[100];
+    snprintf(result, sizeof(result), "%s %s", "[DEBUG]", payload.c_str());
+
+    for (int i = 0; i < MAX_SRV_CLIENTS; i++)
+    {
+        if (telnetClients[i])
+        {
+            if (telnetClients[i].availableForWrite() > 0)
+            {
+                telnetClients[i].println(result);
+            }
+        }
+    }
 }

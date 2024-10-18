@@ -22,7 +22,7 @@
  */
 
 #define FRENCH // NEDERLANDS,SWEDISH,GERMAN,FRENCH
-#define DEBUG_SERIAL
+//#define DEBUG_SERIAL_P1
 
 #define MAXBOOTFAILURE 3 //reset setting if boot fail more than this
 
@@ -57,9 +57,10 @@ ADC_MODE(ADC_VCC); // allows you to monitor the internal VCC level;
 
 void MainSendDebug(String payload)
 {
-  #ifdef DEBUG_SERIAL
+  #ifdef DEBUG_SERIAL_P1
   Serial.println(payload);
   #endif
+  
   if (MQTTClient != nullptr)
   {
     MQTTClient->SendDebug(payload);
@@ -158,8 +159,8 @@ void PrintConfigData()
 
 void setup()
 {
-  #ifdef DEBUG_SERIAL
-  Serial.begin(115200);
+  #ifdef DEBUG_SERIAL_P1
+  Serial.begin(SERIALSPEED);
   Serial.println("Booting...");
   #endif
   MainSendDebugPrintf("Firmware: v%s.%u", VERSION, BUILD_DATE);
@@ -209,7 +210,7 @@ void setup()
   
   if (config_data.telnet)
   {
-    TelnetServer = new TelnetMgr(config_data);
+    TelnetServer = new TelnetMgr(config_data,*DataReaderP1);
   }
 
   DataReaderP1 = new P1Reader(config_data);

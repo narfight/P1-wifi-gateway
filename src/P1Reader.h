@@ -32,7 +32,7 @@
 #define FAILURE 5
 #define FAULT 6
 
-#define MAXLINELENGTH 2048 // 0-0:96.13.0 has a maximum lenght of 1024 chars + 11 of its identifier
+#define MAXLINELENGTH 1037 // 0-0:96.13.0 has a maximum lenght of 1024 chars + 11 of its identifier + end line (2char)
 
 #include <Arduino.h>
 #include <TimeLib.h>
@@ -69,7 +69,7 @@ public:
   char telegram[MAXLINELENGTH] = {}; // holds a single line of the datagram
   String datagram;                   // holds entire datagram for raw output
   String meterName = "";
-  bool datagramValid = false;
+  bool datagramValid = false; // CRC is valid !
   bool dataEnd = false; // signals that we have found the end char in the data (!)
   struct DataP1
   {

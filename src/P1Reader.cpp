@@ -25,7 +25,8 @@
 
 P1Reader::P1Reader(settings &currentConf) : conf(currentConf)
 {
-  Serial.begin(115200);
+  Serial.setRxBufferSize(MAXLINELENGTH-2);
+  Serial.begin(SERIALSPEED);
   datagram.reserve(1500);
 
   alignToTelegram();
@@ -33,25 +34,26 @@ P1Reader::P1Reader(settings &currentConf) : conf(currentConf)
 
 void P1Reader::RTS_on() // switch on Data Request
 {
+  MainSendDebug("[P1] Data requested");
+  Serial.flush(); //flush output buffer
+  while(Serial.available() > 0 ) Serial.read(); //flush input buffer
+  
   state = WAITING; // signal that we are waiting for a valid start char (aka /)
   digitalWrite(OE, LOW); // enable buffer
   digitalWrite(DR, HIGH); // turn on Data Request
   OEstate = true;
-
-  MainSendDebug("[P1] Data requested");
 }
 
 void P1Reader::RTS_off() // switch off Data Request
 {
-  Serial.flush();
+  MainSendDebugPrintf("[P1] Data end request. Next action in %dms", nextUpdateTime);
+  
   digitalWrite(DR, LOW); // turn off Data Request
   digitalWrite(OE, HIGH); // put buffer in Tristate mode
   state = WAITING;
   OEstate = false;
   nextUpdateTime = millis() + conf.interval * 1000;
   datagram = "";  // empty datagram and
- 
-  MainSendDebugPrintf("[P1] Data end request. Next action in %dms", nextUpdateTime);
 }
 
 void P1Reader::ResetnextUpdateTime()
@@ -65,20 +67,24 @@ void P1Reader::ResetnextUpdateTime()
 /// then read until EOL and flsuh serial, return to loop to pick up the first complete telegram.
 void P1Reader::alignToTelegram()
 {
-  if (Serial.available() > 0)
+  if (Serial.available() == 0)
   {
-    while (Serial.available())
-    {
-      int inByte = Serial.read();
-      if (inByte == '!')
-      {
-        break;
-      }
-    }
+    return;
+  }
 
-    char buf[10];
-    Serial.readBytesUntil('\n', buf, 9);
-    Serial.flush();
+  // Find the '!' character
+  while (Serial.available() && Serial.read() != '!')
+  {
+
+  }
+
+  // Read until EOL
+  Serial.readStringUntil('\n');
+
+  // Clear any remaining data in the buffer
+  while (Serial.available())
+  {
+    Serial.read();
   }
 }
 
@@ -153,6 +159,7 @@ void P1Reader::decodeTelegram(int len)
     if (startChar >= 0)
     { // start found. Reset CRC calculation
       MainSendDebug("[P1] Start of datagram found");
+
       currentCRC = CRC16(0x0000, (unsigned char *)telegram + startChar, len - startChar);
       // and reset datagram
       datagram = "";
@@ -320,7 +327,6 @@ void P1Reader::OBISparser(int len)
   }
 
   idx = inString.toInt();
-  MainSendDebugPrintf("[P1] Read line : %d", idx);
   
   switch (idx)
   {
@@ -447,7 +453,7 @@ void P1Reader::OBISparser(int len)
     }
     break;
   default:
-    MainSendDebugPrintf("[P1] Unrecognized line n°%d !", idx);
+    MainSendDebugPrintf("[P1] Unrecognized line : %s", inString);
     break;
   }
   // clear the string for new input:
@@ -465,7 +471,6 @@ void P1Reader::DoMe()
   {
     if (!OEstate)
     {
-      Serial.flush();
       RTS_on();
     }
   }
@@ -473,37 +478,33 @@ void P1Reader::DoMe()
   if (OEstate)
   {
     nextUpdateTime = millis() + conf.interval * 1000;
-    MainSendDebug("[P1] Read Telegram");
-    readTelegram();
     OEstate = false;
   }
+  readTelegram();
 }
 
 void P1Reader::readTelegram()
 {
   if (Serial.available())
   {
-    unsigned long TimeOutRead = millis() + 10000; //max read time : 10s
+    unsigned long TimeOutRead = millis() + 5000; //max read time : 5s
 
     memset(telegram, 0, sizeof(telegram));
     while (Serial.available())
     {
       if (millis() > TimeOutRead)
       {
-        MainSendDebug("[P1] error, timeout on serial");
+        MainSendDebug("[P1] Error, timeout on serial");
         RTS_off();
         return;
       }
 
-      int len = Serial.readBytesUntil('\n', telegram, MAXLINELENGTH);
+      int len = Serial.readBytesUntil('\n', telegram, sizeof(telegram)-2);
       telegram[len] = '\n';
       telegram[len + 1] = 0;
       
-      MainSendDebugPrintf("[P1] Data readed : %s", telegram);
-      
-      blink(1, 400);
-
       decodeTelegram(len + 1);
+      //blink(1, 400);
 
       switch (state)
       {
@@ -530,8 +531,8 @@ void P1Reader::readTelegram()
       default:
         break;
       }
-      yield();
+      //yield();
     }
-    digitalWrite(LED_BUILTIN, HIGH);
+    //digitalWrite(LED_BUILTIN, HIGH);
   }
 }

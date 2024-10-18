@@ -26,10 +26,10 @@
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#include <map>
 #include "Debug.h"
 #include "GlobalVar.h"
-#include <map>
-//#include <string>
+#include "P1Reader.h"
 
 #define MAX_SRV_CLIENTS 5
 #define STACK_PROTECTOR 1512  // bytes
@@ -40,6 +40,7 @@ class TelnetMgr
 {
   private:
   settings& conf;
+  P1Reader &P1Captor;
   std::map<int, bool> authenticatedClients;
   std::map<int, unsigned long> lastActivityTime;
   void handleNewConnections();
@@ -56,10 +57,9 @@ class TelnetMgr
   void closeConnection(int clientId);
   unsigned long NextReportTime = millis();
   public:
-  explicit TelnetMgr(settings& currentConf);
+  explicit TelnetMgr(settings& currentConf, P1Reader &currentP1);
   void DoMe();
   void SendDataGram(String Diagram);
-  void TelnetReporter(String Diagram);
   void SendDebug(String payload);
 };
 #endif

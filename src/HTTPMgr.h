@@ -57,6 +57,7 @@ private:
   void handleRoot();
   void handlePassword();
   void handleSetup();
+  void handleRAW();
   void handleFactoryReset();
   void handleSetupSave();
   void handleUploadForm();

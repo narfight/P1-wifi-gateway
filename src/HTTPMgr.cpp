@@ -40,6 +40,7 @@ void HTTPMgr::start_webservices()
   server.on("/SetupSave", std::bind(&HTTPMgr::handleSetupSave, this));
   server.on("/reset", std::bind(&HTTPMgr::handleFactoryReset, this));
   server.on("/P1", std::bind(&HTTPMgr::handleP1, this));
+  server.on("/RAW", std::bind(&HTTPMgr::handleRAW, this));
   server.on("/Help", std::bind(&HTTPMgr::handleHelp, this));
   server.on("/update", HTTP_GET, std::bind(&HTTPMgr::handleUploadForm, this));
   server.on("/update", HTTP_POST, [this]()
@@ -103,6 +104,11 @@ void HTTPMgr::ReplyOTAOK()
   TradAndSend("text/html", str, true);
   Yield_Delay(1000);
   ESP.restart();
+}
+
+void HTTPMgr::handleRAW()
+{
+  server.send(200, "Text/plain", P1Captor.datagram);
 }
 
 void HTTPMgr::ReplyOTANOK(String Error, u_int ref)
@@ -421,6 +427,16 @@ void HTTPMgr::handleSetup()
   {
     str += F("><br />");
   }
+  str += F("<label for=\"debugToMqtt\">{-ConfMQTTDBG-} :</label><input type='checkbox' name='debugToMqtt' id='debugToMqtt' ");
+  if (conf.debugToMqtt)
+  {
+    str += F(" checked><br />");
+  }
+  else
+  {
+    str += F("><br />");
+  }
+  str += F("</fieldset><fieldset><legend>{-ConfTLNETH2-}</legend>");
   str += F("<label for=\"telnet\">{-ConfTLNETBool-} :</label><input type='checkbox' name='telnet' id='telnet' ");
   if (conf.telnet)
   {
@@ -432,15 +448,6 @@ void HTTPMgr::handleSetup()
   }
   str += F("<label for=\"debugToTelnet\">{-ConfTLNETDBG-} :</label><input type='checkbox' name='debugToTelnet' id='debugToTelnet' ");
   if (conf.debugToTelnet)
-  {
-    str += F(" checked><br />");
-  }
-  else
-  {
-    str += F("><br />");
-  }
-  str += F("<label for=\"debugToMqtt\">{-ConfMQTTDBG-} :</label><input type='checkbox' name='debugToMqtt' id='debugToMqtt' ");
-  if (conf.debugToMqtt)
   {
     str += F(" checked><br />");
   }

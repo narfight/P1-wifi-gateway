@@ -277,6 +277,6 @@ void WifiMgr::setRFPower()
   {
     RFpower = 1;
   }
-
+  MainSendDebugPrintf("[WIFI] Set RF power to %f", RFpower);
   WiFi.setOutputPower(RFpower);
 }

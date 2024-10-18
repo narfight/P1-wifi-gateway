@@ -63,6 +63,7 @@ const char LANG[] = R"=====(
     "ConfMQTTRoot" : "Rubrique racine MQTT",
     "ConfMQTTIntr" : "Intervalle de mesure en sec",
     "ConfMQTTKW" : "Rapport en watts (au lieu de kWh)",
+    "ConfTLNETH2" : "Paramètres Telnet",
     "ConfTLNETBool" : "Activer le port Telnet (23)",
     "ConfTLNETDBG" : "Debug via Telnet ?",
     "ConfMQTTDBG" : "Debug via MQTT ?",

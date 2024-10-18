@@ -38,6 +38,8 @@ bool TelnetMgr::authenticateClient(WiFiClient &client, int clientId)
         client.read();
     }
 
+    lastActivityTime[clientId] = millis();
+    
     if (strlen(conf.adminPassword) == 0)
     {
         //No password defined, no need request auth to client
@@ -60,7 +62,6 @@ bool TelnetMgr::authenticateClient(WiFiClient &client, int clientId)
         if (username == conf.adminUser && password == conf.adminPassword) {
             client.println("Authentication successful.");
             authenticatedClients[clientId] = true;
-            lastActivityTime[clientId] = millis();
             return true;
         }
 

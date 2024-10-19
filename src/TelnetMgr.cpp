@@ -98,7 +98,16 @@ void TelnetMgr::handleClientActivity()
         {
             String command = telnetClients[i].readStringUntil('\n');
             command.trim();
-            processCommand(i, command);
+            
+            if (command.length() != 0)
+            {
+                processCommand(i, command);
+            }
+            else
+            {
+                telnetClients[i].printf("%s>", HOSTNAME);
+            }
+            
             lastActivityTime[i] = millis();
         }
     }
@@ -132,14 +141,12 @@ void TelnetMgr::processCommand(int clientId, const String &command)
     }
     else if (command == "raw") 
     {
-        telnetClients[clientId].println("Datagram :");
-        telnetClients[clientId].println(P1Captor.datagram.length());
         telnetClients[clientId].println(P1Captor.datagram);
     }
-    else if( command != "")
+    else
     {
-        telnetClients[clientId].printf("Unknown command : %s", command.c_str());
-        telnetClients[clientId].println();
+        telnetClients[clientId].print("Unknown command : ");
+        telnetClients[clientId].println(command);
         commandeHelp(clientId);
     }
     telnetClients[clientId].printf("%s>", HOSTNAME);

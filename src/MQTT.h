@@ -45,7 +45,7 @@ private:
   /// @param topic
   /// @param payload
   void send_msg(const char *topic, const char *payload);
-
+  char* uint32ToChar(uint32_t value, char* buffer);
 public:
   long unsigned nextMQTTreconnectAttempt = millis();
 
@@ -56,6 +56,7 @@ public:
 
   void send_float(String name, float metric);
   void send_char(String name, const char *metric);
+  void send_uint32_t(String name, uint32_t metric);
   void MQTT_reporter();
   void SendDebug(String payload);
 };

@@ -102,6 +102,15 @@ void MQTTMgr::send_char(String name, const char *metric)
   send_msg(mtopic.c_str(), metric);
 }
 
+void MQTTMgr::send_uint32_t(String name, uint32_t metric)
+{
+  char value_buffer[11];  // uint32_t max = 4294967295 (10 chiffres + \0)
+  uint32ToChar(metric, value_buffer);
+
+  String mtopic = String(conf.mqttTopic) + "/" + name;
+  send_msg(mtopic.c_str(), value_buffer);
+}
+
 /// @brief Send a message to a broker topic
 /// @param topic 
 /// @param payload 
@@ -116,6 +125,40 @@ void MQTTMgr::send_msg(const char *topic, const char *payload)
     {
         MainSendDebugPrintf("[MQTT] Error to send to topic : %s", topic);
     }
+}
+
+char* MQTTMgr::uint32ToChar(uint32_t value, char* buffer)
+{
+    char* p = buffer;
+    
+    if (value == 0)
+    {
+        *p++ = '0';
+        *p = '\0';
+        return buffer;
+    }
+    
+    // On divise par 10 et on convertit de droite à gauche
+    char* start = p;
+    while (value)
+    {
+        *p++ = '0' + (value % 10);
+        value /= 10;
+    }
+    *p = '\0';
+    
+    // On inverse la chaîne
+    char* end = p - 1;
+    while (start < end)
+    {
+        char temp = *start;
+        *start = *end;
+        *end = temp;
+        start++;
+        end--;
+    }
+    
+    return buffer;
 }
 
 void MQTTMgr::SendDebug(String payload)
@@ -139,32 +182,37 @@ void MQTTMgr::MQTT_reporter()
 
   MainSendDebug("[MQTT] Send data");
 
+  //no DSMR valid :
+  send_char("equipmentName", DataReaderP1.meterName.c_str());
+
   send_char("equipmentID", DataReaderP1.DataReaded.equipmentId);
+  send_char("reading/timestamp", DataReaderP1.DataReaded.P1timestamp);
 
-  send_char("reading/electricity_delivered_1", DataReaderP1.DataReaded.electricityUsedTariff1);
-  send_char("reading/electricity_delivered_2", DataReaderP1.DataReaded.electricityUsedTariff2);
-  send_char("reading/electricity_returned_1", DataReaderP1.DataReaded.electricityReturnedTariff1);
-  send_char("reading/electricity_returned_2", DataReaderP1.DataReaded.electricityReturnedTariff2);
-  send_char("reading/electricity_currently_delivered", DataReaderP1.DataReaded.actualElectricityPowerDeli);
-  send_char("reading/electricity_currently_returned", DataReaderP1.DataReaded.actualElectricityPowerRet);
+  send_float("reading/electricity_delivered_1", DataReaderP1.DataReaded.electricityUsedTariff1);
+  send_float("reading/electricity_delivered_2", DataReaderP1.DataReaded.electricityUsedTariff2);
+  send_float("reading/electricity_returned_1", DataReaderP1.DataReaded.electricityReturnedTariff1);
+  send_float("reading/electricity_returned_2", DataReaderP1.DataReaded.electricityReturnedTariff2);
+  send_float("reading/electricity_currently_delivered", DataReaderP1.DataReaded.actualElectricityPowerDeli);
+  send_float("reading/electricity_currently_returned", DataReaderP1.DataReaded.actualElectricityPowerRet);
 
-  send_char("reading/phase_currently_delivered_l1", DataReaderP1.DataReaded.activePowerL1P);
-  send_char("reading/phase_currently_delivered_l2", DataReaderP1.DataReaded.activePowerL2P);
-  send_char("reading/phase_currently_delivered_l3", DataReaderP1.DataReaded.activePowerL3P);
-  send_char("reading/phase_currently_returned_l1", DataReaderP1.DataReaded.activePowerL1NP);
-  send_char("reading/phase_currently_returned_l2", DataReaderP1.DataReaded.activePowerL2NP);
-  send_char("reading/phase_currently_returned_l3", DataReaderP1.DataReaded.activePowerL3NP);
-  send_char("reading/phase_voltage_l1", DataReaderP1.DataReaded.instantaneousVoltageL1);
-  send_char("reading/phase_voltage_l2", DataReaderP1.DataReaded.instantaneousVoltageL2);
-  send_char("reading/phase_voltage_l3", DataReaderP1.DataReaded.instantaneousVoltageL3);
+  send_float("reading/phase_currently_delivered_l1", DataReaderP1.DataReaded.activePowerL1P);
+  send_float("reading/phase_currently_delivered_l2", DataReaderP1.DataReaded.activePowerL2P);
+  send_float("reading/phase_currently_delivered_l3", DataReaderP1.DataReaded.activePowerL3P);
+  send_float("reading/phase_currently_returned_l1", DataReaderP1.DataReaded.activePowerL1NP);
+  send_float("reading/phase_currently_returned_l2", DataReaderP1.DataReaded.activePowerL2NP);
+  send_float("reading/phase_currently_returned_l3", DataReaderP1.DataReaded.activePowerL3NP);
+  send_float("reading/phase_voltage_l1", DataReaderP1.DataReaded.instantaneousVoltageL1);
+  send_float("reading/phase_voltage_l2", DataReaderP1.DataReaded.instantaneousVoltageL2);
+  send_float("reading/phase_voltage_l3", DataReaderP1.DataReaded.instantaneousVoltageL3);
 
   send_char("consumption/gas/delivered", DataReaderP1.DataReaded.gasReceived5min);
-
-  send_float("meter-stats/actual_tarif_group", DataReaderP1.DataReaded.tariffIndicatorElectricity[3]);
-  send_char("meter-stats/power_failure_count", DataReaderP1.DataReaded.numberLongPowerFailuresAny);
-  send_char("meter-stats/long_power_failure_count", DataReaderP1.DataReaded.numberLongPowerFailuresAny);
-  send_char("meter-stats/short_power_drops", DataReaderP1.DataReaded.numberVoltageSagsL1);
-  send_char("meter-stats/short_power_peaks", DataReaderP1.DataReaded.numberVoltageSwellsL1);
+  
+  send_char("meter-stats/dsmr_version", DataReaderP1.DataReaded.P1version);
+  send_uint32_t("meter-stats/electricity_tariff", DataReaderP1.DataReaded.tariffIndicatorElectricity);
+  send_uint32_t("meter-stats/power_failure_count", DataReaderP1.DataReaded.numberLongPowerFailuresAny);
+  send_uint32_t("meter-stats/long_power_failure_count", DataReaderP1.DataReaded.numberLongPowerFailuresAny);
+  send_uint32_t("meter-stats/short_power_drops", DataReaderP1.DataReaded.numberVoltageSagsL1);
+  send_uint32_t("meter-stats/short_power_peaks", DataReaderP1.DataReaded.numberVoltageSwellsL1);
 
   LastReportinMillis = millis();
 

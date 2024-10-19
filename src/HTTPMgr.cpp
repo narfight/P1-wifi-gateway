@@ -540,53 +540,53 @@ void HTTPMgr::handleP1()
   String str = F("<form ><fieldset><legend>{-DATAH1-}</legend>");
 
   str += "<p><div class='row'><b>{-DATAFullL-}</b><input type='text' class='c6' value='";
-  str += P1Captor.DataReaded.electricityUsedTariff1;
+  str += String(P1Captor.DataReaded.electricityUsedTariff1);
   str += eenheid;
   str += "</p>";
 
   str += "<p><div class='row'><b>{-DATAFullH-}</b><input type='text' class='c6' value='";
-  str += P1Captor.DataReaded.electricityUsedTariff2;
+  str += String(P1Captor.DataReaded.electricityUsedTariff2);
   str += eenheid;
   str += "</p>";
 
   str += "<p><div class='row'><b>{-DATAFullProdL-}</b><input type='text' class='c6' value='";
-  str += P1Captor.DataReaded.electricityReturnedTariff1;
+  str += String(P1Captor.DataReaded.electricityReturnedTariff1);
   str += eenheid;
   str += "</p>";
 
   str += "<p><div class='row'><b>{-DATAFullProdH-}</b><input type='text' class='c6' value='";
-  str += P1Captor.DataReaded.electricityReturnedTariff2;
+  str += String(P1Captor.DataReaded.electricityReturnedTariff2);
   str += eenheid;
   str += "</p>";
 
   str += "<p><div class='row'><b>{-DATACurAmp-}</b><input type='text' class='c6' value='";
-  str += P1Captor.DataReaded.actualElectricityPowerDeli;
+  str += String(P1Captor.DataReaded.actualElectricityPowerDeli);
   str += eenheid;
   str += "</p>";
 
   str += "<p><div class='row'><b>{-DATACurProdAmp-}</b><input type='text' class='c6' value='";
-  str += P1Captor.DataReaded.actualElectricityPowerRet;
+  str += String(P1Captor.DataReaded.actualElectricityPowerRet);
   str += eenheid;
   str += "</p>";
 
   str += "<p><div class='row'><div class='column3'><b>{-DATAUL1-}</b><input type='text' class='c6' value='";
-  str += P1Captor.DataReaded.instantaneousVoltageL1;
+  str += String(P1Captor.DataReaded.instantaneousVoltageL1);
   str += " V'></div>";
   str += "<div class='column3' style='text-align:right'><b>{-DATAUL2-}</b><input type='text' class='c7' value='";
-  str += P1Captor.DataReaded.instantaneousVoltageL2;
+  str += String(P1Captor.DataReaded.instantaneousVoltageL2);
   str += " V'></div>";
   str += "<div class='column3' style='text-align:right'><b>{-DATAUL3-}</b><input type='text' class='c7' value='";
-  str += P1Captor.DataReaded.instantaneousVoltageL3;
+  str += String(P1Captor.DataReaded.instantaneousVoltageL3);
   str += " V'></div></div></p>";
 
   str += "<p><div class='row'><div class='column3'><b>{-DATAAL1-}</b><input type='text' class='c6' value='";
-  str += P1Captor.DataReaded.instantaneousCurrentL1;
+  str += String(P1Captor.DataReaded.instantaneousCurrentL1);
   str += " A'></div>";
   str += "<div class='column3' style='text-align:right'><b>{-DATAAL2-}</b><input type='text' class='c7' value='";
-  str += P1Captor.DataReaded.instantaneousCurrentL2;
+  str += String(P1Captor.DataReaded.instantaneousCurrentL2);
   str += " A'></div>";
   str += "<div class='column3' style='text-align:right'><b>{-DATAAL3-}</b><input type='text' class='c7' value='";
-  str += P1Captor.DataReaded.instantaneousCurrentL3;
+  str += String(P1Captor.DataReaded.instantaneousCurrentL3);
   str += " A'></div></div></p>";
 
   str += "<p><div class='row'><b>{-DATAGFull-}</b><input type='text' class='c6' value='";

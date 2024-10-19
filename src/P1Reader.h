@@ -71,45 +71,65 @@ public:
   String meterName = "";
   bool datagramValid = false; // CRC is valid !
   bool dataEnd = false; // signals that we have found the end char in the data (!)
+
+  /// @brief value that is parsed as a three-decimal float, but stored as an
+  // integer (by multiplying by 1000). Supports val() (or implicit cast to
+  // float) to get the original value, and int_val() to get the more
+  // efficient integer value. The unit() and int_unit() methods on
+  // FixedField return the corresponding units for these values.
+  struct FixedValue
+  {
+    FixedValue()
+    {
+      _value = 0;
+    }
+    FixedValue(String value)
+    {
+      _value = value.toFloat() * 1000;
+    }
+    operator float() { return val(); }
+    float val() { return _value / 1000.0; }
+    uint32_t int_val() { return _value; }
+    uint32_t _value{0};
+  };
+
   struct DataP1
   {
     char gasReceived5min[12];
     char gasDomoticz[12]; // Domoticz wil gas niet in decimalen?
-    String P1header;
     char P1version[8];
-    int P1prot; // 4 or 5 based on P1version 1-3:0.2.8
     char P1timestamp[30] = "\0";
     char equipmentId[100] = "\0";
     char equipmentId2[100] = "\0";
-    char electricityUsedTariff1[12];
-    char electricityUsedTariff2[12];
-    char electricityReturnedTariff1[12];
-    char electricityReturnedTariff2[12];
-    char tariffIndicatorElectricity[8];
-    char numberPowerFailuresAny[6];
-    char numberLongPowerFailuresAny[6];
+    FixedValue electricityUsedTariff1;
+    FixedValue electricityUsedTariff2;
+    FixedValue electricityReturnedTariff1;
+    FixedValue electricityReturnedTariff2;
+    uint32_t tariffIndicatorElectricity;
+    uint32_t numberPowerFailuresAny;
+    uint32_t numberLongPowerFailuresAny;
     String longPowerFailuresLog;
-    char numberVoltageSagsL1[7];
-    char numberVoltageSagsL2[7];
-    char numberVoltageSagsL3[7];
-    char numberVoltageSwellsL1[7];
-    char numberVoltageSwellsL2[7];
-    char numberVoltageSwellsL3[7];
+    uint32_t numberVoltageSagsL1;
+    uint32_t numberVoltageSagsL2;
+    uint32_t numberVoltageSagsL3;
+    uint32_t numberVoltageSwellsL1;
+    uint32_t numberVoltageSwellsL2;
+    uint32_t numberVoltageSwellsL3;
     String textMessage;
-    char instantaneousVoltageL1[7];
-    char instantaneousVoltageL2[7];
-    char instantaneousVoltageL3[7];
-    char instantaneousCurrentL1[9];
-    char instantaneousCurrentL2[9];
-    char instantaneousCurrentL3[9];
-    char activePowerL1P[10];
-    char activePowerL2P[10];
-    char activePowerL3P[10];
-    char activePowerL1NP[10];
-    char activePowerL2NP[10];
-    char activePowerL3NP[10];
-    char actualElectricityPowerDeli[14];
-    char actualElectricityPowerRet[14];
+    FixedValue instantaneousVoltageL1;
+    FixedValue instantaneousVoltageL2;
+    FixedValue instantaneousVoltageL3;
+    FixedValue instantaneousCurrentL1;
+    FixedValue instantaneousCurrentL2;
+    FixedValue instantaneousCurrentL3;
+    FixedValue activePowerL1P;
+    FixedValue activePowerL2P;
+    FixedValue activePowerL3P;
+    FixedValue activePowerL1NP;
+    FixedValue activePowerL2NP;
+    FixedValue activePowerL3NP;
+    FixedValue actualElectricityPowerDeli;
+    FixedValue actualElectricityPowerRet;
   } DataReaded = {};
 };
 #endif

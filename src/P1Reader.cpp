@@ -71,30 +71,12 @@ int P1Reader::FindCharInArray(char array[], char c, int len)
   return -1;
 }
 
-/*unsigned int P1Reader::CRC16(unsigned int crc, unsigned char *buf, int len)
-{
-  for (int pos = 0; pos < len; pos++)
-  {
-    crc ^= (unsigned int)buf[pos]; // XOR byte into least sig. byte of crc
-
-    for (int i = 8; i != 0; i--) // Loop over each bit
-    {
-      if ((crc & 0x0001) != 0) // If the LSB is set
-      {
-        crc >>= 1; // Shift right and XOR 0xA001
-        crc ^= 0xA001;
-      }
-      else // Else LSB is not set
-      {
-        crc >>= 1; // Just shift right
-      }
-    }
-  }
-  return crc;
-}*/
-
 String P1Reader::identifyMeter(String Name)
 {
+  if (Name.indexOf("FLU5\\253769484_A") != -1)
+  {
+    return "Belgian smart meter";
+  }
   if (Name.indexOf("ISK5\\2M550E-1011") != -1)
   {
     return "ISKRA AM550e-1011";
@@ -142,10 +124,10 @@ void P1Reader::decodeTelegram(int len)
         datagram += telegram[cnt];
       }
 
-      /*if (meterName == "")
+      if (meterName == "")
       {
-        meterName = identifyMeter(meternameSet);
-      }*/
+        meterName = identifyMeter(telegram);
+      }
 
       return;
     }
@@ -281,22 +263,14 @@ void P1Reader::OBISparser(int len)
   {
   case 0:
     break;
-  case 13028: // device type
+  case 9614: // device type
     readFirstParenthesisVal(i, len).toCharArray(DataReaded.P1version, sizeof(DataReaded.P1version));
-    if (DataReaded.P1version[0] == '4')
-    {
-      DataReaded.P1prot = 4;
-    }
-    else
-    {
-      DataReaded.P1prot = 5;
-    }
     break;
   case 100:
     readFirstParenthesisVal(i, len).toCharArray(DataReaded.P1timestamp, sizeof(DataReaded.P1timestamp));
     break;
   case 96140:
-    readFirstParenthesisVal(i, len).toCharArray(DataReaded.tariffIndicatorElectricity, sizeof(DataReaded.tariffIndicatorElectricity));
+   DataReaded.tariffIndicatorElectricity = readFirstParenthesisVal(i, len).toInt();
     break;
   case 9611:
     readFirstParenthesisVal(i, len).toCharArray(DataReaded.equipmentId, sizeof(DataReaded.equipmentId));
@@ -305,89 +279,89 @@ void P1Reader::OBISparser(int len)
     readFirstParenthesisVal(i, len).toCharArray(DataReaded.equipmentId2, sizeof(DataReaded.equipmentId2));
     break;
   case 9810:
-    MainSendDebug("[P1] Disruptions (code 9810)");
+    //Maximum demand – Active energy import of the last 13 months
     break;
   case 10170: // 1-0:1.7.0 – actualElectricityPowerDelivered
-    readUntilStar(i, len).toCharArray(DataReaded.actualElectricityPowerDeli, sizeof(DataReaded.actualElectricityPowerDeli));
+    DataReaded.actualElectricityPowerDeli = FixedValue(readUntilStar(i, len));
     break;
   case 10270: // 1-0:1.7.0 – actualElectricityPowerReturned
-    readUntilStar(i, len).toCharArray(DataReaded.actualElectricityPowerRet, sizeof(DataReaded.actualElectricityPowerRet));
+    DataReaded.actualElectricityPowerRet = FixedValue(readUntilStar(i, len));
     break;
   case 10181: // 1-0:1.8.1(000992.992*kWh) Elektra verbruik laag tarief
-    readUntilStar(i, len).toCharArray(DataReaded.electricityUsedTariff1, sizeof(DataReaded.electricityUsedTariff1));
+    DataReaded.electricityUsedTariff1 = FixedValue(readUntilStar(i, len));
     break;
   case 10182: // 1-0:1.8.2(000560.157*kWh) = Elektra verbruik hoog tarief
-    readUntilStar(i, len).toCharArray(DataReaded.electricityUsedTariff2, sizeof(DataReaded.electricityUsedTariff2));
+    DataReaded.electricityUsedTariff2 = FixedValue(readUntilStar(i, len));
     break;
   case 10281: // 1-0:2.8.1(000348.890*kWh) Elektra opbrengst laag tarief
-    readUntilStar(i, len).toCharArray(DataReaded.electricityReturnedTariff1, sizeof(DataReaded.electricityReturnedTariff1));
+    DataReaded.electricityReturnedTariff1 = FixedValue(readUntilStar(i, len));
     break;
   case 10282: // 1-0:2.8.2(000859.885*kWh) Elektra opbrengst hoog tarief
-    readUntilStar(i, len).toCharArray(DataReaded.electricityReturnedTariff2, sizeof(DataReaded.electricityReturnedTariff2));
+    DataReaded.electricityReturnedTariff2 = FixedValue(readUntilStar(i, len));
     break;
   case 103170: // 1-0:31.7.0(002*A) Instantane stroom Elektriciteit L1
-    readUntilStar(i, len).toCharArray(DataReaded.instantaneousCurrentL1, sizeof(DataReaded.instantaneousCurrentL1));
+    DataReaded.instantaneousCurrentL1 = FixedValue(readUntilStar(i, len));
     break;
   case 105170: // 1-0:51.7.0(002*A) Instantane stroom Elektriciteit L2
-    readUntilStar(i, len).toCharArray(DataReaded.instantaneousCurrentL2, sizeof(DataReaded.instantaneousCurrentL2));
+    DataReaded.instantaneousCurrentL2 = FixedValue(readUntilStar(i, len));
     break;
   case 107170: // 1-0:71.7.0(002*A) Instantane stroom Elektriciteit L3
-    readUntilStar(i, len).toCharArray(DataReaded.instantaneousCurrentL3, sizeof(DataReaded.instantaneousCurrentL3));
+    DataReaded.instantaneousCurrentL3 = FixedValue(readUntilStar(i, len));
     break;
   case 103270: // 1-0:32.7.0(232.0*V) Voltage L1
-    readUntilStar(i, len).toCharArray(DataReaded.instantaneousVoltageL1, sizeof(DataReaded.instantaneousVoltageL1));
-    break;
+    DataReaded.instantaneousVoltageL1 = FixedValue(readUntilStar(i, len));
+   break;
   case 105270: // 1-0:52.7.0(232.0*V) Voltage L2
-    readUntilStar(i, len).toCharArray(DataReaded.instantaneousVoltageL2, sizeof(DataReaded.instantaneousVoltageL2));
+    DataReaded.instantaneousVoltageL2 = FixedValue(readUntilStar(i, len));
     break;
   case 107270: // 1-0:72.7.0(232.0*V) Voltage L3
-    readUntilStar(i, len).toCharArray(DataReaded.instantaneousVoltageL3, sizeof(DataReaded.instantaneousVoltageL3));
+    DataReaded.instantaneousVoltageL3 = FixedValue(readUntilStar(i, len));
     break;
   case 102170: // 1-0:21.7.0(002*A) Instantane stroom Elektriciteit L1
-    readUntilStar(i, len).toCharArray(DataReaded.activePowerL1P, sizeof(DataReaded.activePowerL1P));
-    break;
+    DataReaded.activePowerL1P = FixedValue(readUntilStar(i, len));
+   break;
   case 104170: // 1-0:41.7.0(002*A) Instantane stroom Elektriciteit L2
-    readUntilStar(i, len).toCharArray(DataReaded.activePowerL2P, sizeof(DataReaded.activePowerL2P));
+    DataReaded.activePowerL2P = FixedValue(readUntilStar(i, len));
     break;
   case 106170: // 1-0:61.7.0(002*A) Instantane stroom Elektriciteit L3
-    readUntilStar(i, len).toCharArray(DataReaded.activePowerL3P, sizeof(DataReaded.activePowerL3P));
+    DataReaded.activePowerL3P = FixedValue(readUntilStar(i, len));
     break;
   case 102270: // 1-0:22.7.0(232.0*V) Voltage L1
-    readUntilStar(i, len).toCharArray(DataReaded.activePowerL1NP, sizeof(DataReaded.activePowerL1NP));
-    break;
+    DataReaded.activePowerL1NP = FixedValue(readUntilStar(i, len));
+   break;
   case 104270: // 1-0:42.7.0(232.0*V) Voltage L2
-    readUntilStar(i, len).toCharArray(DataReaded.activePowerL2NP, sizeof(DataReaded.activePowerL2NP));
+    DataReaded.activePowerL2NP = FixedValue(readUntilStar(i, len));
     break;
   case 106270: // 1-0:62.7.0(232.0*V) Voltage L3
-    readUntilStar(i, len).toCharArray(DataReaded.activePowerL3NP, sizeof(DataReaded.activePowerL3NP));
+    DataReaded.activePowerL3NP = FixedValue(readUntilStar(i, len));
     break;
   case 1032320: // Aantal korte spanningsdalingen Elektriciteit in fase 1
-    readFirstParenthesisVal(i, len).toCharArray(DataReaded.numberVoltageSagsL1, sizeof(DataReaded.numberVoltageSagsL1));
+    DataReaded.numberVoltageSagsL1 = readFirstParenthesisVal(i, len).toInt();
     break;
   case 1052320: // Aantal korte spanningsdalingen Elektriciteit in fase 2
-    readFirstParenthesisVal(i, len).toCharArray(DataReaded.numberVoltageSagsL2, sizeof(DataReaded.numberVoltageSagsL2));
+   DataReaded.numberVoltageSagsL2 = readFirstParenthesisVal(i, len).toInt();
     break;
   case 1072320: // Aantal korte spanningsdalingen Elektriciteit in fase 3
-    readFirstParenthesisVal(i, len).toCharArray(DataReaded.numberVoltageSagsL3, sizeof(DataReaded.numberVoltageSagsL3));
+    DataReaded.numberVoltageSagsL3 = readFirstParenthesisVal(i, len).toInt();
     break;
   case 1032360: // 1-0:32.36.0(00000) Aantal korte spanningsstijgingen Elektriciteit in fase 1
-    readFirstParenthesisVal(i, len).toCharArray(DataReaded.numberVoltageSwellsL1, sizeof(DataReaded.numberVoltageSwellsL1));
+    DataReaded.numberVoltageSwellsL1 = readFirstParenthesisVal(i, len).toInt();
     break;
   case 1052360: // 1-0:52.36.0(00000) Aantal korte spanningsstijgingen Elektriciteit in fase 2
-    readFirstParenthesisVal(i, len).toCharArray(DataReaded.numberVoltageSwellsL2, sizeof(DataReaded.numberVoltageSwellsL2));
+    DataReaded.numberVoltageSwellsL2 = readFirstParenthesisVal(i, len).toInt();
     break;
   case 1072360: // 1-0:72.36.0(00000) Aantal korte spanningsstijgingen Elektriciteit in fase 3
-    readFirstParenthesisVal(i, len).toCharArray(DataReaded.numberVoltageSwellsL3, sizeof(DataReaded.numberVoltageSwellsL3));
+    DataReaded.numberVoltageSwellsL3 = readFirstParenthesisVal(i, len).toInt();
     break;
   case 12421: // gas
     readBetweenDoubleParenthesis(i, len).toCharArray(DataReaded.gasReceived5min, sizeof(DataReaded.gasReceived5min));
     readBetweenDoubleParenthesis(i, len).toCharArray(DataReaded.gasDomoticz, sizeof(DataReaded.gasDomoticz));
     break;
   case 96721: // 0-0:96.7.21(00051)  Number of power failures in any phase
-    readFirstParenthesisVal(i, len).toCharArray(DataReaded.numberPowerFailuresAny, sizeof(DataReaded.numberPowerFailuresAny));
+    DataReaded.numberPowerFailuresAny = readFirstParenthesisVal(i, len).toInt();
     break;
   case 9679: // 0-0:96.7.9(00007) Number of long power failures in any phase
-    readFirstParenthesisVal(i, len).toCharArray(DataReaded.numberLongPowerFailuresAny, sizeof(DataReaded.numberLongPowerFailuresAny));
+    DataReaded.numberLongPowerFailuresAny = readFirstParenthesisVal(i, len).toInt();
     break;
   case 1099970: // 1-0:99.97.0(6) Power Failure Event Log (long power failures)
     DataReaded.longPowerFailuresLog = "";

@@ -136,9 +136,9 @@ void TelnetMgr::processCommand(int clientId, const String &command)
         telnetClients[clientId].println(P1Captor.datagram.length());
         telnetClients[clientId].println(P1Captor.datagram);
     }
-    else
+    else if( command != "")
     {
-        telnetClients[clientId].printf("Unknown command : %s", command);
+        telnetClients[clientId].printf("Unknown command : %s", command.c_str());
         telnetClients[clientId].println();
         commandeHelp(clientId);
     }

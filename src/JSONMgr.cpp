@@ -40,7 +40,7 @@ void JSONMgr::UpdateElectricity()
 {
   char sValue[300];
   MainSendDebugPrintf("New value for Energy : %s", P1Captor.DataReaded.actualElectricityPowerRet);
-  sprintf(sValue, "%s;%s;%s;%s;%s;%s", P1Captor.DataReaded.electricityUsedTariff1, P1Captor.DataReaded.electricityUsedTariff2, P1Captor.DataReaded.electricityReturnedTariff1, P1Captor.DataReaded.electricityReturnedTariff2, P1Captor.DataReaded.actualElectricityPowerDeli, P1Captor.DataReaded.actualElectricityPowerRet);
+  sprintf(sValue, "%f;%f;%f;%f;%f;%f", P1Captor.DataReaded.electricityUsedTariff1.val(), P1Captor.DataReaded.electricityUsedTariff2.val(), P1Captor.DataReaded.electricityReturnedTariff1.val(), P1Captor.DataReaded.electricityReturnedTariff2.val(), P1Captor.DataReaded.actualElectricityPowerDeli.val(), P1Captor.DataReaded.actualElectricityPowerRet.val());
   DomoticzJson(conf.domoticzEnergyIdx, 0, sValue);
 }
 

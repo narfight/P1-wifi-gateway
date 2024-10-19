@@ -151,7 +151,7 @@ void PrintConfigData()
   MainSendDebugPrintf("   # MQTT : mqtt://%s:***@%s:%u", config_data.mqttUser, config_data.mqttIP, config_data.mqttPort);
   MainSendDebugPrintf("   # MQTT Topic : %s", config_data.mqttTopic);
   MainSendDebugPrintf(" - interval : %u", config_data.interval);
-  MainSendDebugPrintf(" - P1 In watt : %s", (config_data.watt) ? "Y" : "N");
+  MainSendDebugPrintf(" - Invert high/low tarif: %s", (config_data.InverseHigh_1_2_Tarif) ? "Y" : "N");
   MainSendDebugPrintf(" - TELNET Actif : %s", (config_data.telnet) ? "Y" : "N");
   MainSendDebugPrintf("   # Send debug here : %s", (config_data.debugToTelnet) ? "Y" : "N");
   Yield_Delay(20);

@@ -270,7 +270,18 @@ void P1Reader::OBISparser(int len)
     readFirstParenthesisVal(i, len).toCharArray(DataReaded.P1timestamp, sizeof(DataReaded.P1timestamp));
     break;
   case 96140:
-   DataReaded.tariffIndicatorElectricity = readFirstParenthesisVal(i, len).toInt();
+    DataReaded.tariffIndicatorElectricity = readFirstParenthesisVal(i, len).toInt();
+    if (conf.InverseHigh_1_2_Tarif)
+    {
+      if (DataReaded.tariffIndicatorElectricity == 1)
+      {
+        DataReaded.tariffIndicatorElectricity = 2;
+      }
+      else
+      {
+        DataReaded.tariffIndicatorElectricity = 1;
+      }
+    }
     break;
   case 9611:
     readFirstParenthesisVal(i, len).toCharArray(DataReaded.equipmentId, sizeof(DataReaded.equipmentId));
@@ -288,16 +299,44 @@ void P1Reader::OBISparser(int len)
     DataReaded.actualElectricityPowerRet = FixedValue(readUntilStar(i, len));
     break;
   case 10181: // 1-0:1.8.1(000992.992*kWh) Elektra verbruik laag tarief
-    DataReaded.electricityUsedTariff1 = FixedValue(readUntilStar(i, len));
+    if (!conf.InverseHigh_1_2_Tarif)
+    {
+      DataReaded.electricityUsedTariff1 = FixedValue(readUntilStar(i, len));
+    }
+    else
+    {
+      DataReaded.electricityUsedTariff2 = FixedValue(readUntilStar(i, len));
+    }
     break;
   case 10182: // 1-0:1.8.2(000560.157*kWh) = Elektra verbruik hoog tarief
-    DataReaded.electricityUsedTariff2 = FixedValue(readUntilStar(i, len));
+    if (!conf.InverseHigh_1_2_Tarif)
+    {
+      DataReaded.electricityUsedTariff2 = FixedValue(readUntilStar(i, len));
+    }
+    else
+    {
+      DataReaded.electricityUsedTariff1 = FixedValue(readUntilStar(i, len));
+    }
     break;
   case 10281: // 1-0:2.8.1(000348.890*kWh) Elektra opbrengst laag tarief
-    DataReaded.electricityReturnedTariff1 = FixedValue(readUntilStar(i, len));
+    if (!conf.InverseHigh_1_2_Tarif)
+    {
+      DataReaded.electricityReturnedTariff1 = FixedValue(readUntilStar(i, len));
+    }
+    else
+    {
+      DataReaded.electricityReturnedTariff2 = FixedValue(readUntilStar(i, len));
+    }
     break;
   case 10282: // 1-0:2.8.2(000859.885*kWh) Elektra opbrengst hoog tarief
-    DataReaded.electricityReturnedTariff2 = FixedValue(readUntilStar(i, len));
+    if (!conf.InverseHigh_1_2_Tarif)
+    {
+      DataReaded.electricityReturnedTariff2 = FixedValue(readUntilStar(i, len));
+    }
+    else
+    {
+      DataReaded.electricityReturnedTariff1 = FixedValue(readUntilStar(i, len));
+    }
     break;
   case 103170: // 1-0:31.7.0(002*A) Instantane stroom Elektriciteit L1
     DataReaded.instantaneousCurrentL1 = FixedValue(readUntilStar(i, len));

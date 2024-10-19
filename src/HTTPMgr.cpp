@@ -418,8 +418,8 @@ void HTTPMgr::handleSetup()
   str += F("<label for=\"interval\">{-ConfMQTTIntr-} :</label><input type='number' min='10' id='interval' name='interval' value='");
   str += conf.interval;
   str += F("'><br />");
-  str += F("<label for=\"watt\">{-ConfMQTTKW-} :</label><input type='checkbox' name='watt' id='watt' ");
-  if (conf.watt)
+  str += F("<label for=\"InvTarif\">{-ConfPERMUTTARIF-} :</label><input type='checkbox' name='InvTarif' id='InvTarif' ");
+  if (conf.InverseHigh_1_2_Tarif)
   {
     str += F(" checked></p>");
   }
@@ -495,7 +495,7 @@ void HTTPMgr::handleSetupSave()
     server.arg("mqttTopic").toCharArray(NewConf.mqttTopic, sizeof(NewConf.mqttTopic));
 
     NewConf.interval = server.arg("interval").toInt();
-    NewConf.watt = (server.arg("watt") == "on");
+    NewConf.InverseHigh_1_2_Tarif = (server.arg("InvTarif") == "on");
     NewConf.telnet = (server.arg("telnet") == "on");
     NewConf.debugToTelnet = (server.arg("debugToTelnet") == "on");
     NewConf.debugToMqtt = (server.arg("debugToMqtt") == "on");
@@ -527,16 +527,7 @@ void HTTPMgr::handleSetupSave()
 
 void HTTPMgr::handleP1()
 {
-  String eenheid, eenheid2, eenheid3;
-  if (conf.watt)
-  {
-    eenheid = " kWh'></div>";
-  }
-  else
-  {
-    eenheid = " Wh'></div>";
-  }
-
+  String eenheid = " kWh'></div>";
   String str = F("<form ><fieldset><legend>{-DATAH1-}</legend>");
 
   str += "<p><div class='row'><b>{-DATAFullL-}</b><input type='text' class='c6' value='";

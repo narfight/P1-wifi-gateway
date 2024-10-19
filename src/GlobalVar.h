@@ -54,7 +54,7 @@ struct settings
   unsigned int interval;
   bool domo = true;
   bool mqtt = false;
-  bool watt = false;
+  bool InverseHigh_1_2_Tarif = false;
   bool telnet = false;
   bool debugToMqtt = false;
   bool debugToTelnet = false;

@@ -120,9 +120,6 @@ String P1Reader::identifyMeter(String Name)
 
 void P1Reader::decodeTelegram(int len)
 {
-  //unsigned int currentCRC = 0; // the CRC value of the datagram
-  //bool validCRCFound = false;
-  
   int startChar = FindCharInArray(telegram, '/', len);
   int endChar = FindCharInArray(telegram, '!', len);
 
@@ -131,8 +128,8 @@ void P1Reader::decodeTelegram(int len)
     if (startChar >= 0)
     { // start found. Reset CRC calculation
       MainSendDebug("[P1] Start of datagram found");
-
-      //currentCRC = CRC16(0x0000, (unsigned char *)telegram + startChar, len - startChar);
+      
+      digitalWrite(DR, LOW); // turn off Data Request
       // reset datagram
       datagram = "";
       datagramValid = false;

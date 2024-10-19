@@ -41,6 +41,10 @@ private:
   WifiMgr &WifiClient;
   P1Reader &DataReaderP1;
   long unsigned nextMQTTReport= millis();
+  /// @brief Send a message to a broker topic
+  /// @param topic
+  /// @param payload
+  void send_msg(const char *topic, const char *payload);
 
 public:
   bool MqttDelivered = false;
@@ -51,12 +55,8 @@ public:
   bool mqtt_connect();
   bool IsConnected();
 
-  /// @brief Send a message to a broker topic
-  /// @param topic
-  /// @param payload
-  void send_msg(const char *topic, const char *payload);
-  void send_metric(String name, float metric);
-  void mqtt_send_metric(String name, const char *metric);
+  void send_float(String name, float metric);
+  void send_char(String name, const char *metric);
   void MQTT_reporter();
   void SendDebug(String payload);
 };

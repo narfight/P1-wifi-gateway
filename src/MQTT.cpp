@@ -70,9 +70,9 @@ bool MQTTMgr::mqtt_connect()
         MainSendDebug("[MQTT] connected");
 
         // Once connected, publish an announcement...
-        mqtt_send_metric("State/Payload", "p1 gateway running");
-        mqtt_send_metric("State/Version", VERSION);
-        mqtt_send_metric("State/IP", WifiClient.CurrentIP().c_str());
+        send_char("State/Payload", "p1 gateway running");
+        send_char("State/Version", VERSION);
+        send_char("State/IP", WifiClient.CurrentIP().c_str());
       }
       else
       {
@@ -84,6 +84,22 @@ bool MQTTMgr::mqtt_connect()
   
   //Reply with the new status
   return mqtt_client.connected();
+}
+
+
+void MQTTMgr::send_float(String name, float metric) // added *long
+{
+  char value[20];
+  dtostrf(metric, 3, 3, value);
+
+  String mtopic = String(conf.mqttTopic) + "/" + name;
+  send_msg(mtopic.c_str(), value); // output
+}
+
+void MQTTMgr::send_char(String name, const char *metric)
+{
+  String mtopic = String(conf.mqttTopic) + "/" + name;
+  send_msg(mtopic.c_str(), metric);
 }
 
 /// @brief Send a message to a broker topic
@@ -102,21 +118,6 @@ void MQTTMgr::send_msg(const char *topic, const char *payload)
     }
 }
 
-void MQTTMgr::send_metric(String name, float metric) // added *long
-{
-  char value[20];
-  dtostrf(metric, 3, 3, value);
-
-  String mtopic = String(conf.mqttTopic) + "/" + name;
-  send_msg(mtopic.c_str(), value); // output
-}
-
-void MQTTMgr::mqtt_send_metric(String name, const char *metric)
-{
-  String mtopic = String(conf.mqttTopic) + "/" + name;
-  send_msg(mtopic.c_str(), metric);
-}
-
 void MQTTMgr::SendDebug(String payload)
 {
   if (conf.debugToMqtt && mqtt_client.connected())
@@ -124,7 +125,7 @@ void MQTTMgr::SendDebug(String payload)
     char charArray[payload.length() + 1]; // +1 pour le caractère nul
     payload.toCharArray(charArray, sizeof(charArray));
     charArray[sizeof(charArray) - 1] = '\0';
-    mqtt_send_metric("State/Logging", charArray);
+    send_char("State/Logging", charArray);
   }
 }
 
@@ -139,32 +140,32 @@ void MQTTMgr::MQTT_reporter()
 
   MainSendDebug("[MQTT] Send data");
 
-  mqtt_send_metric("equipmentID", DataReaderP1.DataReaded.equipmentId);
+  send_char("equipmentID", DataReaderP1.DataReaded.equipmentId);
 
-  mqtt_send_metric("reading/electricity_delivered_1", DataReaderP1.DataReaded.electricityUsedTariff1);
-  mqtt_send_metric("reading/electricity_delivered_2", DataReaderP1.DataReaded.electricityUsedTariff2);
-  mqtt_send_metric("reading/electricity_returned_1", DataReaderP1.DataReaded.electricityReturnedTariff1);
-  mqtt_send_metric("reading/electricity_returned_2", DataReaderP1.DataReaded.electricityReturnedTariff2);
-  mqtt_send_metric("reading/electricity_currently_delivered", DataReaderP1.DataReaded.actualElectricityPowerDeli);
-  mqtt_send_metric("reading/electricity_currently_returned", DataReaderP1.DataReaded.actualElectricityPowerRet);
+  send_char("reading/electricity_delivered_1", DataReaderP1.DataReaded.electricityUsedTariff1);
+  send_char("reading/electricity_delivered_2", DataReaderP1.DataReaded.electricityUsedTariff2);
+  send_char("reading/electricity_returned_1", DataReaderP1.DataReaded.electricityReturnedTariff1);
+  send_char("reading/electricity_returned_2", DataReaderP1.DataReaded.electricityReturnedTariff2);
+  send_char("reading/electricity_currently_delivered", DataReaderP1.DataReaded.actualElectricityPowerDeli);
+  send_char("reading/electricity_currently_returned", DataReaderP1.DataReaded.actualElectricityPowerRet);
 
-  mqtt_send_metric("reading/phase_currently_delivered_l1", DataReaderP1.DataReaded.activePowerL1P);
-  mqtt_send_metric("reading/phase_currently_delivered_l2", DataReaderP1.DataReaded.activePowerL2P);
-  mqtt_send_metric("reading/phase_currently_delivered_l3", DataReaderP1.DataReaded.activePowerL3P);
-  mqtt_send_metric("reading/phase_currently_returned_l1", DataReaderP1.DataReaded.activePowerL1NP);
-  mqtt_send_metric("reading/phase_currently_returned_l2", DataReaderP1.DataReaded.activePowerL2NP);
-  mqtt_send_metric("reading/phase_currently_returned_l3", DataReaderP1.DataReaded.activePowerL3NP);
-  mqtt_send_metric("reading/phase_voltage_l1", DataReaderP1.DataReaded.instantaneousVoltageL1);
-  mqtt_send_metric("reading/phase_voltage_l2", DataReaderP1.DataReaded.instantaneousVoltageL2);
-  mqtt_send_metric("reading/phase_voltage_l3", DataReaderP1.DataReaded.instantaneousVoltageL3);
+  send_char("reading/phase_currently_delivered_l1", DataReaderP1.DataReaded.activePowerL1P);
+  send_char("reading/phase_currently_delivered_l2", DataReaderP1.DataReaded.activePowerL2P);
+  send_char("reading/phase_currently_delivered_l3", DataReaderP1.DataReaded.activePowerL3P);
+  send_char("reading/phase_currently_returned_l1", DataReaderP1.DataReaded.activePowerL1NP);
+  send_char("reading/phase_currently_returned_l2", DataReaderP1.DataReaded.activePowerL2NP);
+  send_char("reading/phase_currently_returned_l3", DataReaderP1.DataReaded.activePowerL3NP);
+  send_char("reading/phase_voltage_l1", DataReaderP1.DataReaded.instantaneousVoltageL1);
+  send_char("reading/phase_voltage_l2", DataReaderP1.DataReaded.instantaneousVoltageL2);
+  send_char("reading/phase_voltage_l3", DataReaderP1.DataReaded.instantaneousVoltageL3);
 
-  mqtt_send_metric("consumption/gas/delivered", DataReaderP1.DataReaded.gasReceived5min);
+  send_char("consumption/gas/delivered", DataReaderP1.DataReaded.gasReceived5min);
 
-  send_metric("meter-stats/actual_tarif_group", DataReaderP1.DataReaded.tariffIndicatorElectricity[3]);
-  mqtt_send_metric("meter-stats/power_failure_count", DataReaderP1.DataReaded.numberLongPowerFailuresAny);
-  mqtt_send_metric("meter-stats/long_power_failure_count", DataReaderP1.DataReaded.numberLongPowerFailuresAny);
-  mqtt_send_metric("meter-stats/short_power_drops", DataReaderP1.DataReaded.numberVoltageSagsL1);
-  mqtt_send_metric("meter-stats/short_power_peaks", DataReaderP1.DataReaded.numberVoltageSwellsL1);
+  send_float("meter-stats/actual_tarif_group", DataReaderP1.DataReaded.tariffIndicatorElectricity[3]);
+  send_char("meter-stats/power_failure_count", DataReaderP1.DataReaded.numberLongPowerFailuresAny);
+  send_char("meter-stats/long_power_failure_count", DataReaderP1.DataReaded.numberLongPowerFailuresAny);
+  send_char("meter-stats/short_power_drops", DataReaderP1.DataReaded.numberVoltageSagsL1);
+  send_char("meter-stats/short_power_peaks", DataReaderP1.DataReaded.numberVoltageSwellsL1);
 
   MqttDelivered = true;
   LastReportinMillis = millis();

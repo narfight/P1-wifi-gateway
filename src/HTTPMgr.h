@@ -29,6 +29,7 @@
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <EEPROM.h>
+#include <ArduinoJson.h>
 #include "GlobalVar.h"
 #include "Language.h"
 #include "TelnetMgr.h"
@@ -64,6 +65,7 @@ private:
   void handleUploadFlash();
   void handleFavicon();
   void handleStyleCSS();
+  void handleJSON();
   
   void ReplyOTAOK();
   void ReplyOTANOK(const String Error, u_int ref);

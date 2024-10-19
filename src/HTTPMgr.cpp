@@ -42,6 +42,7 @@ void HTTPMgr::start_webservices()
   server.on("/P1", std::bind(&HTTPMgr::handleP1, this));
   server.on("/RAW", std::bind(&HTTPMgr::handleRAW, this));
   server.on("/Help", std::bind(&HTTPMgr::handleHelp, this));
+  server.on("/data.json", std::bind(&HTTPMgr::handleJSON, this));
   server.on("/update", HTTP_GET, std::bind(&HTTPMgr::handleUploadForm, this));
   server.on("/update", HTTP_POST, [this]()
   {
@@ -599,6 +600,31 @@ void HTTPMgr::handleHelp()
   str += F("<p>{-HLPTXT6-}</p>");
   str += F("<p>{-HLPTXT7-}</p>");
   TradAndSend("text/html", str, false);
+}
+
+void HTTPMgr::handleJSON()
+{
+  String str;
+  JsonDocument doc;
+
+  doc["LastSample"] = P1Captor.LastSample;
+  doc["NextUpdateIn"] = P1Captor.GetnextUpdateTime()-millis();
+  doc["DataReaded"]["electricityUsedTariff1"] = P1Captor.DataReaded.electricityUsedTariff1.val();
+  doc["DataReaded"]["electricityUsedTariff2"] = P1Captor.DataReaded.electricityUsedTariff2.val();
+  doc["DataReaded"]["electricityReturnedTariff2"] = P1Captor.DataReaded.electricityReturnedTariff1.val();
+  doc["DataReaded"]["electricityReturnedTariff2"] = P1Captor.DataReaded.electricityReturnedTariff2.val();
+  doc["DataReaded"]["actualElectricityPowerDeli"] = P1Captor.DataReaded.actualElectricityPowerDeli.val();
+  doc["DataReaded"]["actualElectricityPowerRet"] = P1Captor.DataReaded.actualElectricityPowerRet.val();
+  doc["DataReaded"]["instantaneousVoltage"]["L1"] = P1Captor.DataReaded.instantaneousVoltageL1.val();
+  doc["DataReaded"]["instantaneousVoltage"]["L2"] = P1Captor.DataReaded.instantaneousVoltageL2.val();
+  doc["DataReaded"]["instantaneousVoltage"]["L3"] = P1Captor.DataReaded.instantaneousVoltageL3.val();
+  doc["DataReaded"]["instantaneousCurrent"]["L1"] = P1Captor.DataReaded.instantaneousCurrentL1.val();
+  doc["DataReaded"]["instantaneousCurrent"]["L2"] = P1Captor.DataReaded.instantaneousCurrentL2.val();
+  doc["DataReaded"]["instantaneousCurrent"]["L3"] = P1Captor.DataReaded.instantaneousCurrentL3.val();
+  doc["DataReaded"]["gasReceived5min"] = P1Captor.DataReaded.gasReceived5min;
+
+  serializeJson(doc, str);
+  server.send(200, "application/json", str);
 }
 
 /// @brief Check and ask login to login

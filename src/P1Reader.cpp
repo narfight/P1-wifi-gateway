@@ -459,14 +459,7 @@ void P1Reader::readTelegram()
         break;
       case READING:
         break;
-      //case CHECKSUM:
-       // break;
       case DONE:
-        RTS_off();
-        break;
-      case FAILURE:
-        // if there is no checksum, (state=Failure && dataEnd)
-        MainSendDebug("[P1] kicked out of decode loop (invalid CRC or no CRC!)");
         RTS_off();
         break;
       case FAULT:

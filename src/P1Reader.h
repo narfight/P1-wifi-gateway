@@ -27,9 +27,8 @@
 #define DISABLED 0
 #define WAITING 1
 #define READING 2
-#define DONE 4
-#define FAILURE 5
-#define FAULT 6
+#define DONE 5
+#define FAULT 4
 
 #define MAXLINELENGTH 1037 // 0-0:96.13.0 has a maximum lenght of 1024 chars + 11 of its identifier + end line (2char)
 

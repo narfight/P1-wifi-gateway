@@ -152,25 +152,22 @@ void HTTPMgr::handleStyleCSS()
   MainSendDebug("[HTTP] Request style.css");
   ActifCache();
 
-  String str = F("body {text-align: center; font-family: verdana, sans-serif; background: #ffffff;}");
+  String str = F("body {font-family: Verdana, sans-serif;background-color: #f9f9f9;margin: 0;padding: 20px;text-align: center;}");
+  str += F(".container {max-width: 600px;margin: 0 auto;background: #ffffff;border-radius: 8px;box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);padding: 20px;}");
   str += F("h2 {text-align:center;color:#000000;}");
-  str += F("div, fieldset, input {padding: 5px; font-size: 1em}");
   str += F("fieldset {border: 1px solid #ddd;border-radius: 8px;padding: 10px;margin-bottom: 20px;}");
+  str += F("fieldset input {width: 30%;padding: 5px;border: 1px solid #ddd;border-radius: 4px;font-size: 1em;box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1)}");
   str += F("legend {font-weight: bold;padding: 0 10px;font-size: 1.2em}");
-  str += F("label {display: inline-block;width:50%;text-align: right;}");
+  str += F("label {display: inline-block;text-align: right;width: 60%;text-align: right;margin-right: 10px;margin-bottom: 12px;font-weight: normal}");
   str += F(".help, .footer {text-align:right;font-size:11px;color:#aaa}");
   str += F("p {margin: 0.5em 0;}");
-  str += F("input {width: 120px;box-sizing: border-box; -webkit-box-sizing: border-box; -moz-box-sizing: border-box; background: #ffffff; color: #000000;}");
   str += F("textarea {resize: vertical; width: 98%; height: 318px; padding: 5px; overflow: auto; background: #ffffff; color: #000000;}");
   str += F("button {border: 0; border-radius: 0.3rem; background: #97C1A9; color: #ffffff; line-height: 2.4rem; font-size: 1.2rem; width: 100%; -webkit-transition-duration: 0.4s; transition-duration: 0.4s; cursor: pointer;margin-top: 5px;}");
   str += F("button:hover {background: #0e70a4;}");
   str += F(".bhome {background: #55CBCD;}");
   str += F(".bhome:hover {background: #A2E1DB;}");
   str += F("a {color: #1fa3ec;text-decoration: none;}");
-  str += F(".column {float: left;width: 48%;}");
-  str += F(".column3 {float: left; width: 31%;}");
   str += F(".row:after {content: \"\";display: table; clear: both;}");
-  str += F("input {width: 30%;padding: 5px;border: 1px solid #ddd;border-radius: 4px;font-size: 1em;box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);}");
   str += F("svg {display: block;margin: auto;}");
   
   // no translate for CSS
@@ -641,7 +638,7 @@ void HTTPMgr::TradAndSend(const char *content_type, String content, String heade
   str += F("<title>P1 wifi-gateway</title>");
   str += header;
   str += F("<link rel='stylesheet' type='text/css' href='style.css'></head>");
-  str += F("<body><div style='text-align:left;display:inline-block;color:#000000;width:600px;'><h2>P1 wifi-gateway</h2>");
+  str += F("<body><div class=\"container\"><h2>P1 wifi-gateway</h2>");
   str += F("<p class=\"help\"><a href='/Help' target='_blank'>{-HLPH1-}</a>");
 
   // CONTENT

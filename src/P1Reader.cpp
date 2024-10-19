@@ -404,6 +404,14 @@ void P1Reader::OBISparser(int len)
       i++;
     }
     break;
+    case 10140:
+    case 10160:
+    case 96310:
+    case 1700:
+    case 103140:
+    case 96130:
+    //ignore line :-)
+    break;
   default:
     MainSendDebugPrintf("[P1] Unrecognized line : %s", inString);
     break;

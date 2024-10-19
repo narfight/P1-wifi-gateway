@@ -268,14 +268,6 @@ void loop()
 
   if (DataReaderP1->datagramValid && (DataReaderP1->state == DONE) && WifiClient->IsConnected())
   {
-    if (MQTTClient != nullptr)
-    {
-      if (MQTTClient->MqttDelivered)
-      {
-        MQTTClient->MqttDelivered = false; // reset
-      }
-    }
-
     if (config_data.domo)
     {
       JSONClient->DoMe();

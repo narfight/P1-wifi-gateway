@@ -47,7 +47,6 @@ private:
   void send_msg(const char *topic, const char *payload);
 
 public:
-  bool MqttDelivered = false;
   long unsigned nextMQTTreconnectAttempt = millis();
 
   explicit MQTTMgr(settings &currentConf, WifiMgr &Link, P1Reader &currentP1);

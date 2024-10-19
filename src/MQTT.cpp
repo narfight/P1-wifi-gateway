@@ -134,7 +134,6 @@ void MQTTMgr::MQTT_reporter()
   if (!DataReaderP1.datagramValid)
   {
     //Pas de donnée valide a envoyer
-    MqttDelivered = false;
     return;
   }
 
@@ -167,7 +166,6 @@ void MQTTMgr::MQTT_reporter()
   send_char("meter-stats/short_power_drops", DataReaderP1.DataReaded.numberVoltageSagsL1);
   send_char("meter-stats/short_power_peaks", DataReaderP1.DataReaded.numberVoltageSwellsL1);
 
-  MqttDelivered = true;
   LastReportinMillis = millis();
 
   return;

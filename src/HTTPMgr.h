@@ -52,7 +52,7 @@ private:
 
   Language Trad;
   bool ChekifAsAdmin();
-  void TradAndSend(const char *content_type, String content, bool refresh);
+  void TradAndSend(const char *content_type, String content, String header, bool refresh);
   String nettoyerInputText(String inputText);
   String GetAnimWait();
   void handleRoot();
@@ -66,6 +66,9 @@ private:
   void handleFavicon();
   void handleStyleCSS();
   void handleJSON();
+  void handleDataJs();
+
+  void ActifCache();
   
   void ReplyOTAOK();
   void ReplyOTANOK(const String Error, u_int ref);

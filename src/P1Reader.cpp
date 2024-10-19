@@ -69,9 +69,9 @@ int P1Reader::FindCharInArray(char array[], char c, int len)
 
 String P1Reader::identifyMeter(String Name)
 {
-  if (Name.indexOf("FLU5\\253769484_A") != -1)
+  if (Name.indexOf("FLU5\\") != -1)
   {
-    return "Belgian smart meter";
+    return "Siconia"; //Belgium
   }
   if (Name.indexOf("ISK5\\2M550E-1011") != -1)
   {

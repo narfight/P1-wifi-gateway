@@ -43,6 +43,7 @@ void HTTPMgr::start_webservices()
   server.on("/RAW", std::bind(&HTTPMgr::handleRAW, this));
   server.on("/Help", std::bind(&HTTPMgr::handleHelp, this));
   server.on("/data.json", std::bind(&HTTPMgr::handleJSON, this));
+  server.on("/data.js", std::bind(&HTTPMgr::handleDataJs, this));
   server.on("/update", HTTP_GET, std::bind(&HTTPMgr::handleUploadForm, this));
   server.on("/update", HTTP_POST, [this]()
   {
@@ -65,6 +66,20 @@ void HTTPMgr::start_webservices()
 
   server.begin();
   MDNS.addService("http", "tcp", WWW_PORT_HTTP);
+}
+
+void HTTPMgr::ActifCache()
+{
+  //Gestion du cache sur base de la version du firmware
+  String etag = "W/\"" + String(BUILD_DATE) + "\"";
+  if (server.header("If-None-Match") == etag)
+  {
+    server.send(304);
+    return;
+  }
+  // Cache
+  server.sendHeader("ETag", etag);
+  server.sendHeader("Cache-Control", "max-age=86400");
 }
 
 void HTTPMgr::DoMe()
@@ -93,7 +108,7 @@ void HTTPMgr::handleRoot()
   str += F("<form action='/update' method='GET'><button type='submit'>{-MENUOTA-}</button></form>");
   str += F("<form action='/reset' id=\"frmRst\" method='GET'><button type='button' onclick='ConfRST()'>{-MENURESET-}</button></form>");
   str += F("<script> function ConfRST() { if (confirm(\"{-ASKCONFIRM-}\")) { document.getElementById(\"frmRst\").submit();}}</script></fieldset>");
-  TradAndSend("text/html", str, false);
+  TradAndSend("text/html", str, "", false);
 }
 
 void HTTPMgr::ReplyOTAOK()
@@ -102,7 +117,7 @@ void HTTPMgr::ReplyOTAOK()
   String str = F("<fieldset><p>{-OTASUCCESS1-}</p><p>{-OTASUCCESS2-}</p><p>{-OTASUCCESS3-}</p><p>{-OTASUCCESS4-}</p><p>{-OTASUCCESS5-}</p>");
   str += GetAnimWait();
   str += F("</fieldset>");
-  TradAndSend("text/html", str, true);
+  TradAndSend("text/html", str, "", true);
   Yield_Delay(1000);
   ESP.restart();
 }
@@ -118,28 +133,30 @@ void HTTPMgr::ReplyOTANOK(String Error, u_int ref)
   String str = F("<fieldset><p>{-OTANOTSUCCESS-} : <strong>") + Error + " (" + String(ref) + F(")</strong></p><p>{-OTASUCCESS2-}</p><p>{-OTASUCCESS3-}</p><p>{-OTASUCCESS4-}</p><p>{-OTASUCCESS5-}</p>");
   str += GetAnimWait();
   str += F("</fieldset>");
-  TradAndSend("text/html", str, true);
+  TradAndSend("text/html", str, "", true);
   Yield_Delay(1000);
   ESP.restart();
+}
+
+void HTTPMgr::handleDataJs()
+{
+  MainSendDebug("[HTTP] Request data.js");
+  String str = F("async function updateValues(){try{let e=await fetch(\"data.json\"),a=await e.json();document.getElementById(\"electricityUsedTariff1\").value=a.DataReaded.electricityUsedTariff1+\" kWh\",document.getElementById(\"electricityUsedTariff2\").value=a.DataReaded.electricityUsedTariff2+\" kWh\",document.getElementById(\"electricityReturnedTariff2\").value=a.DataReaded.electricityReturnedTariff2+\" kWh\",document.getElementById(\"actualElectricityPowerDeli\").value=a.DataReaded.actualElectricityPowerDeli+\" kWh\",document.getElementById(\"actualElectricityPowerRet\").value=a.DataReaded.actualElectricityPowerRet+\" kWh\",document.getElementById(\"instantaneousVoltageL1\").value=a.DataReaded.instantaneousVoltage.L1+\" V\",document.getElementById(\"instantaneousVoltageL2\").value=a.DataReaded.instantaneousVoltage.L2+\" V\",document.getElementById(\"instantaneousVoltageL3\").value=a.DataReaded.instantaneousVoltage.L3+\" V\",document.getElementById(\"instantaneousCurrentL1\").value=a.DataReaded.instantaneousCurrent.L1+\" A\",document.getElementById(\"instantaneousCurrentL2\").value=a.DataReaded.instantaneousCurrent.L2+\" A\",document.getElementById(\"instantaneousCurrentL3\").value=a.DataReaded.instantaneousCurrent.L3+\" A\",document.getElementById(\"gasReceived5min\").value=a.DataReaded.gasReceived5min+\" m3\"}catch(t){console.error(\"Error on update :\",t)}}setInterval(updateValues,1e4),window.onload=updateValues;");
+  ActifCache();
+  // no translate for CSS
+  server.send(200, "application/javascript", str);
 }
 
 void HTTPMgr::handleStyleCSS()
 {
   MainSendDebug("[HTTP] Request style.css");
-
-  //Gestion du cache sur base de la version du firmware
-  String etag = "W/\"" + String(BUILD_DATE) + "\"";
-  if (server.header("If-None-Match") == etag)
-  {
-    server.send(304);
-    return;
-  }
+  ActifCache();
 
   String str = F("body {text-align: center; font-family: verdana, sans-serif; background: #ffffff;}");
   str += F("h2 {text-align:center;color:#000000;}");
   str += F("div, fieldset, input {padding: 5px; font-size: 1em}");
-  str += F("fieldset {background: #ECEAE4;margin-bottom: 20px}");
-  str += F("legend {font-weight: bold;}");
+  str += F("fieldset {border: 1px solid #ddd;border-radius: 8px;padding: 10px;margin-bottom: 20px;}");
+  str += F("legend {font-weight: bold;padding: 0 10px;font-size: 1.2em}");
   str += F("label {display: inline-block;width:50%;text-align: right;}");
   str += F(".help, .footer {text-align:right;font-size:11px;color:#aaa}");
   str += F("p {margin: 0.5em 0;}");
@@ -153,13 +170,8 @@ void HTTPMgr::handleStyleCSS()
   str += F(".column {float: left;width: 48%;}");
   str += F(".column3 {float: left; width: 31%;}");
   str += F(".row:after {content: \"\";display: table; clear: both;}");
-  str += F("input.c6 {text-align:right}");
-  str += F("input.c7 {text-align:right; color:#97C1A9}");
+  str += F("input {width: 30%;padding: 5px;border: 1px solid #ddd;border-radius: 4px;font-size: 1em;box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);}");
   str += F("svg {display: block;margin: auto;}");
-
-  // Cache
-  server.sendHeader("ETag", etag);
-  server.sendHeader("Cache-Control", "max-age=86400");
   
   // no translate for CSS
   server.send(200, "text/css", str);
@@ -202,7 +214,7 @@ void HTTPMgr::handleUploadForm()
   str += F("<p><label for=\"firmware\">{-OTAFIRMWARE-} :</label><input type='file' accept='.bin,.bin.gz' id='firmware' name='firmware'></p>");
   str += F("</fieldset><button type='submit'>{-OTABTUPDATE-}</button></form>");
   str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
-  TradAndSend("text/html", str, false);
+  TradAndSend("text/html", str, "", false);
 }
 
 void HTTPMgr::handleUploadFlash()
@@ -289,7 +301,7 @@ void HTTPMgr::handleFactoryReset()
   str += F("<p>{-RF_RESTTXT-}</p>");
   str += GetAnimWait();
   str += F("</fieldset>");
-  TradAndSend("text/html", str, true);
+  TradAndSend("text/html", str, "", true);
 
   MainSendDebug("Reset factory and reboot...");
 
@@ -345,7 +357,7 @@ void HTTPMgr::handlePassword()
   str += F("<span id=\"passwordError\" class=\"error\"></span>");
   str += F("</fieldset><button type='submit'>{-ConfSave-}</button></form>");
   str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
-  TradAndSend("text/html", str, false);
+  TradAndSend("text/html", str, "", false);
 }
 
 void HTTPMgr::handleSetup()
@@ -460,7 +472,7 @@ void HTTPMgr::handleSetup()
   str += F("<span id=\"passwordError\" class=\"error\"></span>");
   str += F("<button type='submit'>{-ACTIONSAVE-}</button></form>");
   str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
-  TradAndSend("text/html", str, false);
+  TradAndSend("text/html", str, "", false);
 }
 
 void HTTPMgr::handleSetupSave()
@@ -514,7 +526,7 @@ void HTTPMgr::handleSetupSave()
     str += GetAnimWait();
     str += F("</fieldset>");
 
-    TradAndSend("text/html", str, true);
+    TradAndSend("text/html", str, "", true);
 
     EEPROM.begin(sizeof(struct settings));
     EEPROM.put(0, NewConf);
@@ -528,65 +540,23 @@ void HTTPMgr::handleSetupSave()
 
 void HTTPMgr::handleP1()
 {
-  String eenheid = " kWh'></div>";
   String str = F("<form ><fieldset><legend>{-DATAH1-}</legend>");
-
-  str += "<p><div class='row'><b>{-DATAFullL-}</b><input type='text' class='c6' value='";
-  str += String(P1Captor.DataReaded.electricityUsedTariff1);
-  str += eenheid;
-  str += "</p>";
-
-  str += "<p><div class='row'><b>{-DATAFullH-}</b><input type='text' class='c6' value='";
-  str += String(P1Captor.DataReaded.electricityUsedTariff2);
-  str += eenheid;
-  str += "</p>";
-
-  str += "<p><div class='row'><b>{-DATAFullProdL-}</b><input type='text' class='c6' value='";
-  str += String(P1Captor.DataReaded.electricityReturnedTariff1);
-  str += eenheid;
-  str += "</p>";
-
-  str += "<p><div class='row'><b>{-DATAFullProdH-}</b><input type='text' class='c6' value='";
-  str += String(P1Captor.DataReaded.electricityReturnedTariff2);
-  str += eenheid;
-  str += "</p>";
-
-  str += "<p><div class='row'><b>{-DATACurAmp-}</b><input type='text' class='c6' value='";
-  str += String(P1Captor.DataReaded.actualElectricityPowerDeli);
-  str += eenheid;
-  str += "</p>";
-
-  str += "<p><div class='row'><b>{-DATACurProdAmp-}</b><input type='text' class='c6' value='";
-  str += String(P1Captor.DataReaded.actualElectricityPowerRet);
-  str += eenheid;
-  str += "</p>";
-
-  str += "<p><div class='row'><div class='column3'><b>{-DATAUL1-}</b><input type='text' class='c6' value='";
-  str += String(P1Captor.DataReaded.instantaneousVoltageL1);
-  str += " V'></div>";
-  str += "<div class='column3' style='text-align:right'><b>{-DATAUL2-}</b><input type='text' class='c7' value='";
-  str += String(P1Captor.DataReaded.instantaneousVoltageL2);
-  str += " V'></div>";
-  str += "<div class='column3' style='text-align:right'><b>{-DATAUL3-}</b><input type='text' class='c7' value='";
-  str += String(P1Captor.DataReaded.instantaneousVoltageL3);
-  str += " V'></div></div></p>";
-
-  str += "<p><div class='row'><div class='column3'><b>{-DATAAL1-}</b><input type='text' class='c6' value='";
-  str += String(P1Captor.DataReaded.instantaneousCurrentL1);
-  str += " A'></div>";
-  str += "<div class='column3' style='text-align:right'><b>{-DATAAL2-}</b><input type='text' class='c7' value='";
-  str += String(P1Captor.DataReaded.instantaneousCurrentL2);
-  str += " A'></div>";
-  str += "<div class='column3' style='text-align:right'><b>{-DATAAL3-}</b><input type='text' class='c7' value='";
-  str += String(P1Captor.DataReaded.instantaneousCurrentL3);
-  str += " A'></div></div></p>";
-
-  str += "<p><div class='row'><b>{-DATAGFull-}</b><input type='text' class='c6' value='";
-  str += P1Captor.DataReaded.gasReceived5min;
-  str += F(" m3'></div></p>");
+  str += F("<div class=\"row\"><label for='electricityUsedTariff1'>{-DATAFullL-}</label><input type=\"text\" class=\"c6\" id=\"electricityUsedTariff1\"/></div>");
+  str += F("<div class=\"row\"><label for='electricityUsedTariff2'>{-DATAFullH-}</label><input type=\"text\" class=\"c6\" id=\"electricityUsedTariff2\"/></div>");
+  str += F("<div class=\"row\"><label for='electricityReturnedTariff1'>{-DATAFullProdL-}</label><input type=\"text\" class=\"c6\" id=\"electricityReturnedTariff1\"/></div>");
+  str += F("<div class=\"row\"><label for='electricityReturnedTariff2'>{-DATAFullProdH-}</label><input type=\"text\" class=\"c6\" id=\"electricityReturnedTariff2\"/></div>");
+  str += F("<div class=\"row\"><label for='actualElectricityPowerDeli'>{-DATACurAmp-}</label><input type=\"text\" class=\"c6\" id=\"actualElectricityPowerDeli\"/></div>");
+  str += F("<div class=\"row\"><label for='actualElectricityPowerRet'>{-DATACurProdAmp-}</label><input type=\"text\" class=\"c6\" id=\"actualElectricityPowerRet\"/></div>");
+  str += F("<div class=\"row\"><label for='instantaneousVoltageL1'>{-DATAUL1-}</label><input type=\"text\" class=\"c6\" id=\"instantaneousVoltageL1\"/></div>");
+  str += F("<div class=\"row\"><label for='instantaneousVoltageL2'>{-DATAUL2-}</label><input type=\"text\" class=\"c6\" id=\"instantaneousVoltageL2\"/></div>");
+  str += F("<div class=\"row\"><label for='instantaneousVoltageL3'>{-DATAUL3-}</label><input type=\"text\" class=\"c6\" id=\"instantaneousVoltageL3\"/></div>");
+  str += F("<div class=\"row\"><label for='instantaneousCurrentL1'>{-DATAAL1-}</label><input type=\"text\" class=\"c6\" id=\"instantaneousCurrentL1\"/></div>");
+  str += F("<div class=\"row\"><label for='instantaneousCurrentL2'>{-DATAAL2-}</label><input type=\"text\" class=\"c6\" id=\"instantaneousCurrentL2\"/></div>");
+  str += F("<div class=\"row\"><label for='instantaneousCurrentL3'>{-DATAAL3-}</label><input type=\"text\" class=\"c6\" id=\"instantaneousCurrentL3\"/></div>");
+  str += F("<div class=\"row\"><label for='gasReceived5min'>{-DATAGFull-}</label><input type=\"text\" class=\"c6\" id=\"gasReceived5min\"/></div>");
   str += F("</fieldset></form>");
   str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
-  TradAndSend("text/html", str, false);
+  TradAndSend("text/html", str, "<script type=\"text/javascript\" src=\"data.js\"></script>", false);
 }
 
 void HTTPMgr::handleHelp()
@@ -599,7 +569,7 @@ void HTTPMgr::handleHelp()
   str += F("<p>{-HLPTXT5-}</p>");
   str += F("<p>{-HLPTXT6-}</p>");
   str += F("<p>{-HLPTXT7-}</p>");
-  TradAndSend("text/html", str, false);
+  TradAndSend("text/html", str, "", false);
 }
 
 void HTTPMgr::handleJSON()
@@ -607,11 +577,11 @@ void HTTPMgr::handleJSON()
   String str;
   JsonDocument doc;
 
-  doc["LastSample"] = P1Captor.LastSample;
+  doc["LastSample"] = P1Captor.DataReaded.P1timestamp;
   doc["NextUpdateIn"] = P1Captor.GetnextUpdateTime()-millis();
   doc["DataReaded"]["electricityUsedTariff1"] = P1Captor.DataReaded.electricityUsedTariff1.val();
   doc["DataReaded"]["electricityUsedTariff2"] = P1Captor.DataReaded.electricityUsedTariff2.val();
-  doc["DataReaded"]["electricityReturnedTariff2"] = P1Captor.DataReaded.electricityReturnedTariff1.val();
+  doc["DataReaded"]["electricityReturnedTariff1"] = P1Captor.DataReaded.electricityReturnedTariff1.val();
   doc["DataReaded"]["electricityReturnedTariff2"] = P1Captor.DataReaded.electricityReturnedTariff2.val();
   doc["DataReaded"]["actualElectricityPowerDeli"] = P1Captor.DataReaded.actualElectricityPowerDeli.val();
   doc["DataReaded"]["actualElectricityPowerRet"] = P1Captor.DataReaded.actualElectricityPowerRet.val();
@@ -624,6 +594,10 @@ void HTTPMgr::handleJSON()
   doc["DataReaded"]["gasReceived5min"] = P1Captor.DataReaded.gasReceived5min;
 
   serializeJson(doc, str);
+  // Définir les en-têtes HTTP pour désactiver le cache
+  server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  server.sendHeader("Pragma", "no-cache");
+  server.sendHeader("Expires", "-1");
   server.send(200, "application/json", str);
 }
 
@@ -653,10 +627,10 @@ String HTTPMgr::GetAnimWait()
   return F("<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'><circle cx='50' cy='50' r='40' stroke='#ccc' stroke-width='4' fill='none' /><circle cx='50' cy='10' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='1s' repeatCount='indefinite' /></circle><circle cx='90' cy='50' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='2s' repeatCount='indefinite' /></circle><circle cx='50' cy='90' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='3s' repeatCount='indefinite' /></circle><circle cx='10' cy='50' r='6' fill='#007bff'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='4s' repeatCount='indefinite' /></circle></svg>");
 }
 
-void HTTPMgr::TradAndSend(const char *content_type, String content, bool refresh)
+void HTTPMgr::TradAndSend(const char *content_type, String content, String header, bool refresh)
 {
   // HEADER
-  String str = F("<!DOCTYPE html><link rel=\"icon\" href=\"favicon.svg\"><html lang='{-HEADERLG-}'><head>");
+  String str = F("<!DOCTYPE html><html lang='{-HEADERLG-}'><head><link rel=\"icon\" href=\"favicon.svg\">");
 
   if (refresh)
   {
@@ -665,6 +639,7 @@ void HTTPMgr::TradAndSend(const char *content_type, String content, bool refresh
 
   str += F("<meta charset='utf-8'><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,user-scalable=no\"/>");
   str += F("<title>P1 wifi-gateway</title>");
+  str += header;
   str += F("<link rel='stylesheet' type='text/css' href='style.css'></head>");
   str += F("<body><div style='text-align:left;display:inline-block;color:#000000;width:600px;'><h2>P1 wifi-gateway</h2>");
   str += F("<p class=\"help\"><a href='/Help' target='_blank'>{-HLPH1-}</a>");
@@ -690,10 +665,6 @@ void HTTPMgr::TradAndSend(const char *content_type, String content, bool refresh
   str += ".";
   str += BUILD_DATE;
   str += F("<br><a href='https://github.com/narfight/P1-wifi-gateway' target='_blank'>Github</a>");
-  /*if (refresh)
-  {
-    str += F("<script>setTimeout(setInterval(chk, 2000), 4000);</script>");
-  }*/
   str += F("</div></div></body></html>");
   
   Trad.FindAndTranslateAll(str);

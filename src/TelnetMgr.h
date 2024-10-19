@@ -59,6 +59,7 @@ class TelnetMgr
   public:
   explicit TelnetMgr(settings& currentConf, P1Reader &currentP1);
   void DoMe();
+  void stop();
   void SendDataGram(String Diagram);
   void SendDebug(String payload);
 };

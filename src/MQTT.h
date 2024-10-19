@@ -51,6 +51,7 @@ public:
 
   explicit MQTTMgr(settings &currentConf, WifiMgr &Link, P1Reader &currentP1);
   void doMe();
+  void stop();
   bool mqtt_connect();
   bool IsConnected();
 

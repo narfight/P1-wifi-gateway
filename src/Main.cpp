@@ -91,7 +91,7 @@ void MainSendDebugPrintf(const char *format, ...)
 
         if (length < 0)
         {
-            MainSendDebug("Error: Invalid format string in MainSendDebugPrintf");
+            MainSendDebug("[Core] Error: Invalid format string in MainSendDebugPrintf");
             delete[] buffer;
             return;
         }
@@ -101,7 +101,7 @@ void MainSendDebugPrintf(const char *format, ...)
             bufferSize *= 2;  // Double the buffer size
             if (bufferSize > maxBufferSize)
             {
-                MainSendDebug("Error: Debug message too long in MainSendDebugPrintf");
+                MainSendDebug("[Core] Error: Debug message too long in MainSendDebugPrintf");
                 delete[] buffer;
                 return;
             }
@@ -136,7 +136,7 @@ void blink(int t, unsigned long speed)
 
 void PrintConfigData()
 {
-  MainSendDebug("Current configuration :");
+  MainSendDebug("[Core] Current configuration :");
   MainSendDebugPrintf(" - ConfigVersion : %d", config_data.ConfigVersion);
   MainSendDebugPrintf(" - Boot tentative : %d", config_data.BootFailed);
   MainSendDebugPrintf(" - Admin login : %s", config_data.adminUser);
@@ -163,7 +163,7 @@ void setup()
   Serial.begin(SERIALSPEED);
   Serial.println("Booting...");
   #endif
-  MainSendDebugPrintf("Firmware: v%s.%u", VERSION, BUILD_DATE);
+  MainSendDebugPrintf("[Core] Firmware: v%s.%u", VERSION, BUILD_DATE);
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(OE, OUTPUT);    // IO16 OE on the 74AHCT1G125
@@ -171,7 +171,7 @@ void setup()
   pinMode(DR, OUTPUT);    // IO4 Data Request
   digitalWrite(DR, LOW);  // DR low (only goes high when we want to receive data)
 
-  MainSendDebug("Load configuration from EEprom");
+  MainSendDebug("[Core] Load configuration from EEprom");
 
   EEPROM.begin(sizeof(struct settings));
   EEPROM.get(0, config_data);
@@ -181,11 +181,11 @@ void setup()
   {    
     if (config_data.ConfigVersion != SETTINGVERSION)
     {
-      MainSendDebugPrintf("Config file version is wrong (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
+      MainSendDebugPrintf("[Core] Config file version is wrong (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
     }
     else
     {
-      MainSendDebugPrintf("Too many boot fail (nbr:%d), Reset config !", config_data.BootFailed);
+      MainSendDebugPrintf("[Core] Too many boot fail (nbr:%d), Reset config !", config_data.BootFailed);
     }
 
     //Show to user is reseted !
@@ -232,7 +232,7 @@ void doWatchDogs()
 {
   if (ESP.getFreeHeap() < 2000) // watchdog, in case we still have a memery leak
   {
-    MainSendDebug("[WDG] FATAL : Memory leak !");
+    MainSendDebug("[Core] FATAL : Memory leak !");
     ESP.reset();
   }
 
@@ -288,6 +288,22 @@ void loop()
     config_data.BootFailed = 0;
     EEPROM.put(0, config_data);
     EEPROM.commit();
-    MainSendDebug("Reset boot failed");
+    MainSendDebug("[Core] Reset boot failed");
   }
+}
+
+void RequestRestart(unsigned long delay)
+{
+  MainSendDebug("[Core] Reboot requested !!!");
+  if (TelnetServer != nullptr)
+  {
+    TelnetServer->stop();
+  }
+  if (MQTTClient != nullptr )
+  {
+    MQTTClient->stop();
+  }
+
+  Yield_Delay(delay);
+  ESP.restart();
 }

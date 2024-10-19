@@ -118,8 +118,7 @@ void HTTPMgr::ReplyOTAOK()
   str += GetAnimWait();
   str += F("</fieldset>");
   TradAndSend("text/html", str, "", true);
-  Yield_Delay(1000);
-  ESP.restart();
+  RequestRestart(1000);
 }
 
 void HTTPMgr::handleRAW()
@@ -134,8 +133,7 @@ void HTTPMgr::ReplyOTANOK(String Error, u_int ref)
   str += GetAnimWait();
   str += F("</fieldset>");
   TradAndSend("text/html", str, "", true);
-  Yield_Delay(1000);
-  ESP.restart();
+  RequestRestart(1000);
 }
 
 void HTTPMgr::handleDataJs()
@@ -529,8 +527,7 @@ void HTTPMgr::handleSetupSave()
     EEPROM.commit();
 
     MainSendDebug("[HTTP] Reboot !!!");
-    Yield_Delay(1000);
-    ESP.restart();
+    RequestRestart(1000);
   }
 }
 

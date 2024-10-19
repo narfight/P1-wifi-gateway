@@ -28,4 +28,5 @@ void MainSendDebug(String payload);
 void MainSendDebugPrintf(const char* format, ...);
 void blink(int t, unsigned long speed);
 void Yield_Delay(unsigned long ms);
+void RequestRestart(unsigned long delay);
 #endif

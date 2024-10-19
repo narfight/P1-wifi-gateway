@@ -132,9 +132,7 @@ void TelnetMgr::processCommand(int clientId, const String &command)
     else if (command == "reboot")
     {
         MainSendDebugPrintf("[TELNET] User request reboot !");
-        telnetClients[clientId].println("Reboot !");
-        Yield_Delay(1000);
-        ESP.restart();
+        RequestRestart(1000);
     }
     else if (command == "help") 
     {
@@ -167,6 +165,18 @@ void TelnetMgr::DoMe()
     handleClientActivity();
     checkInactiveClients();
     handleNewConnections();
+}
+
+void TelnetMgr::stop()
+{
+    for (int i = 0; i < MAX_SRV_CLIENTS; i++)
+    {
+        if (telnetClients[i] && telnetClients[i].connected())
+        {
+            telnetClients[i].println("Reboot, session killed.");
+            closeConnection(i);
+        }
+    }
 }
 
 void TelnetMgr::handleNewConnections()

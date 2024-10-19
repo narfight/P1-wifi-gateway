@@ -56,6 +56,11 @@ void MQTTMgr::doMe()
   }
 }
 
+void MQTTMgr::stop()
+{
+  send_char("State/Payload", "p1 gateway stopping");
+}
+
 bool MQTTMgr::mqtt_connect()
 {
   if (!mqtt_client.connected())

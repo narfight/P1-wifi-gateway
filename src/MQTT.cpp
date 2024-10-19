@@ -48,7 +48,7 @@ void MQTTMgr::doMe()
   if (mqtt_connect())
   {
     mqtt_client.loop();
-    if (DataReaderP1.datagramValid && nextMQTTReport < millis())
+    if (DataReaderP1.dataEnd && nextMQTTReport < millis())
     {
       nextMQTTReport = millis() + conf.interval * 1000;
       MQTT_reporter();
@@ -174,7 +174,7 @@ void MQTTMgr::SendDebug(String payload)
 
 void MQTTMgr::MQTT_reporter()
 {
-  if (!DataReaderP1.datagramValid)
+  if (!DataReaderP1.dataEnd)
   {
     //Pas de donnée valide a envoyer
     return;

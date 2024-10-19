@@ -27,7 +27,6 @@
 #define DISABLED 0
 #define WAITING 1
 #define READING 2
-//#define CHECKSUM 3
 #define DONE 4
 #define FAILURE 5
 #define FAULT 6
@@ -44,17 +43,13 @@ class P1Reader
 private:
   settings &conf;
   unsigned long nextUpdateTime = millis() + 5000; //wait 5s before read datagram
-  bool OEstate = false; // 74125 OE output enable is off by default (EO signal high)
   void RTS_on();
   void RTS_off();
-
-  //int dataFailureCount = 0;
   void OBISparser(int len);
   String readFirstParenthesisVal(int start, int end);
   String readBetweenDoubleParenthesis(int start, int end);
   int FindCharInArray(char array[], char c, int len);
   void decodeTelegram(int len);
-  //unsigned int CRC16(unsigned int crc, unsigned char *buf, int len);
   String identifyMeter(String Name);
   String readUntilStar(int start, int end);
 
@@ -63,14 +58,13 @@ public:
   unsigned long LastSample = 0;
   explicit P1Reader(settings &currentConf);
   unsigned long GetnextUpdateTime();
-  void DoMe();
-  void readTelegram();
-  void ResetnextUpdateTime();
   char telegram[MAXLINELENGTH] = {}; // holds a single line of the datagram
   String datagram;                   // holds entire datagram for raw output
   String meterName = "";
-  bool datagramValid = false; // CRC is valid !
   bool dataEnd = false; // signals that we have found the end char in the data (!)
+  void DoMe();
+  void readTelegram();
+  void ResetnextUpdateTime();
 
   /// @brief value that is parsed as a three-decimal float, but stored as an
   // integer (by multiplying by 1000). Supports val() (or implicit cast to

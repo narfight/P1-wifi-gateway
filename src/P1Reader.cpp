@@ -39,23 +39,19 @@ void P1Reader::RTS_on() // switch on Data Request
   state = WAITING; // signal that we are waiting for a valid start char (aka /)
   digitalWrite(OE, LOW); // enable buffer
   digitalWrite(DR, HIGH); // turn on Data Request
-  OEstate = true;
 }
 
 void P1Reader::RTS_off() // switch off Data Request
 {
+  state = DISABLED;
   MainSendDebugPrintf("[P1] Data end request. Next action in %dms", nextUpdateTime);
   
   digitalWrite(DR, LOW); // turn off Data Request
   digitalWrite(OE, HIGH); // put buffer in Tristate mode
-  state = WAITING;
-  OEstate = false;
-  nextUpdateTime = millis() + conf.interval * 1000;
 }
 
 void P1Reader::ResetnextUpdateTime()
 {
-  LastSample = millis();
   RTS_off(); // switch off Data Request
 }
 
@@ -114,7 +110,6 @@ void P1Reader::decodeTelegram(int len)
       digitalWrite(DR, LOW); // turn off Data Request
       // reset datagram
       datagram = "";
-      datagramValid = false;
       dataEnd = false;
       state = READING;
 
@@ -160,7 +155,6 @@ void P1Reader::decodeTelegram(int len)
       }
 
       state = DONE;
-      datagramValid = true;
       LastSample = millis();
       return;
     }
@@ -425,19 +419,12 @@ unsigned long P1Reader::GetnextUpdateTime()
 
 void P1Reader::DoMe()
 {
-  if ((millis() > nextUpdateTime))
-  {
-    if (!OEstate)
-    {
-      RTS_on();
-    }
-  }
-
-  if (OEstate)
+  if ((millis() > nextUpdateTime) && state == DISABLED)
   {
     nextUpdateTime = millis() + conf.interval * 1000;
-    OEstate = false;
+    RTS_on();
   }
+
   readTelegram();
 }
 

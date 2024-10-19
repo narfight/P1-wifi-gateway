@@ -236,13 +236,7 @@ void doWatchDogs()
     ESP.reset();
   }
 
-  /*if (millis() - DataReaderP1->LastSample > 300000)
-  {
-    MainSendDebug("[WDG] No data in 300 sec, restarting monitoring");
-    
-    DataReaderP1->ResetnextUpdateTime();
-  }
-
+  /*
   if (WifiClient->AsAP() && (millis() - WifiClient->APtimer > 600000))
   {
     MainSendDebug("[WDG] No wifi, restart");
@@ -266,7 +260,7 @@ void loop()
     MQTTClient->doMe();
   }
 
-  if (DataReaderP1->datagramValid && (DataReaderP1->state == DONE) && WifiClient->IsConnected())
+  if (DataReaderP1->dataEnd && (DataReaderP1->state == DONE) && WifiClient->IsConnected())
   {
     if (config_data.domo)
     {
@@ -278,7 +272,7 @@ void loop()
       TelnetServer->SendDataGram(DataReaderP1->datagram);
     }
 
-    DataReaderP1->datagramValid = false; // reset
+    DataReaderP1->dataEnd = false; // reset
     DataReaderP1->state = WAITING;
   }
 

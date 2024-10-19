@@ -40,7 +40,7 @@ void HTTPMgr::start_webservices()
   server.on("/SetupSave", std::bind(&HTTPMgr::handleSetupSave, this));
   server.on("/reset", std::bind(&HTTPMgr::handleFactoryReset, this));
   server.on("/P1", std::bind(&HTTPMgr::handleP1, this));
-  server.on("/RAW", std::bind(&HTTPMgr::handleRAW, this));
+  server.on("/raw", std::bind(&HTTPMgr::handleRAW, this));
   server.on("/Help", std::bind(&HTTPMgr::handleHelp, this));
   server.on("/data.json", std::bind(&HTTPMgr::handleJSON, this));
   server.on("/data.js", std::bind(&HTTPMgr::handleDataJs, this));
@@ -100,13 +100,13 @@ void HTTPMgr::handleRoot()
 
   String str = F("<main class='form-signin'>");
   str += F("<fieldset><legend>{-H1DATA-}</legend>");
-  str += F("<form action='/P1' method='post'><button type='p1' class='bhome'>{-MENUP1-}</button></form>");
+  str += F("<form action='/P1' method='get'><button type='p1' class='bhome'>{-MENUP1-}</button></form>");
   str += F("</fieldset>");
   str += F("<fieldset><legend>{-ConfH1-}</legend>");
-  str += F("<form action='/Setup' method='post'><button type='Setup'>{-MENUConf-}</button></form>");
-  str += F("<form action='/setPassword' method='post'><button type='Setup'>{-MENUPASSWORD-}</button></form>");
-  str += F("<form action='/update' method='GET'><button type='submit'>{-MENUOTA-}</button></form>");
-  str += F("<form action='/reset' id=\"frmRst\" method='GET'><button type='button' onclick='ConfRST()'>{-MENURESET-}</button></form>");
+  str += F("<form action='/Setup' method='get'><button type='Setup'>{-MENUConf-}</button></form>");
+  str += F("<form action='/setPassword' method='get'><button type='Setup'>{-MENUPASSWORD-}</button></form>");
+  str += F("<form action='/update' method='get'><button type='submit'>{-MENUOTA-}</button></form>");
+  str += F("<form action='/reset' id=\"frmRst\" method='get'><button type='button' onclick='ConfRST()'>{-MENURESET-}</button></form>");
   str += F("<script> function ConfRST() { if (confirm(\"{-ASKCONFIRM-}\")) { document.getElementById(\"frmRst\").submit();}}</script></fieldset>");
   TradAndSend("text/html", str, "", false);
 }
@@ -161,7 +161,6 @@ void HTTPMgr::handleStyleCSS()
   str += F("label {display: inline-block;text-align: right;width: 60%;text-align: right;margin-right: 10px;margin-bottom: 12px;font-weight: normal}");
   str += F(".help, .footer {text-align:right;font-size:11px;color:#aaa}");
   str += F("p {margin: 0.5em 0;}");
-  str += F("textarea {resize: vertical; width: 98%; height: 318px; padding: 5px; overflow: auto; background: #ffffff; color: #000000;}");
   str += F("button {border: 0; border-radius: 0.3rem; background: #97C1A9; color: #ffffff; line-height: 2.4rem; font-size: 1.2rem; width: 100%; -webkit-transition-duration: 0.4s; transition-duration: 0.4s; cursor: pointer;margin-top: 5px;}");
   str += F("button:hover {background: #0e70a4;}");
   str += F(".bhome {background: #55CBCD;}");
@@ -206,11 +205,11 @@ void HTTPMgr::handleUploadForm()
     return;
   }
 
-  String str = F("<form method='POST' action='' enctype='multipart/form-data'>");
+  String str = F("<form method='post' action='' enctype='multipart/form-data'>");
   str += F("<fieldset><legend>{-OTAH1-}</legend>");
   str += F("<p><label for=\"firmware\">{-OTAFIRMWARE-} :</label><input type='file' accept='.bin,.bin.gz' id='firmware' name='firmware'></p>");
   str += F("</fieldset><button type='submit'>{-OTABTUPDATE-}</button></form>");
-  str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
+  str += F("<form action='/' method='get'><button class='bhome'>{-MENU-}</button></form>");
   TradAndSend("text/html", str, "", false);
 }
 
@@ -344,7 +343,7 @@ void HTTPMgr::handlePassword()
     }
   }
 
-  String str = F("<form action=\"/setPassword\" method=\"POST\" onsubmit=\"return Check()\">");
+  String str = F("<form action=\"/setPassword\" method=\"post\" onsubmit=\"return Check()\">");
   str += F("<fieldset><legend>{-H1Welcome-}</legend>");
   str += F("<label for=\"adminUser\">{-PSWDLOGIN-} :</label><input type=\"text\" name=\"adminUser\" id=\"adminUser\" maxlength=\"32\" value='");
   str += nettoyerInputText(conf.adminUser);
@@ -353,7 +352,7 @@ void HTTPMgr::handlePassword()
   str += F("<label for=\"psd2\">{-PSWD2-} :</label><input type=\"password\" name=\"psd2\" id=\"psd2\" maxlength=\"32\"><br />");
   str += F("<span id=\"passwordError\" class=\"error\"></span>");
   str += F("</fieldset><button type='submit'>{-ConfSave-}</button></form>");
-  str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
+  str += F("<form action='/' method='get'><button class='bhome'>{-MENU-}</button></form>");
   TradAndSend("text/html", str, "", false);
 }
 
@@ -364,7 +363,7 @@ void HTTPMgr::handleSetup()
     return;
   }
 
-  String str = F("<form action='/SetupSave' method='POST'>");
+  String str = F("<form action='/SetupSave' method='post'>");
   str += F("<fieldset><legend>{-ConfWIFIH2-}</legend>");
   str += F("<label for=\"ssid\">{-ConfSSID-} :</label><input type='text' name='ssid' id='ssid' maxlength=\"32\" value='");
   str += nettoyerInputText(conf.ssid);
@@ -468,7 +467,7 @@ void HTTPMgr::handleSetup()
   str += F("</fieldset>");
   str += F("<span id=\"passwordError\" class=\"error\"></span>");
   str += F("<button type='submit'>{-ACTIONSAVE-}</button></form>");
-  str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
+  str += F("<form action='/' method='get'><button class='bhome'>{-MENU-}</button></form>");
   TradAndSend("text/html", str, "", false);
 }
 
@@ -552,7 +551,9 @@ void HTTPMgr::handleP1()
   str += F("<div class=\"row\"><label for='instantaneousCurrentL3'>{-DATAAL3-}</label><input type=\"text\" class=\"c6\" id=\"instantaneousCurrentL3\"/></div>");
   str += F("<div class=\"row\"><label for='gasReceived5min'>{-DATAGFull-}</label><input type=\"text\" class=\"c6\" id=\"gasReceived5min\"/></div>");
   str += F("</fieldset></form>");
-  str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
+  str += F("<form action='/data.json' method='get'><button type='Setup'>{-SHOWJSON-}</button></form>");
+  str += F("<form action='/raw' method='get'><button type='Setup'>{-SHOWRAW-}</button></form>");
+  str += F("<form action='/' method='get'><button class='bhome'>{-MENU-}</button></form>");
   TradAndSend("text/html", str, "<script type=\"text/javascript\" src=\"data.js\"></script>", false);
 }
 

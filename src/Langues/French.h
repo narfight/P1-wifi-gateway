@@ -91,6 +91,8 @@ const char LANG[] = R"=====(
     "DATAAL2" : "Ampérage: L2",
     "DATAAL3" : "Ampérage: L3",
     "DATAGFull" : "Consommation de gaz: total",
+    "SHOWJSON" : "Afficher le Json",
+    "SHOWRAW" : "Afficher le datagram",
     "HLPH1" : "Aide",
     "HLPTXT1" : "La passerelle WiFi P1 peut fournir des données de 4 manières.",
     "HLPTXT2" : "Les valeurs fondamentales sont toujours disponibles via le menu P1",

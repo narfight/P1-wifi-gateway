@@ -44,7 +44,7 @@ void P1Reader::RTS_on() // switch on Data Request
 void P1Reader::RTS_off() // switch off Data Request
 {
   state = DISABLED;
-  MainSendDebugPrintf("[P1] Next request in %dms", nextUpdateTime - millis());
+  MainSendDebugPrintf("[P1] Next request in %dms", (nextUpdateTime - millis()));
   
   digitalWrite(DR, LOW); // turn off Data Request
   digitalWrite(OE, HIGH); // put buffer in Tristate mode

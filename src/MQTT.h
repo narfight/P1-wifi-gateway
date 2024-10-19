@@ -40,7 +40,7 @@ private:
   settings &conf;
   WifiMgr &WifiClient;
   P1Reader &DataReaderP1;
-  long unsigned nextMQTTReport= millis();
+  long unsigned LastTimeofSendedDatagram = millis(); // le dernier millis du datagram envoyé pour savoir si c'est un nouveau
   /// @brief Send a message to a broker topic
   /// @param topic
   /// @param payload

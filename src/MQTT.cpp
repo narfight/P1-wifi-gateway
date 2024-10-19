@@ -48,9 +48,9 @@ void MQTTMgr::doMe()
   if (mqtt_connect())
   {
     mqtt_client.loop();
-    if (DataReaderP1.dataEnd && nextMQTTReport < millis())
+    if (DataReaderP1.dataEnd && LastTimeofSendedDatagram < DataReaderP1.LastSample)
     {
-      nextMQTTReport = millis() + conf.interval * 1000;
+      LastTimeofSendedDatagram = DataReaderP1.LastSample;
       MQTT_reporter();
     }
   }

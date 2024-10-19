@@ -33,6 +33,7 @@ TelnetMgr::TelnetMgr(settings &currentConf, P1Reader &currentP1) : conf(currentC
 
 bool TelnetMgr::authenticateClient(WiFiClient &client, int clientId)
 {
+    Yield_Delay(200); //On attend pour bien flusher tout avant !
     while (client.available()) // flush tout se qui est dans le cache
     {
         client.read();

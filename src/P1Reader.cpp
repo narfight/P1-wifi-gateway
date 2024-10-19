@@ -163,15 +163,8 @@ void P1Reader::decodeTelegram(int len)
     if (endChar >= 0)
     { // we have found the endchar !
       MainSendDebug("[P1] End of datagram found");
-      //state = CHECKSUM;
-      // add to crc calc
       dataEnd = true; // we're at the end of the data stream, so mark (for raw data output) We don't know if the data is valid, we will test this below.
-                      //  gas22Flag=false;        // assume we have also collected the Gas value
-      
-      //currentCRC = CRC16(currentCRC, (unsigned char *)telegram + endChar, 1);
-      //char messageCRC[4];
-      //strncpy(messageCRC, telegram + endChar + 1, 4);
-      
+     
       if (datagram.length() < 2048)
       {
         for (int cnt = 0; cnt < len; cnt++)
@@ -187,28 +180,13 @@ void P1Reader::decodeTelegram(int len)
         return;
       }
 
-      //validCRCFound = (strtol(messageCRC, NULL, 16) == (long)currentCRC);
-
-      //if (validCRCFound)
-      //{
-        state = DONE;
-        datagramValid = true;
-        //dataFailureCount = 0;
-        LastSample = millis();
-        //      gotPowerReading = true; // we at least got electricty readings. Not all setups have a gas meter attached, so gotGasReading is handled when we actually get gasIds coming in
-        return;
-      //}
-      /*else
-      {
-        MainSendDebug("[P1] INVALID CRC FOUND");
-        //dataFailureCount++;
-        state = FAILURE;
-        return;
-      }*/
+      state = DONE;
+      datagramValid = true;
+      LastSample = millis();
+      return;
     }
     else
     { // no endchar, so normal line, process
-      //currentCRC = CRC16(currentCRC, (unsigned char *)telegram, len);
       for (int cnt = 0; cnt < len; cnt++)
       {
         datagram += telegram[cnt];
@@ -337,10 +315,6 @@ void P1Reader::OBISparser(int len)
     break;
   case 10270: // 1-0:1.7.0 – actualElectricityPowerReturned
     readUntilStar(i, len).toCharArray(DataReaded.actualElectricityPowerRet, sizeof(DataReaded.actualElectricityPowerRet));
-    break;
-  case 10180: // 1-0:1.8.0 – actualElectricityPowerDelivered
-    MainSendDebug("[P1] non existent (code 10180)");
-    readUntilStar(i, len).toCharArray(DataReaded.actualElectricityPowerDeli, sizeof(DataReaded.actualElectricityPowerDeli));
     break;
   case 10181: // 1-0:1.8.1(000992.992*kWh) Elektra verbruik laag tarief
     readUntilStar(i, len).toCharArray(DataReaded.electricityUsedTariff1, sizeof(DataReaded.electricityUsedTariff1));

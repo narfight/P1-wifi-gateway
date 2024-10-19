@@ -36,11 +36,11 @@ class MQTTMgr
 {
 private:
   unsigned long LastReportinMillis = 0;
-  bool DSMR_Format = false; // deliver mqtt data in 'dsmr reader" format
   PubSubClient mqtt_client; // * Initiate MQTT client
   settings &conf;
   WifiMgr &WifiClient;
   P1Reader &DataReaderP1;
+  long unsigned nextMQTTReport= millis();
 
 public:
   bool MqttDelivered = false;

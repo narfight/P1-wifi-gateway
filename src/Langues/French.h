@@ -84,7 +84,6 @@ const char LANG[] = R"=====(
     "DATAFullH" : "Consommation heures pleines: total",
     "DATAFullProdH" : "Production heures pleines: total",
     "DATACurProdAmp" : "Production instantanée de courant",
-    "DATATODAY" : "aujourd'hui",
     "DATAUL1" : "Tension: L1",
     "DATAUL2" : "Tension: L2",
     "DATAUL3" : "Tension: L3",

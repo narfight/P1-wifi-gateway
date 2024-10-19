@@ -142,7 +142,7 @@ void HTTPMgr::handleStyleCSS()
   str += F("label {display: inline-block;width:50%;text-align: right;}");
   str += F(".help, .footer {text-align:right;font-size:11px;color:#aaa}");
   str += F("p {margin: 0.5em 0;}");
-  str += F("input {width: 240px;box-sizing: border-box; -webkit-box-sizing: border-box; -moz-box-sizing: border-box; background: #ffffff; color: #000000;}");
+  str += F("input {width: 120px;box-sizing: border-box; -webkit-box-sizing: border-box; -moz-box-sizing: border-box; background: #ffffff; color: #000000;}");
   str += F("textarea {resize: vertical; width: 98%; height: 318px; padding: 5px; overflow: auto; background: #ffffff; color: #000000;}");
   str += F("button {border: 0; border-radius: 0.3rem; background: #97C1A9; color: #ffffff; line-height: 2.4rem; font-size: 1.2rem; width: 100%; -webkit-transition-duration: 0.4s; transition-duration: 0.4s; cursor: pointer;margin-top: 5px;}");
   str += F("button:hover {background: #0e70a4;}");
@@ -536,57 +536,38 @@ void HTTPMgr::handleP1()
   {
     eenheid = " Wh'></div>";
   }
-  
-  if (conf.watt)
-  {
-    eenheid2 = " kW'></div></p>";
-  }
-  else
-  {
-    eenheid2 = " W'></div></p>";
-  }
 
   String str = F("<form ><fieldset><legend>{-DATAH1-}</legend>");
 
-  str += "<p><div class='row'><div class='column'><b>{-DATAFullL-}</b><input type='text' class='c6' value='";
+  str += "<p><div class='row'><b>{-DATAFullL-}</b><input type='text' class='c6' value='";
   str += P1Captor.DataReaded.electricityUsedTariff1;
   str += eenheid;
-  str += "<div class='column' style='text-align:right'><br><b>{-DATATODAY-}</b><input type='text' class='c7' value='";
-  str += atof(P1Captor.DataReaded.electricityUsedTariff1); // - atof(Logger.log_data.dayE1);
-  str += eenheid;
-  str += "</div></p>";
+  str += "</p>";
 
-  str += "<p><div class='row'><div class='column'><b>{-DATAFullH-}</b><input type='text' class='c6' value='";
+  str += "<p><div class='row'><b>{-DATAFullH-}</b><input type='text' class='c6' value='";
   str += P1Captor.DataReaded.electricityUsedTariff2;
   str += eenheid;
-  str += "<div class='column' style='text-align:right'><br><b>{-DATATODAY-}</b><input type='text' class='c7' value='";
-  str += atof(P1Captor.DataReaded.electricityUsedTariff2); // - atof(Logger.log_data.dayE2);
-  str += eenheid;
-  str += "</div></p>";
+  str += "</p>";
 
-  str += "<p><div class='row'><div class='column'><b>{-DATAFullProdL-}</b><input type='text' class='c6' value='";
+  str += "<p><div class='row'><b>{-DATAFullProdL-}</b><input type='text' class='c6' value='";
   str += P1Captor.DataReaded.electricityReturnedTariff1;
   str += eenheid;
-  str += "<div class='column' style='text-align:right'><br><b>{-DATATODAY-}</b><input type='text' class='c7' value='";
-  str += atof(P1Captor.DataReaded.electricityReturnedTariff1); // - atof(Logger.log_data.dayR1);
-  str += eenheid;
-  str += "</div></p>";
+  str += "</p>";
 
-  str += "<p><div class='row'><div class='column'><b>{-DATAFullProdH-}</b><input type='text' class='c6' value='";
+  str += "<p><div class='row'><b>{-DATAFullProdH-}</b><input type='text' class='c6' value='";
   str += P1Captor.DataReaded.electricityReturnedTariff2;
   str += eenheid;
-  str += "<div class='column' style='text-align:right'><br><b>{-DATATODAY-}</b><input type='text' class='c7' value='";
-  str += atof(P1Captor.DataReaded.electricityReturnedTariff2); // - atof(Logger.log_data.dayR2);
-  str += eenheid;
-  str += "</div></p>";
+  str += "</p>";
 
   str += "<p><div class='row'><b>{-DATACurAmp-}</b><input type='text' class='c6' value='";
   str += P1Captor.DataReaded.actualElectricityPowerDeli;
-  str += eenheid2;
+  str += eenheid;
+  str += "</p>";
 
   str += "<p><div class='row'><b>{-DATACurProdAmp-}</b><input type='text' class='c6' value='";
   str += P1Captor.DataReaded.actualElectricityPowerRet;
-  str += eenheid2;
+  str += eenheid;
+  str += "</p>";
 
   str += "<p><div class='row'><div class='column3'><b>{-DATAUL1-}</b><input type='text' class='c6' value='";
   str += P1Captor.DataReaded.instantaneousVoltageL1;
@@ -595,7 +576,7 @@ void HTTPMgr::handleP1()
   str += P1Captor.DataReaded.instantaneousVoltageL2;
   str += " V'></div>";
   str += "<div class='column3' style='text-align:right'><b>{-DATAUL3-}</b><input type='text' class='c7' value='";
-  str += P1Captor.DataReaded.instantaneousVoltageL2;
+  str += P1Captor.DataReaded.instantaneousVoltageL3;
   str += " V'></div></div></p>";
 
   str += "<p><div class='row'><div class='column3'><b>{-DATAAL1-}</b><input type='text' class='c6' value='";
@@ -607,24 +588,10 @@ void HTTPMgr::handleP1()
   str += "<div class='column3' style='text-align:right'><b>{-DATAAL3-}</b><input type='text' class='c7' value='";
   str += P1Captor.DataReaded.instantaneousCurrentL3;
   str += " A'></div></div></p>";
-  /*
 
-    str += F("<p><b>Voltage dips</b><input type='text' style='text-align:right' value='");
-    str += numberVoltageSagsL1;
-    str += F("'></p>");
-    str += F("<p><b>Voltage pieken</b><input type='text' style='text-align:right' value='");
-    str += numberVoltageSwellsL1;
-    str += F("'></p>");
-    str += F("<p><b>Stroomonderbrekingen</b><input type='text' style='text-align:right' value='");
-    str += numberPowerFailuresAny;
-    str += F("'></p>");
-    */
-  str += "<p><div class='row'><div class='column'><b>{-DATAGFull-}</b><input type='text' class='c6' value='";
+  str += "<p><div class='row'><b>{-DATAGFull-}</b><input type='text' class='c6' value='";
   str += P1Captor.DataReaded.gasReceived5min;
-  str += F(" m3'></div>");
-  str += "<div class='column' style='text-align:right'><b>{-DATATODAY-}</b><input type='text' class='c7' value='";
-  str += atof(P1Captor.DataReaded.gasReceived5min); // - atof(Logger.log_data.dayG);
-  str += " m3'></div></div></p>";
+  str += F(" m3'></div></p>");
   str += F("</fieldset></form>");
   str += F("<form action='/' method='POST'><button class='bhome'>{-MENU-}</button></form>");
   TradAndSend("text/html", str, false);

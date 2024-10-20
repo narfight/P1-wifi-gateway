@@ -197,7 +197,7 @@ void HTTPMgr::handleStyleCSS()
   str += F("svg {display: block;margin: auto;}");
   str += F(".status-bar {display: flex;justify-content: flex-end;margin-top: 10px;padding: 10px;border-top: 1px solid #ddd;}");
   str += F(".status-bar .indicator {width: 10px;height: 10px;border-radius: 50%;background-color: green;margin-right: 5px;display: inline-block;}");
-  str += F(".error {background-color: red}");
+  str += F(".error {background-color: red !important;}");
   str += F(".status-bar .text {margin-left: 5px;}");
   str += F(".status-bar .item {display: flex;align-items: center;margin-bottom: 5px;padding-left: 10px}");
   

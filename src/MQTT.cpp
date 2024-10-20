@@ -69,8 +69,10 @@ bool MQTTMgr::mqtt_connect()
     {
       MainSendDebugPrintf("[MQTT] Connect to %s:%u", conf.mqttIP, conf.mqttPort);
       
+      String ClientName = String(HOSTNAME) + "-" + WiFi.macAddress().substring(WiFi.macAddress().length() - 5);
+
       // Attempt to connect
-      if (mqtt_client.connect(HOSTNAME, conf.mqttUser, conf.mqttPass))
+      if (mqtt_client.connect(ClientName.c_str() , conf.mqttUser, conf.mqttPass))
       {
         MainSendDebug("[MQTT] connected");
 

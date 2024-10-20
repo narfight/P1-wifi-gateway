@@ -78,6 +78,7 @@ const char LANG[] = R"=====(
     "OTASUCCESS4" : "La LED clignotera lentement pendant la connexion à votre réseau WiFi.",
     "OTASUCCESS5" : "Si la LED bleue reste allumée, la configuration a échoué et vous devrez refaire la connexion avec le réseau WiFi 'P1_Setup_xxx'",
     "DATAH1" : "Valeurs mesurées",
+    "DATALastGet" : "Recue à",
     "DATAFullL" : "Consommation heures creuses: total",
     "DATAFullProdL" : "Production heures creuses: total",
     "DATACurAmp" : "Consommation instantanée de courant",

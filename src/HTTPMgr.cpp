@@ -145,7 +145,8 @@ void HTTPMgr::handleDataJs()
 
   if (ActifCache()) return;
 
-  String str = F("async function updateValues(){try{let e=await fetch(\"data.json\"),a=await e.json();document.getElementById(\"electricityUsedTariff1\").value=a.DataReaded.electricityUsedTariff1+\" kWh\",document.getElementById(\"electricityUsedTariff2\").value=a.DataReaded.electricityUsedTariff2+\" kWh\",document.getElementById(\"electricityReturnedTariff1\").value=a.DataReaded.electricityReturnedTariff1+\" kWh\",document.getElementById(\"electricityReturnedTariff2\").value=a.DataReaded.electricityReturnedTariff2+\" kWh\",document.getElementById(\"actualElectricityPowerDeli\").value=a.DataReaded.actualElectricityPowerDeli+\" kWh\",document.getElementById(\"actualElectricityPowerRet\").value=a.DataReaded.actualElectricityPowerRet+\" kWh\",document.getElementById(\"instantaneousVoltageL1\").value=a.DataReaded.instantaneousVoltage.L1+\" V\",document.getElementById(\"instantaneousVoltageL2\").value=a.DataReaded.instantaneousVoltage.L2+\" V\",document.getElementById(\"instantaneousVoltageL3\").value=a.DataReaded.instantaneousVoltage.L3+\" V\",document.getElementById(\"instantaneousCurrentL1\").value=a.DataReaded.instantaneousCurrent.L1+\" A\",document.getElementById(\"instantaneousCurrentL2\").value=a.DataReaded.instantaneousCurrent.L2+\" A\",document.getElementById(\"instantaneousCurrentL3\").value=a.DataReaded.instantaneousCurrent.L3+\" A\",document.getElementById(\"gasReceived5min\").value=a.DataReaded.gasReceived5min+\" m3\"}catch(t){console.error(\"Error on update :\",t)}}setInterval(updateValues,1e4),window.onload=updateValues;");
+  String str = F("function parseDateTime(s){let t=s.substring(0,2),n=s.substring(2,4)-1,r=\"20\"+s.substring(4,6),i=s.substring(6,8),u=s.substring(8,10),e=s.substring(10,12),g=new Date(r,n,t,i,u,e);return g.toLocaleString()}");
+  str += F("async function updateValues(){try{let e=await fetch(\"data.json\"),a=await e.json();document.getElementById(\"LastSample\").value=parseDateTime(a.LastSample),document.getElementById(\"electricityUsedTariff1\").value=a.DataReaded.electricityUsedTariff1+\" kWh\",document.getElementById(\"electricityUsedTariff2\").value=a.DataReaded.electricityUsedTariff2+\" kWh\",document.getElementById(\"electricityReturnedTariff1\").value=a.DataReaded.electricityReturnedTariff1+\" kWh\",document.getElementById(\"electricityReturnedTariff2\").value=a.DataReaded.electricityReturnedTariff2+\" kWh\",document.getElementById(\"actualElectricityPowerDeli\").value=a.DataReaded.actualElectricityPowerDeli+\" kWh\",document.getElementById(\"actualElectricityPowerRet\").value=a.DataReaded.actualElectricityPowerRet+\" kWh\",document.getElementById(\"instantaneousVoltageL1\").value=a.DataReaded.instantaneousVoltage.L1+\" V\",document.getElementById(\"instantaneousVoltageL2\").value=a.DataReaded.instantaneousVoltage.L2+\" V\",document.getElementById(\"instantaneousVoltageL3\").value=a.DataReaded.instantaneousVoltage.L3+\" V\",document.getElementById(\"instantaneousCurrentL1\").value=a.DataReaded.instantaneousCurrent.L1+\" A\",document.getElementById(\"instantaneousCurrentL2\").value=a.DataReaded.instantaneousCurrent.L2+\" A\",document.getElementById(\"instantaneousCurrentL3\").value=a.DataReaded.instantaneousCurrent.L3+\" A\",document.getElementById(\"gasReceived5min\").value=a.DataReaded.gasReceived5min+\" m3\"}catch(t){console.error(\"Error on update :\",t)}}setInterval(updateValues,1e4),window.onload=updateValues;");
   // no translate for CSS
   server.send(200, "application/javascript", str);
 }
@@ -167,8 +168,8 @@ void HTTPMgr::handleStyleCSS()
   str += F("p {margin: 0.5em 0;}");
   str += F("button, .bt {display: inline-block;text-align: center;text-decoration: none;border: 0;border-radius: 0.3rem;background: #97C1A9;color: #ffffff;line-height: 2.4rem;font-size: 1.2rem;width: 100%;-webkit-transition-duration: 0.4s;transition-duration: 0.4s;cursor: pointer;margin-top: 5px;}");
   str += F("button:hover, .bt:hover {background: #0e70a4;}");
-  str += F(".bt[href=\"/\"]{background: #55CBCD;}");
-  str += F(".bt[href=\"/\"]:hover {background: #A2E1DB;}");
+  str += F(".bt[href=\"/\"], .bt[href=\"/P1\"]{background: #55CBCD;}");
+  str += F(".bt[href=\"/\"]:hover, .bt[href=\"/P1\"]:hover {background: #A2E1DB;}");
   str += F(".bwarning {background: #E74C3C;}");
   str += F(".bwarning:hover {background: #C0392B;}");
   str += F("a {color: #1fa3ec;text-decoration: none;}");
@@ -544,6 +545,8 @@ void HTTPMgr::handleSetupSave()
 void HTTPMgr::handleP1()
 {
   String str = F("<fieldset><legend>{-DATAH1-}</legend>");
+  //LastSample
+  str += F("<div class=\"row\"><label for='LastSample'>{-DATALastGet-}</label><input type=\"text\" class=\"c6\" id=\"LastSample\"/></div>");
   str += F("<div class=\"row\"><label for='electricityUsedTariff1'>{-DATAFullL-}</label><input type=\"text\" class=\"c6\" id=\"electricityUsedTariff1\"/></div>");
   str += F("<div class=\"row\"><label for='electricityUsedTariff2'>{-DATAFullH-}</label><input type=\"text\" class=\"c6\" id=\"electricityUsedTariff2\"/></div>");
   str += F("<div class=\"row\"><label for='electricityReturnedTariff1'>{-DATAFullProdL-}</label><input type=\"text\" class=\"c6\" id=\"electricityReturnedTariff1\"/></div>");

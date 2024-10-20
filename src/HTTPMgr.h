@@ -66,10 +66,11 @@ private:
   void handleFavicon();
   void handleStyleCSS();
   void handleJSON();
+  void handleJSONStatus();
   void handleDataJs();
   void handleMainJS();
 
-  bool ActifCache();
+  bool ActifCache(bool);
   
   void ReplyOTAOK();
   void ReplyOTANOK(const String Error, u_int ref);

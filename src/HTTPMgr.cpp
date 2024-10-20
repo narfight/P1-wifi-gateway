@@ -31,10 +31,19 @@ void HTTPMgr::start_webservices()
 {
   MainSendDebugPrintf("[WWW] Start on port %d", WWW_PORT_HTTP);
   MDNS.begin(HOSTNAME);
-
+  //header files
   server.on("/style.css", std::bind(&HTTPMgr::handleStyleCSS, this));
   server.on("/favicon.svg", std::bind(&HTTPMgr::handleFavicon, this));
   server.on("/main.js", std::bind(&HTTPMgr::handleMainJS, this));
+  
+  //extra for /P1 page for refresh
+  server.on("/P1.json", std::bind(&HTTPMgr::handleJSON, this));
+  server.on("/P1.js", std::bind(&HTTPMgr::handleDataJs, this));
+  
+  //for the footer
+  server.on("/status.json", std::bind(&HTTPMgr::handleJSONStatus, this));
+
+  //pages
   server.on("/", std::bind(&HTTPMgr::handleRoot, this));
   server.on("/setPassword", std::bind(&HTTPMgr::handlePassword, this));
   server.on("/Setup", std::bind(&HTTPMgr::handleSetup, this));
@@ -43,8 +52,6 @@ void HTTPMgr::start_webservices()
   server.on("/P1", std::bind(&HTTPMgr::handleP1, this));
   server.on("/raw", std::bind(&HTTPMgr::handleRAW, this));
   server.on("/Help", std::bind(&HTTPMgr::handleHelp, this));
-  server.on("/data.json", std::bind(&HTTPMgr::handleJSON, this));
-  server.on("/data.js", std::bind(&HTTPMgr::handleDataJs, this));
   server.on("/update", HTTP_GET, std::bind(&HTTPMgr::handleUploadForm, this));
   server.on("/update", HTTP_POST, [this]()
   {
@@ -70,20 +77,32 @@ void HTTPMgr::start_webservices()
 }
 
 
-bool HTTPMgr::ActifCache()
+bool HTTPMgr::ActifCache(bool enabled)
 {
-  //Gestion du cache sur base de la version du firmware
-  String etag = "W/\"" + String(BUILD_DATE) + "\"";
-  if (server.header("If-None-Match") == etag)
+  if (enabled)
   {
-    server.send(304);
-    return true;
-  }
-  // Cache
-  server.sendHeader("ETag", etag);
-  server.sendHeader("Cache-Control", "max-age=86400");
+    //Gestion du cache sur base de la version du firmware
+    String etag = "W/\"" + String(BUILD_DATE) + "\"";
+    if (server.header("If-None-Match") == etag)
+    {
+      server.send(304);
+      return true;
+    }
+    // Cache
+    server.sendHeader("ETag", etag);
+    server.sendHeader("Cache-Control", "max-age=86400");
 
-  return false;
+    return false;
+  }
+  else
+  {
+    // Définir les en-têtes HTTP pour désactiver le cache
+    server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    server.sendHeader("Pragma", "no-cache");
+    server.sendHeader("Expires", "-1");
+
+    return false;
+  }
 }
 
 void HTTPMgr::DoMe()
@@ -111,6 +130,7 @@ void HTTPMgr::handleRoot()
   str += F("<a href=\"/setPassword\" class=\"bt\">{-MENUPASSWORD-}</a>");
   str += F("<a href=\"/update\" class=\"bt\">{-MENUOTA-}</a>");
   str += F("<a href=\"/reset\" class=\"bt bwarning\">{-MENURESET-}</a>");
+  str += F("</fieldset>");
   TradAndSend("text/html", str, "", false);
 }
 
@@ -141,12 +161,12 @@ void HTTPMgr::ReplyOTANOK(String Error, u_int ref)
 
 void HTTPMgr::handleDataJs()
 {
-  MainSendDebug("[HTTP] Request data.js");
+  MainSendDebug("[HTTP] Request P1.js");
 
-  if (ActifCache()) return;
+  if (ActifCache(true)) return;
 
-  String str = F("function parseDateTime(s){let t=s.substring(0,2),n=s.substring(2,4)-1,r=\"20\"+s.substring(4,6),i=s.substring(6,8),u=s.substring(8,10),e=s.substring(10,12),g=new Date(r,n,t,i,u,e);return g.toLocaleString()}");
-  str += F("async function updateValues(){try{let e=await fetch(\"data.json\"),a=await e.json();document.getElementById(\"LastSample\").value=parseDateTime(a.LastSample),document.getElementById(\"electricityUsedTariff1\").value=a.DataReaded.electricityUsedTariff1+\" kWh\",document.getElementById(\"electricityUsedTariff2\").value=a.DataReaded.electricityUsedTariff2+\" kWh\",document.getElementById(\"electricityReturnedTariff1\").value=a.DataReaded.electricityReturnedTariff1+\" kWh\",document.getElementById(\"electricityReturnedTariff2\").value=a.DataReaded.electricityReturnedTariff2+\" kWh\",document.getElementById(\"actualElectricityPowerDeli\").value=a.DataReaded.actualElectricityPowerDeli+\" kWh\",document.getElementById(\"actualElectricityPowerRet\").value=a.DataReaded.actualElectricityPowerRet+\" kWh\",document.getElementById(\"instantaneousVoltageL1\").value=a.DataReaded.instantaneousVoltage.L1+\" V\",document.getElementById(\"instantaneousVoltageL2\").value=a.DataReaded.instantaneousVoltage.L2+\" V\",document.getElementById(\"instantaneousVoltageL3\").value=a.DataReaded.instantaneousVoltage.L3+\" V\",document.getElementById(\"instantaneousCurrentL1\").value=a.DataReaded.instantaneousCurrent.L1+\" A\",document.getElementById(\"instantaneousCurrentL2\").value=a.DataReaded.instantaneousCurrent.L2+\" A\",document.getElementById(\"instantaneousCurrentL3\").value=a.DataReaded.instantaneousCurrent.L3+\" A\",document.getElementById(\"gasReceived5min\").value=a.DataReaded.gasReceived5min+\" m3\"}catch(t){console.error(\"Error on update :\",t)}}setInterval(updateValues,1e4),window.onload=updateValues;");
+  String str = F("function parseDateTime(s){let t=s.substring(0,2),n=s.substring(2,4)-1,r=\"20\"+s.substring(4,6),i=s.substring(6,8),u=s.substring(8,10),e=s.substring(10,12),g=new Date(r,n,t,i,u,e);return g}");
+  str += F("async function updateValues(){try{let e=await fetch(\"P1.json\"),a=await e.json();document.getElementById(\"LastSample\").value=parseDateTime(a.LastSample).toLocaleString(),document.getElementById(\"electricityUsedTariff1\").value=a.DataReaded.electricityUsedTariff1+\" kWh\",document.getElementById(\"electricityUsedTariff2\").value=a.DataReaded.electricityUsedTariff2+\" kWh\",document.getElementById(\"electricityReturnedTariff1\").value=a.DataReaded.electricityReturnedTariff1+\" kWh\",document.getElementById(\"electricityReturnedTariff2\").value=a.DataReaded.electricityReturnedTariff2+\" kWh\",document.getElementById(\"actualElectricityPowerDeli\").value=a.DataReaded.actualElectricityPowerDeli+\" kWh\",document.getElementById(\"actualElectricityPowerRet\").value=a.DataReaded.actualElectricityPowerRet+\" kWh\",document.getElementById(\"instantaneousVoltageL1\").value=a.DataReaded.instantaneousVoltage.L1+\" V\",document.getElementById(\"instantaneousVoltageL2\").value=a.DataReaded.instantaneousVoltage.L2+\" V\",document.getElementById(\"instantaneousVoltageL3\").value=a.DataReaded.instantaneousVoltage.L3+\" V\",document.getElementById(\"instantaneousCurrentL1\").value=a.DataReaded.instantaneousCurrent.L1+\" A\",document.getElementById(\"instantaneousCurrentL2\").value=a.DataReaded.instantaneousCurrent.L2+\" A\",document.getElementById(\"instantaneousCurrentL3\").value=a.DataReaded.instantaneousCurrent.L3+\" A\",document.getElementById(\"gasReceived5min\").value=a.DataReaded.gasReceived5min+\" m3\"}catch(t){console.error(\"Error on update :\",t)}}setInterval(updateValues,1e4),window.onload=updateValues;");
   // no translate for CSS
   server.send(200, "application/javascript", str);
 }
@@ -155,10 +175,10 @@ void HTTPMgr::handleStyleCSS()
 {
   MainSendDebug("[HTTP] Request style.css");
   
-  if (ActifCache()) return;
+  if (ActifCache(true)) return;
 
   String str = F("body {font-family: Verdana, sans-serif;background-color: #f9f9f9;margin: 0;padding: 20px;text-align: center;}");
-  str += F(".container {max-width: 600px;margin: 0 auto;background: #ffffff;border-radius: 8px;box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);padding: 20px;}");
+  str += F(".container {max-width: 600px;margin: 0 auto;background: #ffffff;border-radius: 8px;box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);padding: 20px 20px 0px 20px;}");
   str += F("h2 {text-align:center;color:#000000;}");
   str += F("fieldset {border: 1px solid #ddd;border-radius: 8px;padding: 10px;margin-bottom: 20px;}");
   str += F("fieldset input {width: 30%;padding: 5px;border: 1px solid #ddd;border-radius: 4px;font-size: 1em;box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1)}");
@@ -175,6 +195,11 @@ void HTTPMgr::handleStyleCSS()
   str += F("a {color: #1fa3ec;text-decoration: none;}");
   str += F(".row:after {content: \"\";display: table; clear: both;}");
   str += F("svg {display: block;margin: auto;}");
+  str += F(".status-bar {display: flex;justify-content: flex-end;margin-top: 10px;padding: 10px;border-top: 1px solid #ddd;}");
+  str += F(".status-bar .indicator {width: 10px;height: 10px;border-radius: 50%;background-color: green;margin-right: 5px;display: inline-block;}");
+  str += F(".error {background-color: red}");
+  str += F(".status-bar .text {margin-left: 5px;}");
+  str += F(".status-bar .item {display: flex;align-items: center;margin-bottom: 5px;padding-left: 10px}");
   
   // no translate for CSS
   server.send(200, "text/css", str);
@@ -183,11 +208,12 @@ void HTTPMgr::handleMainJS()
 {
   MainSendDebug("[HTTP] Request main.js");
   
-  if (ActifCache()) return;
+  if (ActifCache(true)) return;
 
-  String str = F("window.onload = function() {");
+  String str = F("function parseDateTime(t){return new Date(\"20\"+t.substring(0,2),t.substring(2,4)-1,t.substring(4,6),t.substring(6,8),t.substring(8,10),t.substring(10,12))}async function updateStatus(){try{let e=await fetch(\"status.json\"),s=await e.json();const r=document.getElementById(\"MQTT-indicator\");null!=r&&(1==s.MQTT?r.classList.remove(\"error\"):r.classList.add(\"error\"));const n=document.getElementById(\"P1-indicator\");if(\"\"!=s.P1.LastSample){var t=parseDateTime(s.P1.LastSample);Date.now().set;t.setSeconds(t.getSeconds()+3*s.P1.Interval),t<Date.now()?n.classList.add(\"error\"):n.classList.remove(\"error\")}else n.classList.add(\"error\")}catch(t){console.error(\"Error on update status:\",t)}}window.onload=function(){document.querySelectorAll(\".bwarning\").forEach((t=>{t.addEventListener(\"click\",(function(t){confirm(\"{-ASKCONFIRM-}\")||t.preventDefault()}))})),setInterval(updateStatus,1e4)};");
+  /*String str = F("window.onload = function() {");
   str += F("const fin = document.querySelectorAll(\".bwarning\");fin.forEach((it) => {it.addEventListener('click', function(event) {if (!confirm('{-ASKCONFIRM-}')) {event.preventDefault();}});});");
-  str += F("}");
+  str += F("}");*/
 
   Trad.FindAndTranslateAll(str);
   server.send(200, "application/javascript", str);
@@ -196,7 +222,7 @@ void HTTPMgr::handleFavicon()
 {
   MainSendDebug("[HTTP] Request favicon.svg");
 
-  if (ActifCache()) return;
+  if (ActifCache(true)) return;
 
   String str = F("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
   str += F("<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" viewBox=\"0 0 24 24\">");
@@ -561,10 +587,10 @@ void HTTPMgr::handleP1()
   str += F("<div class=\"row\"><label for='instantaneousCurrentL3'>{-DATAAL3-}</label><input type=\"text\" class=\"c6\" id=\"instantaneousCurrentL3\"/></div>");
   str += F("<div class=\"row\"><label for='gasReceived5min'>{-DATAGFull-}</label><input type=\"text\" class=\"c6\" id=\"gasReceived5min\"/></div>");
   str += F("</fieldset>");
-  str += F("<a href=\"/data.json\" class=\"bt\">{-SHOWJSON-}</a>");
+  str += F("<a href=\"/P1.json\" class=\"bt\">{-SHOWJSON-}</a>");
   str += F("<a href=\"/raw\" class=\"bt\">{-SHOWRAW-}</a>");
   str += F("<a href=\"/\" class=\"bt\">{-MENU-}</a>");
-  TradAndSend("text/html", str, "<script type=\"text/javascript\" src=\"data.js\"></script>", false);
+  TradAndSend("text/html", str, "<script type=\"text/javascript\" src=\"P1.js\"></script>", false);
 }
 
 void HTTPMgr::handleHelp()
@@ -578,6 +604,25 @@ void HTTPMgr::handleHelp()
   str += F("<p>{-HLPTXT6-}</p>");
   str += F("<p>{-HLPTXT7-}</p>");
   TradAndSend("text/html", str, "", false);
+}
+
+void HTTPMgr::handleJSONStatus()
+{
+  String str;
+  JsonDocument doc;
+
+  doc["P1"]["LastSample"] = P1Captor.DataReaded.P1timestamp;
+  doc["P1"]["Interval"] = conf.interval;
+  doc["P1"]["NextUpdateIn"] = P1Captor.GetnextUpdateTime()-millis();
+  if (conf.mqtt)
+  {
+    doc["MQTT"] = MQTT.IsConnected();
+  }
+
+  serializeJson(doc, str);
+  
+  ActifCache(false);
+  server.send(200, "application/json", str);
 }
 
 void HTTPMgr::handleJSON()
@@ -602,10 +647,8 @@ void HTTPMgr::handleJSON()
   doc["DataReaded"]["gasReceived5min"] = P1Captor.DataReaded.gasReceived5min;
 
   serializeJson(doc, str);
-  // Définir les en-têtes HTTP pour désactiver le cache
-  server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-  server.sendHeader("Pragma", "no-cache");
-  server.sendHeader("Expires", "-1");
+
+  ActifCache(false);
   server.send(200, "application/json", str);
 }
 
@@ -656,25 +699,21 @@ void HTTPMgr::TradAndSend(const char *content_type, String content, String heade
   // CONTENT
   str += content;
 
-  // FOOTER
-  str += F("<div class=\"footer\">");
+  // STATUS
+  str += F("<div class=\"status-bar\">");
   if (conf.mqtt)
   {
-    if (MQTT.IsConnected())
-    {
-      str += F("MQTT link: Connected ");
-    }
-    else
-    {
-      str += F("MQTT link: Not connected ");
-    }
+    str += F("<div class=\"item\"><span class=\"indicator\" id=\"MQTT-indicator\"></span><span class=\"text\">MQTT</span></div>");
   }
+  str += F("<div class=\"item\"><span class=\"indicator\" id=\"P1-indicator\"></span><span class=\"text\">P1</span></div>");
+  str += F("</div>");
+  // FOOTER
+  str += F("</div>");
   str += F("{-OTAFIRMWARE-} : v");
   str += F(VERSION);
   str += ".";
   str += BUILD_DATE;
-  str += F("<br><a href='https://github.com/narfight/P1-wifi-gateway' target='_blank'>Github</a>");
-  str += F("</div></div></body></html>");
+  str += F(" | <a href='https://github.com/narfight/P1-wifi-gateway' target='_blank'>Github</a> </body></html>");
   
   Trad.FindAndTranslateAll(str);
   server.send(200, content_type, str);

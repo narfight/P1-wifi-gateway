@@ -67,8 +67,9 @@ private:
   void handleStyleCSS();
   void handleJSON();
   void handleDataJs();
+  void handleMainJS();
 
-  void ActifCache();
+  bool ActifCache();
   
   void ReplyOTAOK();
   void ReplyOTANOK(const String Error, u_int ref);

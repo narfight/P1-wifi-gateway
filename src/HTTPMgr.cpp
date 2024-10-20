@@ -34,6 +34,7 @@ void HTTPMgr::start_webservices()
 
   server.on("/style.css", std::bind(&HTTPMgr::handleStyleCSS, this));
   server.on("/favicon.svg", std::bind(&HTTPMgr::handleFavicon, this));
+  server.on("/main.js", std::bind(&HTTPMgr::handleMainJS, this));
   server.on("/", std::bind(&HTTPMgr::handleRoot, this));
   server.on("/setPassword", std::bind(&HTTPMgr::handlePassword, this));
   server.on("/Setup", std::bind(&HTTPMgr::handleSetup, this));
@@ -68,18 +69,21 @@ void HTTPMgr::start_webservices()
   MDNS.addService("http", "tcp", WWW_PORT_HTTP);
 }
 
-void HTTPMgr::ActifCache()
+
+bool HTTPMgr::ActifCache()
 {
   //Gestion du cache sur base de la version du firmware
   String etag = "W/\"" + String(BUILD_DATE) + "\"";
   if (server.header("If-None-Match") == etag)
   {
     server.send(304);
-    return;
+    return true;
   }
   // Cache
   server.sendHeader("ETag", etag);
   server.sendHeader("Cache-Control", "max-age=86400");
+
+  return false;
 }
 
 void HTTPMgr::DoMe()
@@ -100,14 +104,13 @@ void HTTPMgr::handleRoot()
 
   String str = F("<main class='form-signin'>");
   str += F("<fieldset><legend>{-H1DATA-}</legend>");
-  str += F("<form action='/P1' method='get'><button type='p1' class='bhome'>{-MENUP1-}</button></form>");
+  str += F("<a href=\"/P1\" class=\"bt\">{-MENUP1-}</a>");
   str += F("</fieldset>");
   str += F("<fieldset><legend>{-ConfH1-}</legend>");
-  str += F("<form action='/Setup' method='get'><button type='Setup'>{-MENUConf-}</button></form>");
-  str += F("<form action='/setPassword' method='get'><button type='Setup'>{-MENUPASSWORD-}</button></form>");
-  str += F("<form action='/update' method='get'><button type='submit'>{-MENUOTA-}</button></form>");
-  str += F("<form action='/reset' id=\"frmRst\" method='get'><button type='button' onclick='ConfRST()'>{-MENURESET-}</button></form>");
-  str += F("<script> function ConfRST() { if (confirm(\"{-ASKCONFIRM-}\")) { document.getElementById(\"frmRst\").submit();}}</script></fieldset>");
+  str += F("<a href=\"/Setup\" class=\"bt\">{-MENUConf-}</a>");
+  str += F("<a href=\"/setPassword\" class=\"bt\">{-MENUPASSWORD-}</a>");
+  str += F("<a href=\"/update\" class=\"bt\">{-MENUOTA-}</a>");
+  str += F("<a href=\"/reset\" class=\"bt bwarning\">{-MENURESET-}</a>");
   TradAndSend("text/html", str, "", false);
 }
 
@@ -139,8 +142,10 @@ void HTTPMgr::ReplyOTANOK(String Error, u_int ref)
 void HTTPMgr::handleDataJs()
 {
   MainSendDebug("[HTTP] Request data.js");
+
+  if (ActifCache()) return;
+
   String str = F("async function updateValues(){try{let e=await fetch(\"data.json\"),a=await e.json();document.getElementById(\"electricityUsedTariff1\").value=a.DataReaded.electricityUsedTariff1+\" kWh\",document.getElementById(\"electricityUsedTariff2\").value=a.DataReaded.electricityUsedTariff2+\" kWh\",document.getElementById(\"electricityReturnedTariff1\").value=a.DataReaded.electricityReturnedTariff1+\" kWh\",document.getElementById(\"electricityReturnedTariff2\").value=a.DataReaded.electricityReturnedTariff2+\" kWh\",document.getElementById(\"actualElectricityPowerDeli\").value=a.DataReaded.actualElectricityPowerDeli+\" kWh\",document.getElementById(\"actualElectricityPowerRet\").value=a.DataReaded.actualElectricityPowerRet+\" kWh\",document.getElementById(\"instantaneousVoltageL1\").value=a.DataReaded.instantaneousVoltage.L1+\" V\",document.getElementById(\"instantaneousVoltageL2\").value=a.DataReaded.instantaneousVoltage.L2+\" V\",document.getElementById(\"instantaneousVoltageL3\").value=a.DataReaded.instantaneousVoltage.L3+\" V\",document.getElementById(\"instantaneousCurrentL1\").value=a.DataReaded.instantaneousCurrent.L1+\" A\",document.getElementById(\"instantaneousCurrentL2\").value=a.DataReaded.instantaneousCurrent.L2+\" A\",document.getElementById(\"instantaneousCurrentL3\").value=a.DataReaded.instantaneousCurrent.L3+\" A\",document.getElementById(\"gasReceived5min\").value=a.DataReaded.gasReceived5min+\" m3\"}catch(t){console.error(\"Error on update :\",t)}}setInterval(updateValues,1e4),window.onload=updateValues;");
-  ActifCache();
   // no translate for CSS
   server.send(200, "application/javascript", str);
 }
@@ -148,7 +153,8 @@ void HTTPMgr::handleDataJs()
 void HTTPMgr::handleStyleCSS()
 {
   MainSendDebug("[HTTP] Request style.css");
-  ActifCache();
+  
+  if (ActifCache()) return;
 
   String str = F("body {font-family: Verdana, sans-serif;background-color: #f9f9f9;margin: 0;padding: 20px;text-align: center;}");
   str += F(".container {max-width: 600px;margin: 0 auto;background: #ffffff;border-radius: 8px;box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);padding: 20px;}");
@@ -159,10 +165,12 @@ void HTTPMgr::handleStyleCSS()
   str += F("label {display: inline-block;text-align: right;width: 60%;text-align: right;margin-right: 10px;margin-bottom: 12px;font-weight: normal}");
   str += F(".help, .footer {text-align:right;font-size:11px;color:#aaa}");
   str += F("p {margin: 0.5em 0;}");
-  str += F("button {border: 0; border-radius: 0.3rem; background: #97C1A9; color: #ffffff; line-height: 2.4rem; font-size: 1.2rem; width: 100%; -webkit-transition-duration: 0.4s; transition-duration: 0.4s; cursor: pointer;margin-top: 5px;}");
-  str += F("button:hover {background: #0e70a4;}");
-  str += F(".bhome {background: #55CBCD;}");
-  str += F(".bhome:hover {background: #A2E1DB;}");
+  str += F("button, .bt {display: inline-block;text-align: center;text-decoration: none;border: 0;border-radius: 0.3rem;background: #97C1A9;color: #ffffff;line-height: 2.4rem;font-size: 1.2rem;width: 100%;-webkit-transition-duration: 0.4s;transition-duration: 0.4s;cursor: pointer;margin-top: 5px;}");
+  str += F("button:hover, .bt:hover {background: #0e70a4;}");
+  str += F(".bt[href=\"/\"]{background: #55CBCD;}");
+  str += F(".bt[href=\"/\"]:hover {background: #A2E1DB;}");
+  str += F(".bwarning {background: #E74C3C;}");
+  str += F(".bwarning:hover {background: #C0392B;}");
   str += F("a {color: #1fa3ec;text-decoration: none;}");
   str += F(".row:after {content: \"\";display: table; clear: both;}");
   str += F("svg {display: block;margin: auto;}");
@@ -170,27 +178,29 @@ void HTTPMgr::handleStyleCSS()
   // no translate for CSS
   server.send(200, "text/css", str);
 }
+void HTTPMgr::handleMainJS()
+{
+  MainSendDebug("[HTTP] Request main.js");
+  
+  if (ActifCache()) return;
 
+  String str = F("window.onload = function() {");
+  str += F("const fin = document.querySelectorAll(\".bwarning\");fin.forEach((it) => {it.addEventListener('click', function(event) {if (!confirm('{-ASKCONFIRM-}')) {event.preventDefault();}});});");
+  str += F("}");
+
+  Trad.FindAndTranslateAll(str);
+  server.send(200, "application/javascript", str);
+}
 void HTTPMgr::handleFavicon()
 {
-  MainSendDebug("[HTTP] Request style.css");
+  MainSendDebug("[HTTP] Request favicon.svg");
 
-  //Gestion du cache sur base de la version du firmware
-  String etag = "W/\"" + String(BUILD_DATE) + "\"";
-  if (server.header("If-None-Match") == etag)
-  {
-    server.send(304);
-    return;
-  }
+  if (ActifCache()) return;
 
   String str = F("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
   str += F("<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" viewBox=\"0 0 24 24\">");
   str += F("<path d=\"M4,4H20A2,2 0 0,1 22,6V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4M4,6V18H11V6H4M20,18V6H18.76C19,6.54 18.95,7.07 18.95,7.13C18.88,7.8 18.41,8.5 18.24,8.75L15.91,11.3L19.23,11.28L19.24,12.5L14.04,12.47L14,11.47C14,11.47 17.05,8.24 17.2,7.95C17.34,7.67 17.91,6 16.5,6C15.27,6.05 15.41,7.3 15.41,7.3L13.87,7.31C13.87,7.31 13.88,6.65 14.25,6H13V18H15.58L15.57,17.14L16.54,17.13C16.54,17.13 17.45,16.97 17.46,16.08C17.5,15.08 16.65,15.08 16.5,15.08C16.37,15.08 15.43,15.13 15.43,15.95H13.91C13.91,15.95 13.95,13.89 16.5,13.89C19.1,13.89 18.96,15.91 18.96,15.91C18.96,15.91 19,17.16 17.85,17.63L18.37,18H20M8.92,16H7.42V10.2L5.62,10.76V9.53L8.76,8.41H8.92V16Z\"/>");
   str += F("</svg>");
-
-  // Cache
-  server.sendHeader("ETag", etag);
-  server.sendHeader("Cache-Control", "max-age=86400");
   
   // no translate for CSS
   server.send(200, "image/svg+xml", str);
@@ -205,9 +215,9 @@ void HTTPMgr::handleUploadForm()
 
   String str = F("<form method='post' action='' enctype='multipart/form-data'>");
   str += F("<fieldset><legend>{-OTAH1-}</legend>");
-  str += F("<p><label for=\"firmware\">{-OTAFIRMWARE-} :</label><input type='file' accept='.bin,.bin.gz' id='firmware' name='firmware'></p>");
-  str += F("</fieldset><button type='submit'>{-OTABTUPDATE-}</button></form>");
-  str += F("<form action='/' method='get'><button class='bhome'>{-MENU-}</button></form>");
+  str += F("<p><label for=\"firmware\">{-OTAFIRMWARE-} :</label><input type='file' accept='.bin,.bin.gz' id='firmware' name='firmware' required></p>");
+  str += F("</fieldset><button class=\"bt bwarning\" type='submit'>{-OTABTUPDATE-}</button></form>");
+  str += F("<a href=\"/\" class=\"bt\">{-MENU-}</a>");
   TradAndSend("text/html", str, "", false);
 }
 
@@ -350,7 +360,7 @@ void HTTPMgr::handlePassword()
   str += F("<label for=\"psd2\">{-PSWD2-} :</label><input type=\"password\" name=\"psd2\" id=\"psd2\" maxlength=\"32\"><br />");
   str += F("<span id=\"passwordError\" class=\"error\"></span>");
   str += F("</fieldset><button type='submit'>{-ConfSave-}</button></form>");
-  str += F("<form action='/' method='get'><button class='bhome'>{-MENU-}</button></form>");
+  str += F("<a href=\"/\" class=\"bt\">{-MENU-}</a>");
   TradAndSend("text/html", str, "", false);
 }
 
@@ -465,7 +475,7 @@ void HTTPMgr::handleSetup()
   str += F("</fieldset>");
   str += F("<span id=\"passwordError\" class=\"error\"></span>");
   str += F("<button type='submit'>{-ACTIONSAVE-}</button></form>");
-  str += F("<form action='/' method='get'><button class='bhome'>{-MENU-}</button></form>");
+  str += F("<a href=\"/\" class=\"bt\">{-MENU-}</a>");
   TradAndSend("text/html", str, "", false);
 }
 
@@ -533,7 +543,7 @@ void HTTPMgr::handleSetupSave()
 
 void HTTPMgr::handleP1()
 {
-  String str = F("<form ><fieldset><legend>{-DATAH1-}</legend>");
+  String str = F("<fieldset><legend>{-DATAH1-}</legend>");
   str += F("<div class=\"row\"><label for='electricityUsedTariff1'>{-DATAFullL-}</label><input type=\"text\" class=\"c6\" id=\"electricityUsedTariff1\"/></div>");
   str += F("<div class=\"row\"><label for='electricityUsedTariff2'>{-DATAFullH-}</label><input type=\"text\" class=\"c6\" id=\"electricityUsedTariff2\"/></div>");
   str += F("<div class=\"row\"><label for='electricityReturnedTariff1'>{-DATAFullProdL-}</label><input type=\"text\" class=\"c6\" id=\"electricityReturnedTariff1\"/></div>");
@@ -547,10 +557,10 @@ void HTTPMgr::handleP1()
   str += F("<div class=\"row\"><label for='instantaneousCurrentL2'>{-DATAAL2-}</label><input type=\"text\" class=\"c6\" id=\"instantaneousCurrentL2\"/></div>");
   str += F("<div class=\"row\"><label for='instantaneousCurrentL3'>{-DATAAL3-}</label><input type=\"text\" class=\"c6\" id=\"instantaneousCurrentL3\"/></div>");
   str += F("<div class=\"row\"><label for='gasReceived5min'>{-DATAGFull-}</label><input type=\"text\" class=\"c6\" id=\"gasReceived5min\"/></div>");
-  str += F("</fieldset></form>");
-  str += F("<form action='/data.json' method='get'><button type='Setup'>{-SHOWJSON-}</button></form>");
-  str += F("<form action='/raw' method='get'><button type='Setup'>{-SHOWRAW-}</button></form>");
-  str += F("<form action='/' method='get'><button class='bhome'>{-MENU-}</button></form>");
+  str += F("</fieldset>");
+  str += F("<a href=\"/data.json\" class=\"bt\">{-SHOWJSON-}</a>");
+  str += F("<a href=\"/raw\" class=\"bt\">{-SHOWRAW-}</a>");
+  str += F("<a href=\"/\" class=\"bt\">{-MENU-}</a>");
   TradAndSend("text/html", str, "<script type=\"text/javascript\" src=\"data.js\"></script>", false);
 }
 
@@ -634,6 +644,7 @@ void HTTPMgr::TradAndSend(const char *content_type, String content, String heade
 
   str += F("<meta charset='utf-8'><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,user-scalable=no\"/>");
   str += F("<title>P1 wifi-gateway</title>");
+  str += F("<script type=\"text/javascript\" src=\"main.js\"></script>");
   str += header;
   str += F("<link rel='stylesheet' type='text/css' href='style.css'></head>");
   str += F("<body><div class=\"container\"><h2>P1 wifi-gateway</h2>");

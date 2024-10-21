@@ -224,16 +224,13 @@ char* WifiMgr::genererSSID()
 
 void WifiMgr::SetAPMod()
 {
-  char* ssid = genererSSID();
-  MainSendDebugPrintf("[WIFI] Setting up Captive Portal by the name '%s'", ssid);
+  MainSendDebugPrintf("[WIFI] Setting up Captive Portal by the name '%s'", GetClientName());
   digitalWrite(LED_BUILTIN, LOW);
 
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(ssid, "");
+  WiFi.softAP(GetClientName(), "");
   MainSendDebugPrintf("[WIFI] Captive Portal IP : %s", WiFi.softAPIP().toString().c_str());
   APtimer = millis();
-
-  delete[] ssid;
 }
 
 /// @brief Si il diffuse son propre AP et non connecté a un Wifi
@@ -243,40 +240,56 @@ bool WifiMgr::AsAP()
   return (WiFi.getMode() != WIFI_STA);
 }
 
-/// @brief
-/// @return Return the quality (Received Signal Strength Indicator) of the WiFi network.
-int WifiMgr::getQuality()
+void WifiMgr::setRFPower()
+{
+  float newPower = CalcuAdjustWiFiPower();
+  
+  if (newPower == -1)
+  {
+    return; //not connected or error
+  }
+
+  // N'applique le changement que si la différence est significative
+  if (currentPowerWifi == -1 || abs(currentPowerWifi - newPower) >= HYSTERESIS_CORRECTION_POWER)
+  {
+    MainSendDebugPrintf("[WIFI] Set RF power from %f to %f", currentPowerWifi, newPower);
+    WiFi.setOutputPower(currentPowerWifi);
+    currentPowerWifi = newPower;
+  }
+}
+
+float WifiMgr::CalcuAdjustWiFiPower()
 {
   if (WiFi.status() != WL_CONNECTED)
   {
     return -1;
   }
 
-  int dBm = WiFi.RSSI();
-  if (dBm <= -100)
+  int rssi = WiFi.RSSI();
+  float newPower;
+  
+  // Protection contre les valeurs RSSI invalides
+  if (rssi >= 0)
   {
-    return 0;
+    return -1;
   }
-  if (dBm >= -50)
+  
+  if (rssi > -50)
   {
-    return 100;
+    // Signal fort : puissance minimale
+    newPower = 0;
   }
-
-  return 2 * (dBm + 100);
-}
-
-void WifiMgr::setRFPower()
-{
-  float RFpower = roundf(20 - (getQuality() / 5)) + 2;
-  if (RFpower >= 21)
+  else if (rssi < -80)
   {
-    RFpower = 20.5;
+    // Signal faible : puissance maximale
+    newPower = 20.5;
   }
-
-  if (RFpower < 0)
+  else 
   {
-    RFpower = 1;
+    // Entre -50 et -80 : adaptation linéaire
+    // Convertit -80~-50 en 0~20.5
+    newPower = ((-rssi - 50) * 20.5) / 30;
   }
-  MainSendDebugPrintf("[WIFI] Set RF power to %f", RFpower);
-  WiFi.setOutputPower(RFpower);
+  
+  return newPower;
 }

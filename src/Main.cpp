@@ -31,6 +31,7 @@
 #include "GlobalVar.h"
 #include "Language.h"
 
+char clientName[CLIENTNAMESIZE];
 unsigned long WatchDogsTimer = 0;
 
 settings config_data;
@@ -157,13 +158,36 @@ void PrintConfigData()
   Yield_Delay(20);
 }
 
+void SetName()
+{
+    String macAddr = WiFi.macAddress(); // Format typique "AA:BB:CC:DD:EE:FF"
+    strcpy(clientName, HOSTNAME);
+    strcat(clientName, "-");
+    
+    // Pointer vers le début des 2 derniers groupes (position -5:-2 et -2:fin)
+    const char* macStr = macAddr.c_str();
+    int macLen = macAddr.length();
+    
+    // Copie les 2 derniers octets sans les ':'
+    char lastBytes[5];
+    lastBytes[0] = macStr[macLen-5];
+    lastBytes[1] = macStr[macLen-4];
+    lastBytes[2] = macStr[macLen-2];
+    lastBytes[3] = macStr[macLen-1];
+    lastBytes[4] = '\0';
+    
+    strcat(clientName, lastBytes);
+}
+
 void setup()
 {
   #ifdef DEBUG_SERIAL_P1
   Serial.begin(SERIALSPEED);
   Serial.println("Booting...");
   #endif
+  SetName();
   MainSendDebugPrintf("[Core] Firmware: v%s.%u", VERSION, BUILD_DATE);
+  MainSendDebugPrintf("[Core] Name: %s", clientName);
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(OE, OUTPUT);    // IO16 OE on the 74AHCT1G125
@@ -191,7 +215,7 @@ void setup()
     //Show to user is reseted !
     blink(20, 50UL);
 
-    config_data = (settings){SETTINGVERSION, 0, true, "", "", "192.168.1.12", 8080, 1234, 1235, "dsmr", "10.0.0.3", 1883, "", "", 60, false, true, false, false, false, true, "", ""};
+    config_data = (settings){SETTINGVERSION, 0, true, "", "", "10.0.0.3", 8080, 1234, 1235, "dsmr", "10.0.0.3", 1883, "", "", 60, false, false, false, false, false, true, "", ""};
   }
   else
   {
@@ -235,13 +259,6 @@ void doWatchDogs()
     MainSendDebug("[Core] FATAL : Memory leak !");
     ESP.reset();
   }
-
-  /*
-  if (WifiClient->AsAP() && (millis() - WifiClient->APtimer > 600000))
-  {
-    MainSendDebug("[WDG] No wifi, restart");
-    ESP.reset(); // we have been in AP mode for 600 sec.
-  }*/
 }
 
 void loop()
@@ -290,6 +307,12 @@ void loop()
     EEPROM.commit();
     MainSendDebug("[Core] Reset boot failed");
   }
+}
+
+
+char* GetClientName()
+{
+  return clientName;
 }
 
 void RequestRestart(unsigned long delay)

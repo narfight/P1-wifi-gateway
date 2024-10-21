@@ -24,10 +24,14 @@
 
 #ifndef MQTT_H
 #define MQTT_H
+
+#define MAXERROR 10
+#define RETRYTIME 10000
+
 #include <Arduino.h>
 #include "GlobalVar.h"
 #include <WiFiClient.h>
-#include <PubSubClient.h>
+#include <AsyncMqttClient.h>
 #include "Debug.h"
 #include "P1Reader.h"
 #include "WifiMgr.h"
@@ -36,16 +40,25 @@ class MQTTMgr
 {
 private:
   unsigned long LastReportinMillis = 0;
-  PubSubClient mqtt_client; // * Initiate MQTT client
+  AsyncMqttClient mqtt_client; // * Initiate MQTT client
   settings &conf;
   WifiMgr &WifiClient;
   P1Reader &DataReaderP1;
+  void onMqttConnect(bool sessionPresent);
+  void onMqttDisconnect(AsyncMqttClientDisconnectReason reason);
   long unsigned LastTimeofSendedDatagram = millis(); // le dernier millis du datagram envoyé pour savoir si c'est un nouveau
   /// @brief Send a message to a broker topic
   /// @param topic
   /// @param payload
   void send_msg(const char *topic, const char *payload);
   char* uint32ToChar(uint32_t value, char* buffer);
+  enum {
+    CONNECTING,
+    CONNECTED,
+    DISCONNECTING,
+    DISCONNECTED
+  } _state;
+  u_int8_t CountError;
 public:
   long unsigned nextMQTTreconnectAttempt = millis();
 

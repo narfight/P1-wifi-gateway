@@ -27,7 +27,8 @@
 #include <Arduino.h>
 
 #define VERSION "0.97"
-#define HOSTNAME "p1meter"
+#define HOSTNAME "P1meter"
+#define CLIENTNAMESIZE 32
 
 #define OE 16 // IO16 OE on the 74AHCT1G125
 #define DR 4  // IO4 is Data Request

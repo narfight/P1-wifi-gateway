@@ -26,6 +26,8 @@
 
 MQTTMgr::MQTTMgr(settings &currentConf, WifiMgr &currentLink, P1Reader &currentP1) : conf(currentConf), WifiClient(currentLink), DataReaderP1(currentP1)
 {
+  _state = DISCONNECTED;
+
   WifiClient.OnWifiEvent([this](bool b, wl_status_t s1, wl_status_t s2)
   {
       if (b)
@@ -33,9 +35,48 @@ MQTTMgr::MQTTMgr(settings &currentConf, WifiMgr &currentLink, P1Reader &currentP
         nextMQTTreconnectAttempt = 0;
       }
   });
+
+  // Configuration des callbacks MQTT
+  mqtt_client.onConnect([this](bool sessionPresent) {
+      onMqttConnect(sessionPresent);
+  });
   
-  mqtt_client.setClient(WifiClient.WifiCom);
-  mqtt_client.setServer(conf.mqttIP, conf.mqttPort);
+  mqtt_client.onDisconnect([this](AsyncMqttClientDisconnectReason reason) {
+      onMqttDisconnect(reason);
+  });
+  mqtt_client.onSubscribe([this](uint16_t packetId, uint8_t qos)
+  {
+    MainSendDebug("[MQTT] Subrscribe event");
+  });
+}
+
+void MQTTMgr::onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
+{
+  _state = DISCONNECTED;
+  CountError++;
+  MainSendDebugPrintf("[MQTT] Disconnected (%u)", reason);
+
+  if (CountError >= MAXERROR)
+  {
+    MainSendDebug("[MQTT] Max error to connect, reset MQTT client");
+    mqtt_client.disconnect(true);
+    mqtt_client.clearQueue();
+    CountError = 0;
+  }
+
+  nextMQTTreconnectAttempt = millis() + RETRYTIME; //try reconnect
+}
+
+void MQTTMgr::onMqttConnect(bool sessionPresent)
+{
+  _state = CONNECTED;
+  CountError = 0;
+  MainSendDebug("[MQTT] connected");
+
+  // Once connected, publish an announcement...
+  send_char("State/status", "P1 gateway running");
+  send_char("State/Version", VERSION);
+  send_char("State/IP", WifiClient.CurrentIP().c_str());
 }
 
 bool MQTTMgr::IsConnected()
@@ -47,7 +88,6 @@ void MQTTMgr::doMe()
 {
   if (mqtt_connect())
   {
-    mqtt_client.loop();
     if (DataReaderP1.dataEnd && LastTimeofSendedDatagram < DataReaderP1.LastSample)
     {
       LastTimeofSendedDatagram = DataReaderP1.LastSample;
@@ -58,35 +98,26 @@ void MQTTMgr::doMe()
 
 void MQTTMgr::stop()
 {
-  send_char("State/Payload", "p1 gateway stopping");
+  send_char("State/status", "P1 gateway stopping");
 }
 
 bool MQTTMgr::mqtt_connect()
 {
-  if (!mqtt_client.connected())
+  if (!mqtt_client.connected() && _state != CONNECTING && millis() > nextMQTTreconnectAttempt)
   {
-    if (millis() > nextMQTTreconnectAttempt)
+    MainSendDebugPrintf("[MQTT] try to connect to %s:%u", conf.mqttIP, conf.mqttPort);
+
+    //Setting connection
+    if (strlen(conf.mqttUser) != 0 && strlen(conf.mqttPass) != 0)
     {
-      MainSendDebugPrintf("[MQTT] Connect to %s:%u", conf.mqttIP, conf.mqttPort);
-      
-      String ClientName = String(HOSTNAME) + "-" + WiFi.macAddress().substring(WiFi.macAddress().length() - 5);
-
-      // Attempt to connect
-      if (mqtt_client.connect(ClientName.c_str() , conf.mqttUser, conf.mqttPass))
-      {
-        MainSendDebug("[MQTT] connected");
-
-        // Once connected, publish an announcement...
-        send_char("State/Payload", "p1 gateway running");
-        send_char("State/Version", VERSION);
-        send_char("State/IP", WifiClient.CurrentIP().c_str());
-      }
-      else
-      {
-        MainSendDebugPrintf("[MQTT] Connection failed : rc=%d", mqtt_client.state());
-        nextMQTTreconnectAttempt = millis() + 2000; // try again in 2 seconds
-      }
+      mqtt_client.setCredentials(conf.mqttUser, conf.mqttPass);
     }
+    mqtt_client.setServer(conf.mqttIP, conf.mqttPort);
+    mqtt_client.setClientId(GetClientName());
+   
+    // Attempt to connect
+    _state = CONNECTING;
+    mqtt_client.connect();
   }
   
   //Reply with the new status
@@ -127,11 +158,7 @@ void MQTTMgr::send_msg(const char *topic, const char *payload)
     {
       return; //nothing to report
     }
-
-    if (!mqtt_client.publish(topic, payload, false))
-    {
-        MainSendDebugPrintf("[MQTT] Error to send to topic : %s", topic);
-    }
+    mqtt_client.publish(topic, 2, true, payload);
 }
 
 char* MQTTMgr::uint32ToChar(uint32_t value, char* buffer)
@@ -187,7 +214,7 @@ void MQTTMgr::MQTT_reporter()
     return;
   }
 
-  MainSendDebug("[MQTT] Send data");
+  MainSendDebug("[MQTT] Send P1 data");
 
   //no DSMR valid :
   send_char("equipmentName", DataReaderP1.meterName.c_str());

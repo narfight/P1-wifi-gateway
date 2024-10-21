@@ -30,7 +30,7 @@ HTTPMgr::HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &curre
 void HTTPMgr::start_webservices()
 {
   MainSendDebugPrintf("[WWW] Start on port %d", WWW_PORT_HTTP);
-  MDNS.begin(HOSTNAME);
+  MDNS.begin(GetClientName());
   //header files
   server.on("/style.css", std::bind(&HTTPMgr::handleStyleCSS, this));
   server.on("/favicon.svg", std::bind(&HTTPMgr::handleFavicon, this));
@@ -213,7 +213,7 @@ void HTTPMgr::handleMainJS()
   
   if (ActifCache(true)) return;
 
-  String str = F("function parseDateTime(t){return new Date(\"20\"+t.substring(0,2),t.substring(2,4)-1,t.substring(4,6),t.substring(6,8),t.substring(8,10),t.substring(10,12))}async function updateStatus(){try{let e=await fetch(\"status.json\"),s=await e.json();const r=document.getElementById(\"MQTT-indicator\");null!=r&&(1==s.MQTT?r.classList.remove(\"error\"):r.classList.add(\"error\"));const n=document.getElementById(\"P1-indicator\");if(\"\"!=s.P1.LastSample){var t=parseDateTime(s.P1.LastSample);Date.now().set;t.setSeconds(t.getSeconds()+3*s.P1.Interval),t<Date.now()?n.classList.add(\"error\"):n.classList.remove(\"error\")}else n.classList.add(\"error\")}catch(t){console.error(\"Error on update status:\",t)}}window.onload=function(){document.querySelectorAll(\".bwarning\").forEach((t=>{t.addEventListener(\"click\",(function(t){confirm(\"{-ASKCONFIRM-}\")||t.preventDefault()}))})),setInterval(updateStatus,1e4)};");
+  String str = F("function parseDateTime(t){return new Date(\"20\"+t.substring(0,2),t.substring(2,4)-1,t.substring(4,6),t.substring(6,8),t.substring(8,10),t.substring(10,12))}async function updateStatus(){try{let e=await fetch(\"status.json\"),s=await e.json();const r=document.getElementById(\"MQTT-indicator\");null!=r&&(1==s.MQTT?r.classList.remove(\"error\"):r.classList.add(\"error\"));const n=document.getElementById(\"P1-indicator\");if(\"\"!=s.P1.LastSample){var t=parseDateTime(s.P1.LastSample);Date.now().set;t.setSeconds(t.getSeconds()+3*s.P1.Interval),t<Date.now()?n.classList.add(\"error\"):n.classList.remove(\"error\")}else n.classList.add(\"error\")}catch(t){console.error(\"Error on update status:\",t)}}window.onload=function(){updateStatus();document.querySelectorAll(\".bwarning\").forEach((t=>{t.addEventListener(\"click\",(function(t){confirm(\"{-ASKCONFIRM-}\")||t.preventDefault()}))})),setInterval(updateStatus,1e4)};");
 
   Trad.FindAndTranslateAll(str);
   server.send(200, "application/javascript", str);
@@ -699,7 +699,7 @@ void HTTPMgr::TradAndSend(const char *content_type, String content, String heade
   }
 
   str += F("<meta charset='utf-8'><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,user-scalable=no\"/>");
-  str += F("<title>P1 wifi-gateway</title>");
+  str += "<title>" + String(GetClientName()) + "</title>";
   str += F("<script type=\"text/javascript\" src=\"main.js\"></script>");
   str += header;
   str += F("<link rel='stylesheet' type='text/css' href='style.css'></head>");

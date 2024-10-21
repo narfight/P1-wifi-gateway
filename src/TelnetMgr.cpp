@@ -106,7 +106,7 @@ void TelnetMgr::handleClientActivity()
             }
             else
             {
-                telnetClients[i].printf("%s>", HOSTNAME);
+                telnetClients[i].printf("%s>", GetClientName());
             }
             
             lastActivityTime[i] = millis();
@@ -148,7 +148,7 @@ void TelnetMgr::processCommand(int clientId, const String &command)
         telnetClients[clientId].println(command);
         commandeHelp(clientId);
     }
-    telnetClients[clientId].printf("%s>", HOSTNAME);
+    telnetClients[clientId].printf("%s>", GetClientName());
 }
 void TelnetMgr::commandeHelp(int clientId)
 {
@@ -191,7 +191,7 @@ void TelnetMgr::handleNewConnections()
             {
                 telnetClients[i].printf("Welcome! Your session ID is %d.\n", i);
                 MainSendDebugPrintf("[TELNET] New authenticated session (Id:%d)", i);
-                telnetClients[i].printf("%s>", HOSTNAME);
+                telnetClients[i].printf("%s>", GetClientName());
             }
             else
             {

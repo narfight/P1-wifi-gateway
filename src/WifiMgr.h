@@ -26,6 +26,7 @@
 
 #define SSID_SETUP "P1_setup_"
 #define INTERVAL_SCAN_SSID_MS 10000
+#define HYSTERESIS_CORRECTION_POWER 2.0
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -47,9 +48,10 @@ class WifiMgr
   void SetAPMod();
   char* genererSSID();
   bool FindThesSSID();
+  float CalcuAdjustWiFiPower();
   unsigned long LastScanSSID = millis(); //Last time when the scan of SSID was do
   unsigned long OfflineSince = 0; //Number of ms since wifi don't connected before switch to AP
-
+  float currentPowerWifi = -1; //Power of Wifi TX interface
   public:
   explicit WifiMgr(settings& currentConf);
   unsigned long APtimer = 0; // time we went into AP mode. Restart module if in AP for 10 mins as we might have gotten in AP due to router wifi issue
@@ -65,9 +67,6 @@ class WifiMgr
   /// @return True si c'est en mode AP
   bool AsAP();
 
-  /// @brief
-  /// @return Return the quality (Received Signal Strength Indicator) of the WiFi network.
-  int getQuality();
   void setRFPower();
   void Reconnect();
 };

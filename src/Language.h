@@ -26,6 +26,7 @@
 
 #include <Arduino.h>
 #include "Langues/French.h"
+#include "Debug.h"
 
 class Language
 {

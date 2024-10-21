@@ -65,4 +65,5 @@ void Language::FindAndTranslateAll(String& inputText)
     startIndex = inputText.indexOf("{-");
     endIndex = inputText.indexOf("-}");
   }
+  inputText.replace("{#HOSTNAME#}", GetClientName());
 }

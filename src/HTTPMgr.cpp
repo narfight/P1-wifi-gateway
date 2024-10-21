@@ -38,7 +38,7 @@ void HTTPMgr::start_webservices()
   
   //extra for /P1 page for refresh
   server.on("/P1.json", std::bind(&HTTPMgr::handleJSON, this));
-  server.on("/P1.js", std::bind(&HTTPMgr::handleDataJs, this));
+  server.on("/P1.js", std::bind(&HTTPMgr::handleP1Js, this));
   
   //for the footer
   server.on("/status.json", std::bind(&HTTPMgr::handleJSONStatus, this));
@@ -49,6 +49,7 @@ void HTTPMgr::start_webservices()
   server.on("/Setup", std::bind(&HTTPMgr::handleSetup, this));
   server.on("/SetupSave", std::bind(&HTTPMgr::handleSetupSave, this));
   server.on("/reset", std::bind(&HTTPMgr::handleFactoryReset, this));
+  server.on("/reboot", std::bind(&HTTPMgr::handleReboot, this));
   server.on("/P1", std::bind(&HTTPMgr::handleP1, this));
   server.on("/raw", std::bind(&HTTPMgr::handleRAW, this));
   server.on("/Help", std::bind(&HTTPMgr::handleHelp, this));
@@ -129,6 +130,7 @@ void HTTPMgr::handleRoot()
   str += F("<a href=\"/Setup\" class=\"bt\">{-MENUConf-}</a>");
   str += F("<a href=\"/setPassword\" class=\"bt\">{-MENUPASSWORD-}</a>");
   str += F("<a href=\"/update\" class=\"bt\">{-MENUOTA-}</a>");
+  str += F("<a href=\"/reboot\" class=\"bt bwarning\">{-MENUREBOOT-}</a>");
   str += F("<a href=\"/reset\" class=\"bt bwarning\">{-MENURESET-}</a>");
   str += F("</fieldset>");
   TradAndSend("text/html", str, "", false);
@@ -144,11 +146,6 @@ void HTTPMgr::ReplyOTAOK()
   RequestRestart(1000);
 }
 
-void HTTPMgr::handleRAW()
-{
-  server.send(200, "Text/plain", P1Captor.datagram);
-}
-
 void HTTPMgr::ReplyOTANOK(String Error, u_int ref)
 {
   MainSendDebugPrintf("[FLASH] Error : %s (%u)", Error.c_str(), ref);
@@ -159,7 +156,12 @@ void HTTPMgr::ReplyOTANOK(String Error, u_int ref)
   RequestRestart(1000);
 }
 
-void HTTPMgr::handleDataJs()
+void HTTPMgr::handleRAW()
+{
+  server.send(200, "Text/plain", P1Captor.datagram);
+}
+
+void HTTPMgr::handleP1Js()
 {
   MainSendDebug("[HTTP] Request P1.js");
 
@@ -167,6 +169,7 @@ void HTTPMgr::handleDataJs()
 
   String str = F("function parseDateTime(s){let t=s.substring(0,2),n=s.substring(2,4)-1,r=\"20\"+s.substring(4,6),i=s.substring(6,8),u=s.substring(8,10),e=s.substring(10,12),g=new Date(r,n,t,i,u,e);return g}");
   str += F("async function updateValues(){try{let e=await fetch(\"P1.json\"),a=await e.json();document.getElementById(\"LastSample\").value=parseDateTime(a.LastSample).toLocaleString(),document.getElementById(\"electricityUsedTariff1\").value=a.DataReaded.electricityUsedTariff1+\" kWh\",document.getElementById(\"electricityUsedTariff2\").value=a.DataReaded.electricityUsedTariff2+\" kWh\",document.getElementById(\"electricityReturnedTariff1\").value=a.DataReaded.electricityReturnedTariff1+\" kWh\",document.getElementById(\"electricityReturnedTariff2\").value=a.DataReaded.electricityReturnedTariff2+\" kWh\",document.getElementById(\"actualElectricityPowerDeli\").value=a.DataReaded.actualElectricityPowerDeli+\" kWh\",document.getElementById(\"actualElectricityPowerRet\").value=a.DataReaded.actualElectricityPowerRet+\" kWh\",document.getElementById(\"instantaneousVoltageL1\").value=a.DataReaded.instantaneousVoltage.L1+\" V\",document.getElementById(\"instantaneousVoltageL2\").value=a.DataReaded.instantaneousVoltage.L2+\" V\",document.getElementById(\"instantaneousVoltageL3\").value=a.DataReaded.instantaneousVoltage.L3+\" V\",document.getElementById(\"instantaneousCurrentL1\").value=a.DataReaded.instantaneousCurrent.L1+\" A\",document.getElementById(\"instantaneousCurrentL2\").value=a.DataReaded.instantaneousCurrent.L2+\" A\",document.getElementById(\"instantaneousCurrentL3\").value=a.DataReaded.instantaneousCurrent.L3+\" A\",document.getElementById(\"gasReceived5min\").value=a.DataReaded.gasReceived5min+\" m3\"}catch(t){console.error(\"Error on update :\",t)}}setInterval(updateValues,1e4),window.onload=updateValues;");
+  
   // no translate for CSS
   server.send(200, "application/javascript", str);
 }
@@ -211,9 +214,6 @@ void HTTPMgr::handleMainJS()
   if (ActifCache(true)) return;
 
   String str = F("function parseDateTime(t){return new Date(\"20\"+t.substring(0,2),t.substring(2,4)-1,t.substring(4,6),t.substring(6,8),t.substring(8,10),t.substring(10,12))}async function updateStatus(){try{let e=await fetch(\"status.json\"),s=await e.json();const r=document.getElementById(\"MQTT-indicator\");null!=r&&(1==s.MQTT?r.classList.remove(\"error\"):r.classList.add(\"error\"));const n=document.getElementById(\"P1-indicator\");if(\"\"!=s.P1.LastSample){var t=parseDateTime(s.P1.LastSample);Date.now().set;t.setSeconds(t.getSeconds()+3*s.P1.Interval),t<Date.now()?n.classList.add(\"error\"):n.classList.remove(\"error\")}else n.classList.add(\"error\")}catch(t){console.error(\"Error on update status:\",t)}}window.onload=function(){document.querySelectorAll(\".bwarning\").forEach((t=>{t.addEventListener(\"click\",(function(t){confirm(\"{-ASKCONFIRM-}\")||t.preventDefault()}))})),setInterval(updateStatus,1e4)};");
-  /*String str = F("window.onload = function() {");
-  str += F("const fin = document.querySelectorAll(\".bwarning\");fin.forEach((it) => {it.addEventListener('click', function(event) {if (!confirm('{-ASKCONFIRM-}')) {event.preventDefault();}});});");
-  str += F("}");*/
 
   Trad.FindAndTranslateAll(str);
   server.send(200, "application/javascript", str);
@@ -231,6 +231,17 @@ void HTTPMgr::handleFavicon()
   
   // no translate for CSS
   server.send(200, "image/svg+xml", str);
+}
+
+void HTTPMgr::handleReboot()
+{
+  if (!ChekifAsAdmin())
+  {
+    return;
+  }
+
+  RebootPage("TXTREBOOTPAGE");
+  RequestRestart(1000);  
 }
 
 void HTTPMgr::handleUploadForm()
@@ -328,22 +339,16 @@ void HTTPMgr::handleFactoryReset()
     return;
   }
 
-  String str = F("<fieldset><legend>{-RF_RESTARTH1-}</legend>");
-  str += F("<p>{-RF_RESTTXT-}</p>");
-  str += GetAnimWait();
-  str += F("</fieldset>");
-  TradAndSend("text/html", str, "", true);
-
-  MainSendDebug("Reset factory and reboot...");
+  MainSendDebug("[HTTP] Reset factory and reboot...");
+  RebootPage("RF_RESTTXT");
 
   conf.ConfigVersion = SETTINGVERSIONNULL;
 
   EEPROM.begin(sizeof(struct settings));
   EEPROM.put(0, conf);
   EEPROM.commit();
-
-  Yield_Delay(1000);
-  ESP.reset();
+  
+  RequestRestart(1000);
 }
 
 void HTTPMgr::handlePassword()
@@ -548,16 +553,7 @@ void HTTPMgr::handleSetupSave()
 
     MainSendDebug("[HTTP] save in EEPROM !!!");
 
-    String str = F("<fieldset><legend>{-ConfH1-}</legend>");
-    str += F("<p>{-Conf-Saved-}</p>");
-    str += F("<p>{-ConfReboot-}</p>");
-    str += F("<p></p>");
-    str += F("<p>{-ConfLedStart-}</p>");
-    str += F("<p>{-ConfLedError-}</p>");
-    str += GetAnimWait();
-    str += F("</fieldset>");
-
-    TradAndSend("text/html", str, "", true);
+    RebootPage("Conf-Saved");
 
     EEPROM.begin(sizeof(struct settings));
     EEPROM.put(0, NewConf);
@@ -566,6 +562,20 @@ void HTTPMgr::handleSetupSave()
     MainSendDebug("[HTTP] Reboot !!!");
     RequestRestart(1000);
   }
+}
+
+void HTTPMgr::RebootPage(String Message)
+{
+    String str = F("<fieldset><legend>{-ConfH1-}</legend>");
+    str += "<p>{-" + Message + "-}</p>";
+    str += F("<p>{-ConfReboot-}</p>");
+    str += F("<p></p>");
+    str += F("<p>{-ConfLedStart-}</p>");
+    str += F("<p>{-ConfLedError-}</p>");
+    str += GetAnimWait();
+    str += F("</fieldset>");
+
+    TradAndSend("text/html", str, "", true);
 }
 
 void HTTPMgr::handleP1()

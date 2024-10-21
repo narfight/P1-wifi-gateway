@@ -67,8 +67,11 @@ private:
   void handleStyleCSS();
   void handleJSON();
   void handleJSONStatus();
-  void handleDataJs();
+  void handleP1Js();
   void handleMainJS();
+  void handleReboot();
+
+  void RebootPage(String Message);
 
   bool ActifCache(bool);
   

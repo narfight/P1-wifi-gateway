@@ -37,6 +37,7 @@ const char LANG[] = R"=====(
     "MENUConf" : "Configuration",
     "MENUOTA" : "Mettre à jour le micrologiciel",
     "MENURESET" : "Retour aux paramètres d'usine",
+    "MENUREBOOT" : "Redémarrer",
     "MENUPASSWORD" : "Identifiant",
     "H1DATA" : "Données",
     "ConfH1": "Wifi et configuration du module",
@@ -111,5 +112,6 @@ const char LANG[] = R"=====(
     "RF_RESTARTH1" : "Opération réussie",
     "RF_RESTTXT" : "Merci de vous connecter au Wifi du module une fois qu'il aura redémarré",
     "ASKCONFIRM" : "Êtes-vous sûr de vouloir réaliser cette action ?",
+    "TXTREBOOTPAGE" : "Redémarrage demandé par l'utilisateur",
     }
 )=====";

@@ -34,24 +34,12 @@
 
 #include <Arduino.h>
 #include <TimeLib.h>
+#include <vector>
 #include "GlobalVar.h"
 #include "Debug.h"
 
 class P1Reader
 {
-private:
-  settings &conf;
-  unsigned long nextUpdateTime = millis() + 5000; //wait 5s before read datagram
-  void RTS_on();
-  void RTS_off();
-  void OBISparser(int len);
-  String readFirstParenthesisVal(int start, int end);
-  String readBetweenDoubleParenthesis(int start, int end);
-  int FindCharInArray(char array[], char c, int len);
-  void decodeTelegram(int len);
-  String identifyMeter(String Name);
-  String readUntilStar(int start, int end);
-
 public:
   int state = DISABLED;
   unsigned long LastSample = 0;
@@ -72,18 +60,15 @@ public:
   // FixedField return the corresponding units for these values.
   struct FixedValue
   {
-    FixedValue()
-    {
-      _value = 0;
-    }
-    FixedValue(String value)
-    {
-      _value = value.toFloat() * 1000;
-    }
-    operator float() { return val(); }
-    float val() { return _value / 1000.0; }
-    uint32_t int_val() { return _value; }
-    uint32_t _value{0};
+    FixedValue() = default;
+    FixedValue(String value) : _value(value.toFloat() * 1000) {}
+
+    operator float() const { return _value * 0.001f; }
+    float val() const { return _value * 0.001f; }
+    //uint32_t int_val() const { return _value; }
+
+  private:
+    uint32_t _value = 0;
   };
 
   struct DataP1
@@ -91,7 +76,7 @@ public:
     char gasReceived5min[12];
     char gasDomoticz[12]; // Domoticz wil gas niet in decimalen?
     char P1version[8];
-    char P1timestamp[30] = "\0";
+    char P1timestamp[13] = "\0";
     char equipmentId[100] = "\0";
     char equipmentId2[100] = "\0";
     FixedValue electricityUsedTariff1;
@@ -124,5 +109,31 @@ public:
     FixedValue actualElectricityPowerDeli;
     FixedValue actualElectricityPowerRet;
   } DataReaded = {};
+  void OnNewDatagram(std::function<void()> callback)
+  {
+    delegates.push_back(callback);
+  }
+
+protected:
+  void TriggerCallbacks()
+  {
+    for(const auto& callback : delegates) 
+    {
+      if(callback) callback();
+    }
+  }
+private:
+  std::vector<std::function<void()>> delegates;
+  settings &conf;
+  unsigned long nextUpdateTime = millis() + 5000; //wait 5s before read datagram
+  void RTS_on();
+  void RTS_off();
+  void OBISparser(int len);
+  String readFirstParenthesisVal(int start, int end);
+  String readBetweenDoubleParenthesis(int start, int end);
+  int FindCharInArray(char array[], char c, int len);
+  void decodeTelegram(int len);
+  String identifyMeter(String Name);
+  String readUntilStar(int start, int end);
 };
 #endif

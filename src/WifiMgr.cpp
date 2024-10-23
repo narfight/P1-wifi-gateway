@@ -61,7 +61,7 @@ String WifiMgr::CurrentIP()
 
 bool WifiMgr::FindThesSSID()
 {
-  MainSendDebugPrintf("[WIFI] Looking for the SSID : %s", conf.ssid);
+  MainSendDebugPrintf("[WIFI] Looking for : %s", conf.ssid);
   
   // Scan des réseaux WiFi
   int numNetworks = WiFi.scanNetworks();
@@ -145,7 +145,7 @@ void WifiMgr::Connect()
   if (strcmp(conf.ssid, "") != 0)
   {
     // Wifi configured to connect to one wifi
-    MainSendDebugPrintf("[WIFI] Trying to connect to '%s' wifi network", conf.ssid);
+    MainSendDebugPrintf("[WIFI] Connect to '%s'", conf.ssid);
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
     WiFi.begin(conf.ssid, conf.password);
@@ -224,12 +224,11 @@ char* WifiMgr::genererSSID()
 
 void WifiMgr::SetAPMod()
 {
-  MainSendDebugPrintf("[WIFI] Setting up Captive Portal by the name '%s'", GetClientName());
   digitalWrite(LED_BUILTIN, LOW);
 
   WiFi.mode(WIFI_AP);
   WiFi.softAP(GetClientName(), "");
-  MainSendDebugPrintf("[WIFI] Captive Portal IP : %s", WiFi.softAPIP().toString().c_str());
+  MainSendDebugPrintf("[WIFI] Start captive Portal '%s' (IP:%s)", GetClientName(), WiFi.softAPIP().toString().c_str());
   APtimer = millis();
 }
 
@@ -252,7 +251,6 @@ void WifiMgr::setRFPower()
   // N'applique le changement que si la différence est significative
   if (currentPowerWifi == -1 || abs(currentPowerWifi - newPower) >= HYSTERESIS_CORRECTION_POWER)
   {
-    MainSendDebugPrintf("[WIFI] Set RF power from %f to %f", currentPowerWifi, newPower);
     WiFi.setOutputPower(currentPowerWifi);
     currentPowerWifi = newPower;
   }

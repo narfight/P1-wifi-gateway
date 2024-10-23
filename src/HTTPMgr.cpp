@@ -1,4 +1,6 @@
 /*
+RAM:   [=====     ]  48.1% (used 39444 bytes from 81920 bytes)
+Flash: [======    ]  57.8% (used 440645 bytes from 761840 bytes)
  * Copyright (c) 2023 Jean-Pierre sneyers
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,7 +31,6 @@ HTTPMgr::HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &curre
 
 void HTTPMgr::start_webservices()
 {
-  MainSendDebugPrintf("[WWW] Start on port %d", WWW_PORT_HTTP);
   MDNS.begin(GetClientName());
   //header files
   server.on("/style.css", std::bind(&HTTPMgr::handleStyleCSS, this));
@@ -42,6 +43,8 @@ void HTTPMgr::start_webservices()
   
   //for the footer
   server.on("/status.json", std::bind(&HTTPMgr::handleJSONStatus, this));
+
+  server.on("/file", std::bind(&HTTPMgr::handleFile, this));
 
   //pages
   server.on("/", std::bind(&HTTPMgr::handleRoot, this));
@@ -76,7 +79,6 @@ void HTTPMgr::start_webservices()
   server.begin();
   MDNS.addService("http", "tcp", WWW_PORT_HTTP);
 }
-
 
 bool HTTPMgr::ActifCache(bool enabled)
 {
@@ -136,6 +138,39 @@ void HTTPMgr::handleRoot()
   TradAndSend("text/html", str, "", false);
 }
 
+void HTTPMgr::handleFile()
+{
+  if (!server.hasArg("name"))
+  {
+    server.send(400, "text/plain", "Missing name parameter");
+    return;
+  }
+
+  if (!LittleFS.begin())
+  {
+    server.send(500, "text/plain");
+    return;
+  }
+
+  if (LittleFS.exists(server.arg("name")))
+  {
+    File file = LittleFS.open(server.arg("name"), "r");
+    if(file)
+    {
+      String str = "";
+      while(file.available())
+      {
+        str += file.readString();
+      }
+      server.send(200, "application/json", str);
+    }
+  }
+  else
+  {
+    server.send(404, "text/plain");
+  }
+}
+
 void HTTPMgr::ReplyOTAOK()
 {
   MainSendDebug("[FLASH] Ok, reboot now");
@@ -163,8 +198,6 @@ void HTTPMgr::handleRAW()
 
 void HTTPMgr::handleP1Js()
 {
-  MainSendDebug("[HTTP] Request P1.js");
-
   if (ActifCache(true)) return;
 
   String str = F("async function updateValues(){try{let e=await fetch(\"P1.json\"),a=await e.json();document.getElementById(\"LastSample\").value=parseDateTime(a.LastSample).toLocaleString(),document.getElementById(\"electricityUsedTariff1\").value=a.DataReaded.electricityUsedTariff1+\" kWh\",document.getElementById(\"electricityUsedTariff2\").value=a.DataReaded.electricityUsedTariff2+\" kWh\",document.getElementById(\"electricityReturnedTariff1\").value=a.DataReaded.electricityReturnedTariff1+\" kWh\",document.getElementById(\"electricityReturnedTariff2\").value=a.DataReaded.electricityReturnedTariff2+\" kWh\",document.getElementById(\"actualElectricityPowerDeli\").value=a.DataReaded.actualElectricityPowerDeli+\" kWh\",document.getElementById(\"actualElectricityPowerRet\").value=a.DataReaded.actualElectricityPowerRet+\" kWh\",document.getElementById(\"instantaneousVoltageL1\").value=a.DataReaded.instantaneousVoltage.L1+\" V\",document.getElementById(\"instantaneousVoltageL2\").value=a.DataReaded.instantaneousVoltage.L2+\" V\",document.getElementById(\"instantaneousVoltageL3\").value=a.DataReaded.instantaneousVoltage.L3+\" V\",document.getElementById(\"instantaneousCurrentL1\").value=a.DataReaded.instantaneousCurrent.L1+\" A\",document.getElementById(\"instantaneousCurrentL2\").value=a.DataReaded.instantaneousCurrent.L2+\" A\",document.getElementById(\"instantaneousCurrentL3\").value=a.DataReaded.instantaneousCurrent.L3+\" A\",document.getElementById(\"gasReceived5min\").value=a.DataReaded.gasReceived5min+\" m3\"}catch(t){console.error(\"Error on update :\",t)}}setInterval(updateValues,1e4),window.onload=updateValues;");
@@ -175,8 +208,6 @@ void HTTPMgr::handleP1Js()
 
 void HTTPMgr::handleStyleCSS()
 {
-  MainSendDebug("[HTTP] Request style.css");
-  
   if (ActifCache(true)) return;
 
   String str = F("body {font-family: Verdana, sans-serif;background-color: #f9f9f9;margin: 0;padding: 20px;text-align: center;}");
@@ -208,8 +239,6 @@ void HTTPMgr::handleStyleCSS()
 }
 void HTTPMgr::handleMainJS()
 {
-  MainSendDebug("[HTTP] Request main.js");
-  
   if (ActifCache(true)) return;
 
   String str = F("function parseDateTime(t){return new Date(\"20\"+t.substring(0,2),t.substring(2,4)-1,t.substring(4,6),t.substring(6,8),t.substring(8,10),t.substring(10,12))}async function updateStatus(){try{let e=await fetch(\"status.json\"),s=await e.json();const r=document.getElementById(\"MQTT-indicator\");null!=r&&(1==s.MQTT?r.classList.remove(\"error\"):r.classList.add(\"error\"));const n=document.getElementById(\"P1-indicator\");if(\"\"!=s.P1.LastSample){var t=parseDateTime(s.P1.LastSample);Date.now().set;t.setSeconds(t.getSeconds()+3*s.P1.Interval),t<Date.now()?n.classList.add(\"error\"):n.classList.remove(\"error\")}else n.classList.add(\"error\")}catch(t){console.error(\"Error on update status:\",t)}}window.onload=function(){updateStatus();document.querySelectorAll(\".bwarning\").forEach((t=>{t.addEventListener(\"click\",(function(t){confirm(\"{-ASKCONFIRM-}\")||t.preventDefault()}))})),setInterval(updateStatus,1e4)};");
@@ -219,8 +248,6 @@ void HTTPMgr::handleMainJS()
 }
 void HTTPMgr::handleFavicon()
 {
-  MainSendDebug("[HTTP] Request favicon.svg");
-
   if (ActifCache(true)) return;
 
   String str = F("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -276,8 +303,7 @@ void HTTPMgr::handleUploadFlash()
       
       //check size en space
       uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-      MainSendDebugPrintf("[FLASH] Upload of '%s' (%lu octet)", upload.filename.c_str(), upload.contentLength);
-      MainSendDebugPrintf("[FLASH] Space in memory : %lu octect", maxSketchSpace);
+      MainSendDebugPrintf("[FLASH] Upload of '%s' (%lu octet - free %lu)", upload.filename.c_str(), upload.contentLength, maxSketchSpace);
 
       if (upload.contentLength > maxSketchSpace)
       {
@@ -338,7 +364,6 @@ void HTTPMgr::handleFactoryReset()
     return;
   }
 
-  MainSendDebug("[HTTP] Reset factory and reboot...");
   RebootPage("RF_RESTTXT");
 
   conf.ConfigVersion = SETTINGVERSIONNULL;
@@ -370,7 +395,7 @@ void HTTPMgr::handlePassword()
       server.arg("adminUser").toCharArray(conf.adminUser, sizeof(conf.adminUser));
       
       conf.BootFailed = 0;
-      MainSendDebug("[HTTP] New admin password");
+      MainSendDebug("[HTTP] New password");
       EEPROM.begin(sizeof(struct settings));
       EEPROM.put(0, conf);
       EEPROM.commit();
@@ -517,8 +542,6 @@ void HTTPMgr::handleSetupSave()
     return;
   }
 
-  MainSendDebug("[WWW] Save new setup.");
-
   if (server.method() == HTTP_POST)
   {
     settings NewConf;
@@ -550,15 +573,12 @@ void HTTPMgr::handleSetupSave()
 
     NewConf.ConfigVersion = SETTINGVERSION;
 
-    MainSendDebug("[HTTP] save in EEPROM !!!");
-
     RebootPage("Conf-Saved");
 
     EEPROM.begin(sizeof(struct settings));
     EEPROM.put(0, NewConf);
     EEPROM.commit();
 
-    MainSendDebug("[HTTP] Reboot !!!");
     RequestRestart(1000);
   }
 }

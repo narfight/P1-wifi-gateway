@@ -46,7 +46,6 @@ private:
   P1Reader &DataReaderP1;
   void onMqttConnect(bool sessionPresent);
   void onMqttDisconnect(AsyncMqttClientDisconnectReason reason);
-  long unsigned LastTimeofSendedDatagram = millis(); // le dernier millis du datagram envoyé pour savoir si c'est un nouveau
   /// @brief Send a message to a broker topic
   /// @param topic
   /// @param payload
@@ -57,13 +56,12 @@ private:
     CONNECTED,
     DISCONNECTING,
     DISCONNECTED
-  } _state;
+  } _state = DISCONNECTED;
   u_int8_t CountError;
 public:
   long unsigned nextMQTTreconnectAttempt = millis();
 
   explicit MQTTMgr(settings &currentConf, WifiMgr &Link, P1Reader &currentP1);
-  void doMe();
   void stop();
   bool mqtt_connect();
   bool IsConnected();

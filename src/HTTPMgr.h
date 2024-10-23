@@ -35,11 +35,12 @@
 #include "TelnetMgr.h"
 #include "MQTT.h"
 #include "P1Reader.h"
+#include "LogP1Mgr.h"
 
 class HTTPMgr
 {
 public:
-  explicit HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &currentMQTT, P1Reader &currentP1);
+  explicit HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &currentMQTT, P1Reader &currentP1)
   void DoMe();
   void start_webservices();
 
@@ -70,6 +71,7 @@ private:
   void handleP1Js();
   void handleMainJS();
   void handleReboot();
+  void handleFile();
 
   void RebootPage(String Message);
 

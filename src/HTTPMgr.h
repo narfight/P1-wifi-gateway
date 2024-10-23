@@ -40,7 +40,7 @@
 class HTTPMgr
 {
 public:
-  explicit HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &currentMQTT, P1Reader &currentP1)
+  explicit HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &currentMQTT, P1Reader &currentP1);
   void DoMe();
   void start_webservices();
 

@@ -1,6 +1,5 @@
 /*
-RAM:   [=====     ]  48.1% (used 39444 bytes from 81920 bytes)
-Flash: [======    ]  57.8% (used 440645 bytes from 761840 bytes)
+
  * Copyright (c) 2023 Jean-Pierre sneyers
  *
  * This program is free software: you can redistribute it and/or modify

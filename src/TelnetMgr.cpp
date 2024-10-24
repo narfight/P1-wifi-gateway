@@ -159,11 +159,6 @@ void TelnetMgr::commandeHelp(int clientId)
     telnetClients[clientId].println("Available commands: exit, raw, read, reboot, help");
 }
 
-bool TelnetMgr::isClientAuthenticated(int clientId)
-{
-    return authenticatedClients.find(clientId) != authenticatedClients.end() && authenticatedClients[clientId];
-}
-
 void TelnetMgr::DoMe()
 {
     handleClientActivity();

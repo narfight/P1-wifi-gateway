@@ -61,11 +61,10 @@ public:
   struct FixedValue
   {
     FixedValue() = default;
-    FixedValue(String value) : _value(value.toFloat() * 1000) {}
+    explicit FixedValue(String value) : _value(value.toFloat() * 1000) {}
 
     operator float() const { return _value * 0.001f; }
     float val() const { return _value * 0.001f; }
-    //uint32_t int_val() const { return _value; }
 
   private:
     uint32_t _value = 0;
@@ -131,7 +130,7 @@ private:
   void OBISparser(int len);
   String readFirstParenthesisVal(int start, int end);
   String readBetweenDoubleParenthesis(int start, int end);
-  int FindCharInArray(char array[], char c, int len);
+  int FindCharInArray(const char array[], char c, int len);
   void decodeTelegram(int len);
   String identifyMeter(String Name);
   String readUntilStar(int start, int end);

@@ -54,7 +54,7 @@ void P1Reader::ResetnextUpdateTime()
   RTS_off();
 }
 
-int P1Reader::FindCharInArray(char array[], char c, int len)
+int P1Reader::FindCharInArray(const char array[], char c, int len)
 {
   for (int i = 0; i < len; i++)
   {

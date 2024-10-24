@@ -99,7 +99,7 @@ private:
           //JsonObject obj = pair.value().as<JsonObject>();
           strcpy(datetime, pair.key().c_str());
         }
-        char charhour[2] = { datetime[6], datetime[7] };
+        //DEBUG char charhour[2] = { datetime[6], datetime[7] };
         //DEBUG LastHourInLast24H = hexStringToUint8(charhour);
       }
     }

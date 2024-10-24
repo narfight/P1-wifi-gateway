@@ -59,7 +59,7 @@ HTTPMgr *HTTPClient;
 
 ADC_MODE(ADC_VCC); // allows you to monitor the internal VCC level;
 
-void MainSendDebug(String payload)
+void MainSendDebug(const char *payload)
 {
   #ifdef DEBUG_SERIAL_P1
   Serial.println(payload);
@@ -163,13 +163,16 @@ void PrintConfigData()
 
 void SetName()
 {
-    String macAddr = WiFi.macAddress(); // Format typique "AA:BB:CC:DD:EE:FF"
+    const u_int8_t macLen = 17;
+    char macAddr[18]; // 18 caractères pour inclure l'octet nul
+
+    // Obtenir l'adresse MAC et la copier dans le tableau
+    strncpy(macAddr, WiFi.macAddress().c_str(), sizeof(macAddr) - 1);
     strcpy(clientName, HOSTNAME);
     strcat(clientName, "-");
     
     // Pointer vers le début des 2 derniers groupes (position -5:-2 et -2:fin)
-    const char* macStr = macAddr.c_str();
-    int macLen = macAddr.length();
+    const char* macStr = macAddr;
     
     // Copie les 2 derniers octets sans les ':'
     char lastBytes[5];
@@ -272,6 +275,7 @@ void doWatchDogs()
 
 void loop()
 {
+  //MainSendDebugPrintf("Free Memory : %u", ESP.getFreeHeap());
   WifiClient->DoMe();
   DataReaderP1->DoMe();
   HTTPClient->DoMe();

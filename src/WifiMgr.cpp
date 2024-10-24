@@ -205,23 +205,6 @@ bool WifiMgr::IsConnected()
 {
   return WiFi.isConnected();
 }
-
-char* WifiMgr::genererSSID()
-{
-  // Lire l'adresse MAC du module WiFi
-  String adresseMAC = WiFi.macAddress();
-
-  // Concaténer "SSID_SETUP" avec les 4 derniers caractères de l'adresse MAC
-  String resultat = SSID_SETUP + WiFi.macAddress().substring(adresseMAC.length() - 5);
-  resultat.replace(":", "");
-
-  // Convertir la chaîne String en tableau de caractères (char[])
-  char* resultatChar = new char[resultat.length() + 1];
-  resultat.toCharArray(resultatChar, resultat.length() + 1);
-
-  return resultatChar;
-}
-
 void WifiMgr::SetAPMod()
 {
   digitalWrite(LED_BUILTIN, LOW);

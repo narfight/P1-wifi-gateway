@@ -10,7 +10,7 @@ def compress_firmware(source, target, env):
     DESTIN_FILE = SOURCE_FILE + ".gz"
 
     with open(SOURCE_FILE, 'rb') as f_in:
-        with gzip.open(DESTIN_FILE, 'wb') as f_out:
+        with gzip.open(DESTIN_FILE, 'wb', compresslevel=9) as f_out:
             shutil.copyfileobj(f_in, f_out)
 
     ORG_FIRMWARE_SIZE = os.stat(SOURCE_FILE).st_size

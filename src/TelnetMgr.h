@@ -48,7 +48,6 @@ class TelnetMgr
   void checkInactiveClients();
   bool authenticateClient(WiFiClient &client, int clientId);
   bool readWithTimeout(WiFiClient &client, const char* prompt, unsigned long timeout);
-  bool isClientAuthenticated(int clientId);
   WiFiServer telnet;
   WiFiClient telnetClients[MAX_SRV_CLIENTS];
   void handleClientActivity();

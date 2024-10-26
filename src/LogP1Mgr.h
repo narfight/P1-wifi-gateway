@@ -19,7 +19,7 @@
  * previous works by:
  *
  * Ronald Leenes (https://github.com/romix123/P1-wifi-gateway and http://esp8266thingies.nl)
- */
+*/
 #ifndef LOGP1MGR_H
 #define LOGP1MGR_H
 
@@ -48,22 +48,25 @@ public:
     {
       NewDataGram();
     });
+
+    //LittleFS.remove(FILENAME_LAST24H); // for debug
   }
 
   // Conversion d'une chaîne hex en uint8_t
   static uint8_t hexStringToUint8(const char* chaine)
   {
-      uint8_t resultat = 0;
-      int i = 0;
+    uint8_t resultat = 0;
+    int i = 0;
 
-      // On parcourt la chaîne de caractères jusqu'à rencontrer un caractère non numérique ou la fin de la chaîne
-      while (chaine[i] >= '0' && chaine[i] <= '9') {
-          // On extrait le chiffre et on le multiplie par la puissance de 10 correspondante
-          resultat = resultat * 10 + (chaine[i] - '0');
-          i++;
-      }
+    // On parcourt la chaîne de caractères jusqu'à rencontrer un caractère non numérique ou la fin de la chaîne
+    while (chaine[i] >= '0' && chaine[i] <= '9')
+    {
+      // On extrait le chiffre et on le multiplie par la puissance de 10 correspondante
+      resultat = resultat * 10 + (chaine[i] - '0');
+      i++;
+    }
 
-      return resultat;
+    return resultat;
   }
 private:
   P1Reader &DataReaderP1;
@@ -93,14 +96,13 @@ private:
         MainSendDebug("[STKG] Last24H.json loaded");
         char datetime[13];
         // Parcourir les objets du JSON
-        JsonObject root = doc.as<JsonObject>();
-        for (JsonPair pair : root)
+        for (JsonObject item : doc.as<JsonArray>())
         {
-          //JsonObject obj = pair.value().as<JsonObject>();
-          strcpy(datetime, pair.key().c_str());
+          strcpy(datetime, item["DateTime"]);
         }
-        //DEBUG char charhour[2] = { datetime[6], datetime[7] };
-        //DEBUG LastHourInLast24H = hexStringToUint8(charhour);
+
+        char charhour[2] = { datetime[6], datetime[7] };
+        LastHourInLast24H = hexStringToUint8(charhour);
       }
     }
 
@@ -109,7 +111,6 @@ private:
       MainSendDebug("[STKG] Error to load Last24H.json");
     }
     
-    //LittleFS.remove(FILENAME_LAST24H); // for debug
     FileInitied = true;
   }
 
@@ -118,7 +119,7 @@ private:
     char charhour[2] = { DataReaderP1.DataReaded.P1timestamp[6], DataReaderP1.DataReaded.P1timestamp[7] };
     uint8_t hour = hexStringToUint8(charhour);
 
-    //MainSendDebugPrintf("[STKG] P1 H=%u, Last H=%u", hour, LastHourInLast24H);
+    MainSendDebugPrintf("[STKG] P1 H=%u, Last H=%u", hour, LastHourInLast24H);
     
     if (!FileInitied)
     {
@@ -130,10 +131,10 @@ private:
       return; // on attend l'heure prochaine !
     }
 
-    //WriteNewLineInLast24H();
+    WriteNewLineInLast24H();
   }
 
-/*  void WriteNewLineInLast24H()
+  void WriteNewLineInLast24H()
   {
     JsonDocument Points;
     File file;
@@ -163,27 +164,31 @@ private:
             i++;
           }
  
-          for (u_int8_t i = 0; i< NbrToRemove; i++)
-          {
-            MainSendDebugPrintf("[STKG] Remove : %u", i);
-            Points.remove(i);
-          }
+          AddPointAndSave(newDoc);
+          return;
         }    
       }
     }
 
-    Points[DataReaderP1.DataReaded.P1timestamp]["T1"] = DataReaderP1.DataReaded.electricityUsedTariff1.val();
-    Points[DataReaderP1.DataReaded.P1timestamp]["T2"] = DataReaderP1.DataReaded.electricityUsedTariff2.val();
-    Points[DataReaderP1.DataReaded.P1timestamp]["R1"] = DataReaderP1.DataReaded.electricityReturnedTariff1.val();
-    Points[DataReaderP1.DataReaded.P1timestamp]["R2"] = DataReaderP1.DataReaded.electricityReturnedTariff2.val();
-    
-    file = LittleFS.open(FILENAME_LAST24H, "w");
+    AddPointAndSave(Points);
+  }
+
+  void AddPointAndSave(JsonDocument Points)
+  {
+    JsonObject point = Points.add<JsonObject>();
+    point["DateTime"] = DataReaderP1.DataReaded.P1timestamp;
+    point["T1"] = DataReaderP1.DataReaded.electricityUsedTariff1.val();
+    point["T2"] = DataReaderP1.DataReaded.electricityUsedTariff2.val();
+    point["R1"] = DataReaderP1.DataReaded.electricityReturnedTariff1.val();
+    point["R2"] = DataReaderP1.DataReaded.electricityReturnedTariff2.val();
+
+    File file = LittleFS.open(FILENAME_LAST24H, "w");
     serializeJson(Points, file);
     file.close();
-
+    
     //sauvegarde la derniére heure
     char charhour[2] = { DataReaderP1.DataReaded.P1timestamp[6], DataReaderP1.DataReaded.P1timestamp[7] };
-    //DEBUG LastHourInLast24H = hexStringToUint8(charhour);
-  }*/
+    LastHourInLast24H = hexStringToUint8(charhour);
+  }
 };
 #endif

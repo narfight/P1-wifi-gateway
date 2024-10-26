@@ -73,6 +73,9 @@ private:
   void handleReboot();
   void handleFile();
 
+  void handleGraph24();
+  void handleGraph24JS();
+
   void RebootPage(const char *Message);
 
   bool ActifCache(bool);

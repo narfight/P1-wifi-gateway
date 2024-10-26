@@ -34,6 +34,7 @@ const char LANG[] = R"=====(
     "HEADERLG" : "fr",
     "MENU" : "Menu",
     "MENUP1" : "Valeurs mesurées",
+    "MENUGraph24" : "Graphique sur 24h",
     "MENUConf" : "Configuration",
     "MENUOTA" : "Mettre à jour le micrologiciel",
     "MENURESET" : "Retour aux paramètres d'usine",

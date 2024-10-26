@@ -39,6 +39,9 @@ void HTTPMgr::start_webservices()
   //extra for /P1 page for refresh
   server.on("/P1.json", std::bind(&HTTPMgr::handleJSON, this));
   server.on("/P1.js", std::bind(&HTTPMgr::handleP1Js, this));
+
+  server.on("/Log24H.js", std::bind(&HTTPMgr::handleGraph24JS, this));
+  server.on("/Log24H", std::bind(&HTTPMgr::handleGraph24, this));
   
   //for the footer
   server.on("/status.json", std::bind(&HTTPMgr::handleJSONStatus, this));
@@ -127,6 +130,7 @@ void HTTPMgr::handleRoot()
   static char template_html[] PROGMEM = R"(
     <fieldset><legend>{-H1DATA-}</legend>
     <a href="/P1" class="bt">{-MENUP1-}</a>
+    <a href="/Log24H" class="bt">{-MENUGraph24-}</a>
     </fieldset>
     <fieldset><legend>{-ConfH1-}</legend>
     <a href="/Setup" class="bt">{-MENUConf-}</a>
@@ -156,12 +160,31 @@ void HTTPMgr::handleFile()
   if (LittleFS.exists(server.arg("name")))
   {
     File file = LittleFS.open(server.arg("name"), "r");
-    if(file)
+    if (!file)
     {
-      char* content = (char*)malloc(file.size());
-      file.readBytes(content, sizeof(content));
-      server.send(200, "application/json", file);
+      server.send(404, "text/plain", "File not found");
+      return;
     }
+
+    const size_t BUFFER_SIZE = 512;  // Ajustez selon votre mémoire disponible
+    char buffer[BUFFER_SIZE];
+    size_t totalSize = file.size();
+
+    // Configurer l'en-tête pour le streaming
+    server.setContentLength(totalSize);
+    server.send(200, "application/json", "");
+
+    // Envoyer le fichier par morceaux
+    while (file.available())
+    {
+      size_t bytesRead = file.readBytes(buffer, BUFFER_SIZE);
+      if (bytesRead > 0)
+      {
+        server.client().write(buffer, bytesRead);
+      }
+    }
+
+    file.close();
   }
   else
   {
@@ -192,7 +215,7 @@ void HTTPMgr::ReplyOTA(bool success, const char* error, u_int ref)
   snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html, (success)? "" : "N", error, ref, animation);
 
   TradAndSend("text/html", HTMLBufferContent, "", true);
-  RequestRestart(1000);
+  RequestRestart(3000);
 }
 
 void HTTPMgr::handleRAW()
@@ -249,6 +272,28 @@ void HTTPMgr::handleMainJS()
   char* translatedText = Trad.FindAndTranslateAll(js);
   server.send(200, "application/javascript", translatedText);
   free(translatedText);
+}
+
+void HTTPMgr::handleGraph24JS()
+{
+  if (ActifCache(true)) return;
+
+  static char js[] PROGMEM = R"(function formatDate(l){return`20${l.slice(0,2)}-${l.slice(2,4)}-${l.slice(4,6)} ${l.slice(6,8)}:${l.slice(8,10)}:${l.slice(10)}`}google.charts.load("current",{packages:["corechart","bar"]}),google.charts.setOnLoadCallback(()=>{fetch("/file?name=/Last24H.json").then(l=>l.json()).then(l=>{var e=new google.visualization.DataTable;e.addColumn("string","DateTime"),e.addColumn("number","T1"),e.addColumn("number","T2"),e.addColumn("number","R1"),e.addColumn("number","R2");let a={T1:null,T2:null,R1:null,R2:null};l.forEach(l=>{let n={T1:null,T2:null,R1:null,R2:null};null!==a.T1&&(n.T1=l.T1-a.T1,n.T2=l.T2-a.T2,n.R1=l.R1-a.R1,n.R2=l.R2-a.R2),a={T1:l.T1,T2:l.T2,R1:l.R1,R2:l.R2},e.addRow([formatDate(l.DateTime),n.T1,n.T2,n.R1,n.R2])}),new google.visualization.LineChart(document.getElementById("chart_div")).draw(e,{hAxis:{title:"Date/Heure"},vAxis:{title:"kWh",format:"# kWh"},legend:"bottom", chartArea: {width:'90%'}})})});)";
+
+  server.send(200, "application/javascript", js);
+}
+
+void HTTPMgr::handleGraph24()
+{
+  if (!ChekifAsAdmin())
+  {
+    return;
+  }
+
+ static char html[] PROGMEM = R"(<fieldset><legend>{-MENUGraph24-}</legend></h1>
+    <div id="chart_div" style="width: 100%"></div></fieldset><a href="/" class="bt">{-MENU-}</a>)";
+
+  TradAndSend("text/html", html, "<script type=\"text/javascript\" src=\"https://www.gstatic.com/charts/loader.js\"></script><script type=\"text/javascript\" src=\"Log24H.js\"></script>", false);
 }
 
 void HTTPMgr::handleFavicon()
@@ -601,7 +646,7 @@ void HTTPMgr::handleHelp()
 
 void HTTPMgr::handleJSONStatus()
 {
-  char out[80];
+  char out[90];
   JsonDocument doc;
 
   doc["P1"]["LastSample"] = P1Captor.DataReaded.P1timestamp;
@@ -727,7 +772,7 @@ void HTTPMgr::TradAndSend(const char *content_type, char *content, const char *h
   snprintf_P(buffer, sizeof(buffer), template_html_header,
     GetClientName(),
     header,
-    (refresh)? "<script>function chk() {fetch('http://' + window.location.hostname).then(response => {if (response.ok) {setTimeout(function () {window.location.href = '/';}, 3000);}}).catch(ex =>{});};setTimeout(setInterval(chk, 3000), 3000);</script>" : ""
+    (refresh)? "<script>function chk() {fetch('http://' + window.location.hostname).then(response => {if (response.ok) {setTimeout(function () {window.location.href = '/';}, 6000);}}).catch(ex =>{});};setTimeout(setInterval(chk, 3000), 3000);</script>" : ""
   );
   char* translatedText = Trad.FindAndTranslateAll(buffer);
   server.sendContent(translatedText);

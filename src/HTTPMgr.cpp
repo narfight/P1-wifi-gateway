@@ -215,7 +215,7 @@ void HTTPMgr::ReplyOTA(bool success, const char* error, u_int ref)
   snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html, (success)? "" : "N", error, ref, animation);
 
   TradAndSend("text/html", HTMLBufferContent, "", true);
-  RequestRestart(3000);
+  RequestRestart(1000);
 }
 
 void HTTPMgr::handleRAW()
@@ -278,7 +278,7 @@ void HTTPMgr::handleGraph24JS()
 {
   if (ActifCache(true)) return;
 
-  static char js[] PROGMEM = R"(function formatDate(l){return`20${l.slice(0,2)}-${l.slice(2,4)}-${l.slice(4,6)} ${l.slice(6,8)}:${l.slice(8,10)}:${l.slice(10)}`}google.charts.load("current",{packages:["corechart","bar"]}),google.charts.setOnLoadCallback(()=>{fetch("/file?name=/Last24H.json").then(l=>l.json()).then(l=>{var e=new google.visualization.DataTable;e.addColumn("string","DateTime"),e.addColumn("number","T1"),e.addColumn("number","T2"),e.addColumn("number","R1"),e.addColumn("number","R2");let a={T1:null,T2:null,R1:null,R2:null};l.forEach(l=>{let n={T1:null,T2:null,R1:null,R2:null};null!==a.T1&&(n.T1=l.T1-a.T1,n.T2=l.T2-a.T2,n.R1=l.R1-a.R1,n.R2=l.R2-a.R2),a={T1:l.T1,T2:l.T2,R1:l.R1,R2:l.R2},e.addRow([formatDate(l.DateTime),n.T1,n.T2,n.R1,n.R2])}),new google.visualization.LineChart(document.getElementById("chart_div")).draw(e,{hAxis:{title:"Date/Heure"},vAxis:{title:"kWh",format:"# kWh"},legend:"bottom", chartArea: {width:'90%'}})})});)";
+  static char js[] PROGMEM = R"(google.charts.load("current",{packages:["corechart","bar"]}),google.charts.setOnLoadCallback(()=>{fetch("/file?name=/Last24H.json").then(l=>l.json()).then(l=>{var e=new google.visualization.DataTable;e.addColumn("string","DateTime"),e.addColumn("number","T1"),e.addColumn("number","T2"),e.addColumn("number","R1"),e.addColumn("number","R2");let a={T1:null,T2:null,R1:null,R2:null};l.forEach(l=>{let n={T1:null,T2:null,R1:null,R2:null};null!==a.T1&&(n.T1=l.T1-a.T1,n.T2=l.T2-a.T2,n.R1=l.R1-a.R1,n.R2=l.R2-a.R2),a={T1:l.T1,T2:l.T2,R1:l.R1,R2:l.R2},e.addRow([parseDateTime(l.DateTime),n.T1,n.T2,n.R1,n.R2])}),new google.visualization.LineChart(document.getElementById("chart_div")).draw(e,{hAxis:{title:"Date/Heure"},vAxis:{title:"kWh",format:"# kWh"},legend:"bottom", chartArea: {width:'90%'}})})});)";
 
   server.send(200, "application/javascript", js);
 }
@@ -413,6 +413,8 @@ void HTTPMgr::handleFactoryReset()
   }
 
   RebootPage("RF_RESTTXT");
+
+  LittleFS.format();
 
   conf.ConfigVersion = SETTINGVERSIONNULL;
 
@@ -599,7 +601,6 @@ void HTTPMgr::RebootPage(const char *Message)
 )";
   
   snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html, Message, GetAnimWait());
-
   TradAndSend("text/html", HTMLBufferContent, "", true);
 }
 
@@ -746,6 +747,7 @@ void HTTPMgr::TradAndSend(const char *content_type, char *content, const char *h
 {
   char buffer[1500];  // Buffer pour header et footer
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.send(200, "text/html","");
   static const char template_html_header[] PROGMEM = R"(
 <!DOCTYPE html>
 <html lang="{-HEADERLG-}">
@@ -766,8 +768,8 @@ void HTTPMgr::TradAndSend(const char *content_type, char *content, const char *h
 <div class="status-bar">
 <div class="item"><span class="indicator" id="MQTT-indicator"></span><span class="text">MQTT</span></div>
 <div class="item"><span class="indicator" id="P1-indicator"></span><span class="text">P1</span></div>
-</div>
-{-OTAFIRMWARE-} : v%s.%d  | <a href="https://github.com/narfight/P1-wifi-gateway" target="_blank">Github</a></div></body></html>
+</div></div>
+{-OTAFIRMWARE-} : v%s.%d  | <a href="https://github.com/narfight/P1-wifi-gateway" target="_blank">Github</a></body></html>
 )";
   snprintf_P(buffer, sizeof(buffer), template_html_header,
     GetClientName(),
@@ -790,5 +792,6 @@ void HTTPMgr::TradAndSend(const char *content_type, char *content, const char *h
 
   translatedText = Trad.FindAndTranslateAll(buffer);
   server.sendContent(translatedText);
+  server.sendContent("");
   free(translatedText);
 }

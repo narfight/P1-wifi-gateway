@@ -81,35 +81,43 @@ private:
     uint8_t minute;
     uint8_t second;
   };
-
-  void prepareLogLast24H()
+//RAM:   [====      ]  40.1% (used 32844 bytes from 81920 bytes)
+//Flash: [===       ]  28.3% (used 296053 bytes from 1044464 bytes)
+  bool LoadFile(const char *FileName, JsonDocument &doc)
   {
-    DeserializationError error;
-
-    File file = LittleFS.open(FILENAME_LAST24H, "r");
+    File file = LittleFS.open(FileName, "r");
     if(file)
     {
-      JsonDocument doc;
-      error = deserializeJson(doc, file);
+      DeserializationError error = deserializeJson(doc, file);
+      file.close();
+      
       if (!error)
       {
-        MainSendDebug("[STKG] Last24H.json loaded");
-        char datetime[13];
-        // Parcourir les objets du JSON
-        for (JsonObject item : doc.as<JsonArray>())
-        {
-          strcpy(datetime, item["DateTime"]);
-        }
-
-        char charhour[2] = { datetime[6], datetime[7] };
-        LastHourInLast24H = hexStringToUint8(charhour);
+        return true;
       }
     }
 
-    if (!file || error)
+    return false;
+    MainSendDebugPrintf("[STKG] Error on load %s", FileName);
+  }
+
+  void prepareLogLast24H()
+  {
+    JsonDocument doc;
+    if (!LoadFile(FILENAME_LAST24H, doc))
     {
-      MainSendDebug("[STKG] Error to load Last24H.json");
+      return;
     }
+
+    char datetime[13];
+    // Parcourir les objets du JSON
+    for (JsonObject item : doc.as<JsonArray>())
+    {
+      strcpy(datetime, item["DateTime"]);
+    }
+
+    char charhour[2] = { datetime[6], datetime[7] };
+    LastHourInLast24H = hexStringToUint8(charhour);
     
     FileInitied = true;
   }
@@ -137,37 +145,30 @@ private:
   void WriteNewLineInLast24H()
   {
     JsonDocument Points;
-    File file;
 
-    file = LittleFS.open(FILENAME_LAST24H, "r");
-    if(file)
+    if (!LoadFile(FILENAME_LAST24H, Points))
     {
-      DeserializationError error;
-      error = deserializeJson(Points, file);
-      if (!error)
+      return;
+    }
+
+    JsonObject ActualFile = Points.as<JsonObject>();
+    if (Points.size() > 23)
+    {
+      u_int8_t NbrToRemove = Points.size() - 23;
+
+      JsonDocument newDoc;
+      int i = 0;
+      for (JsonObject::iterator it = ActualFile.begin(); it != ActualFile.end(); ++it)
       {
-        file.close();
-
-        JsonObject ActualFile = Points.as<JsonObject>();
-        if (ActualFile.size() > 23)
+        if (i >= NbrToRemove)
         {
-          u_int8_t NbrToRemove = ActualFile.size() - 23;
-
-          JsonDocument newDoc;
-          int i = 0;
-          for (JsonObject::iterator it = ActualFile.begin(); it != ActualFile.end(); ++it)
-          {
-            if (i >= NbrToRemove)
-            {
-              newDoc[it->key()] = it->value();
-            }
-            i++;
-          }
- 
-          AddPointAndSave(newDoc);
-          return;
-        }    
+          newDoc[it->key()] = it->value();
+        }
+        i++;
       }
+
+      AddPointAndSave(newDoc);
+      return;
     }
 
     AddPointAndSave(Points);

@@ -26,7 +26,6 @@
 #define WWW_PORT_HTTP 80
 #include <Arduino.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <EEPROM.h>
 #include <ArduinoJson.h>

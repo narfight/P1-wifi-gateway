@@ -24,7 +24,7 @@
 #ifndef DEBUGFUNCTION_H
 #define DEBUGFUNCTION_H
 
-void MainSendDebug(String payload);
+void MainSendDebug(const char *payload);
 void MainSendDebugPrintf(const char* format, ...);
 void blink(int t, unsigned long speed);
 void Yield_Delay(unsigned long ms);

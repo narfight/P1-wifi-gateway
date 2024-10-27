@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ronald Leenes
+ * Copyright (c) 2023 Jean-Pierre sneyers
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,15 +21,22 @@
  * Ronald Leenes (https://github.com/romix123/P1-wifi-gateway and http://esp8266thingies.nl)
  */
 
-
 #include "JSONMgr.h"
+
+JSONMgr::JSONMgr(settings &configuration, P1Reader &currentP1) : conf(configuration), P1Captor(currentP1)
+{
+  P1Captor.OnNewDatagram([this]()
+  {
+    UpdateElectricity();
+    UpdateGas();
+  });
+}
 
 void JSONMgr::UpdateGas()
 {
   // if we have a new value, report
   if(strncmp(P1Captor.DataReaded.gasReceived5min, prevGAS, sizeof(P1Captor.DataReaded.gasReceived5min)) != 0)
   {
-    MainSendDebugPrintf("New value for gas : %s", P1Captor.DataReaded.gasDomoticz);
     DomoticzJson(conf.domoticzGasIdx, 0, P1Captor.DataReaded.gasDomoticz); // gasReceived5min);
     strcpy(prevGAS, P1Captor.DataReaded.gasReceived5min); // retain current value for future reference
   }
@@ -39,7 +46,6 @@ void JSONMgr::UpdateGas()
 void JSONMgr::UpdateElectricity()
 {
   char sValue[300];
-  MainSendDebugPrintf("New value for Energy : %s", P1Captor.DataReaded.actualElectricityPowerRet);
   sprintf(sValue, "%f;%f;%f;%f;%f;%f", P1Captor.DataReaded.electricityUsedTariff1.val(), P1Captor.DataReaded.electricityUsedTariff2.val(), P1Captor.DataReaded.electricityReturnedTariff1.val(), P1Captor.DataReaded.electricityReturnedTariff2.val(), P1Captor.DataReaded.actualElectricityPowerDeli.val(), P1Captor.DataReaded.actualElectricityPowerRet.val());
   DomoticzJson(conf.domoticzEnergyIdx, 0, sValue);
 }
@@ -78,14 +84,4 @@ void JSONMgr::DomoticzJson(unsigned int idx, int nValue, char* sValue)
     }
     http.end();
   }
-}
-
-JSONMgr::JSONMgr(settings &configuration, P1Reader &currentP1) : conf(configuration), P1Captor(currentP1)
-{
-}
-
-void JSONMgr::DoMe()
-{
-  UpdateElectricity();
-  UpdateGas();
 }

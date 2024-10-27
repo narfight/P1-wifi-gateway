@@ -66,11 +66,11 @@ bool TelnetMgr::authenticateClient(WiFiClient &client, int clientId)
             return true;
         }
 
-        client.printf("Authentication failed. %d attempts remaining.\n", MAX_ATTEMPTS - attempt - 1);
+        client.printf("Try again. %d attempts remaining.\n", MAX_ATTEMPTS - attempt - 1);
         Yield_Delay(1000 * (attempt + 1)); // Délai croissant entre les tentatives
     }
 
-    client.println("Max attempts reached. Connection closed.");
+    client.println("Max attempts reached.");
     return false;
 }
 
@@ -119,7 +119,6 @@ void TelnetMgr::closeConnection(int clientId)
     telnetClients[clientId].stop();
     authenticatedClients.erase(clientId);
     lastActivityTime.erase(clientId);
-    MainSendDebugPrintf("[TELNET] Closed connection for client %d", clientId);
 }
 
 void TelnetMgr::processCommand(int clientId, const String &command)
@@ -142,6 +141,11 @@ void TelnetMgr::processCommand(int clientId, const String &command)
     {
         telnetClients[clientId].println(P1Captor.datagram);
     }
+    else if (command == "read") 
+    {
+        P1Captor.ResetnextUpdateTime();
+        telnetClients[clientId].println("Done");
+    }
     else
     {
         telnetClients[clientId].print("Unknown command : ");
@@ -152,12 +156,7 @@ void TelnetMgr::processCommand(int clientId, const String &command)
 }
 void TelnetMgr::commandeHelp(int clientId)
 {
-    telnetClients[clientId].println("Available commands: exit, raw, reboot, help");
-}
-
-bool TelnetMgr::isClientAuthenticated(int clientId)
-{
-    return authenticatedClients.find(clientId) != authenticatedClients.end() && authenticatedClients[clientId];
+    telnetClients[clientId].println("Available commands: exit, raw, read, reboot, help");
 }
 
 void TelnetMgr::DoMe()
@@ -189,8 +188,8 @@ void TelnetMgr::handleNewConnections()
             telnetClients[i] = telnet.accept();
             if (authenticateClient(telnetClients[i], i))
             {
-                telnetClients[i].printf("Welcome! Your session ID is %d.\n", i);
-                MainSendDebugPrintf("[TELNET] New authenticated session (Id:%d)", i);
+                telnetClients[i].print("Welcome!");
+                MainSendDebug("[TELNET] New session");
                 telnetClients[i].printf("%s>", GetClientName());
             }
             else
@@ -201,7 +200,7 @@ void TelnetMgr::handleNewConnections()
         else
         {
             telnet.accept().println("Server is busy. Try again later.");
-            MainSendDebugPrintf("[TELNET] Server is busy with %d active connections", MAX_SRV_CLIENTS);
+            MainSendDebugPrintf("[TELNET] no slot free for new connection");
         }
     }
 }
@@ -276,10 +275,6 @@ void TelnetMgr::SendDataGram(String Diagram)
         if (telnetClients[i].availableForWrite() >= 1)
         {
             telnetClients[i].write(Diagram.c_str(), len);
-        }
-        else
-        {
-            MainSendDebugPrintf("[TELNET] Client %d is not available for writing.", i);
         }
     }  
     yield();

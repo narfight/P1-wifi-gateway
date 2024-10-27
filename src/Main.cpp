@@ -45,6 +45,9 @@ MQTTMgr *MQTTClient;
 #include "TelnetMgr.h"
 TelnetMgr *TelnetServer;
 
+#include "LogP1Mgr.h"
+LogP1Mgr *LogP1;
+
 #include "P1Reader.h"
 P1Reader *DataReaderP1;
 
@@ -56,7 +59,7 @@ HTTPMgr *HTTPClient;
 
 ADC_MODE(ADC_VCC); // allows you to monitor the internal VCC level;
 
-void MainSendDebug(String payload)
+void MainSendDebug(const char *payload)
 {
   #ifdef DEBUG_SERIAL_P1
   Serial.println(payload);
@@ -92,7 +95,6 @@ void MainSendDebugPrintf(const char *format, ...)
 
         if (length < 0)
         {
-            MainSendDebug("[Core] Error: Invalid format string in MainSendDebugPrintf");
             delete[] buffer;
             return;
         }
@@ -102,7 +104,6 @@ void MainSendDebugPrintf(const char *format, ...)
             bufferSize *= 2;  // Double the buffer size
             if (bufferSize > maxBufferSize)
             {
-                MainSendDebug("[Core] Error: Debug message too long in MainSendDebugPrintf");
                 delete[] buffer;
                 return;
             }
@@ -135,9 +136,10 @@ void blink(int t, unsigned long speed)
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
+#ifdef DEBUG_SERIAL_P1
 void PrintConfigData()
 {
-  MainSendDebug("[Core] Current configuration :");
+  MainSendDebug("[Core] Setting :");
   MainSendDebugPrintf(" - ConfigVersion : %d", config_data.ConfigVersion);
   MainSendDebugPrintf(" - Boot tentative : %d", config_data.BootFailed);
   MainSendDebugPrintf(" - Admin login : %s", config_data.adminUser);
@@ -157,16 +159,20 @@ void PrintConfigData()
   MainSendDebugPrintf("   # Send debug here : %s", (config_data.debugToTelnet) ? "Y" : "N");
   Yield_Delay(20);
 }
+#endif
 
 void SetName()
 {
-    String macAddr = WiFi.macAddress(); // Format typique "AA:BB:CC:DD:EE:FF"
+    const u_int8_t macLen = 17;
+    char macAddr[18]; // 18 caractères pour inclure l'octet nul
+
+    // Obtenir l'adresse MAC et la copier dans le tableau
+    strncpy(macAddr, WiFi.macAddress().c_str(), sizeof(macAddr) - 1);
     strcpy(clientName, HOSTNAME);
     strcat(clientName, "-");
     
     // Pointer vers le début des 2 derniers groupes (position -5:-2 et -2:fin)
-    const char* macStr = macAddr.c_str();
-    int macLen = macAddr.length();
+    const char* macStr = macAddr;
     
     // Copie les 2 derniers octets sans les ':'
     char lastBytes[5];
@@ -187,7 +193,6 @@ void setup()
   #endif
   SetName();
   MainSendDebugPrintf("[Core] Firmware: v%s.%u", VERSION, BUILD_DATE);
-  MainSendDebugPrintf("[Core] Name: %s", clientName);
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(OE, OUTPUT);    // IO16 OE on the 74AHCT1G125
@@ -205,7 +210,7 @@ void setup()
   {    
     if (config_data.ConfigVersion != SETTINGVERSION)
     {
-      MainSendDebugPrintf("[Core] Config file version is wrong (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
+      MainSendDebugPrintf("[Core] Reset settgins (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
     }
     else
     {
@@ -215,7 +220,7 @@ void setup()
     //Show to user is reseted !
     blink(20, 50UL);
 
-    config_data = (settings){SETTINGVERSION, 0, true, "", "", "10.0.0.3", 8080, 1234, 1235, "dsmr", "10.0.0.3", 1883, "", "", 60, false, false, false, false, false, true, "", ""};
+    config_data = (settings){SETTINGVERSION, 0, true, "", "", "10.0.0.3", 8080, 1234, 1235, "dsmr", "10.0.0.3", 1883, "", "", 60, false, false, false, false, false, false, "", ""};
   }
   else
   {
@@ -228,14 +233,16 @@ void setup()
   
   blink(2, 200UL);
   
+  #ifdef DEBUG_SERIAL_P1
   PrintConfigData();
+  #endif
 
   WifiClient = new WifiMgr(config_data);
   DataReaderP1 = new P1Reader(config_data);
 
   if (config_data.telnet)
   {
-    TelnetServer = new TelnetMgr(config_data,*DataReaderP1);
+    TelnetServer = new TelnetMgr(config_data, *DataReaderP1);
   }
 
   if (config_data.mqtt)
@@ -243,8 +250,13 @@ void setup()
     MQTTClient = new MQTTMgr(config_data, *WifiClient, *DataReaderP1);
   }
 
+  if (config_data.domo)
+  {
+    JSONClient = new JSONMgr(config_data, *DataReaderP1);
+  }
+  
+  LogP1 = new LogP1Mgr(config_data, *DataReaderP1);
   HTTPClient = new HTTPMgr(config_data, *TelnetServer, *MQTTClient, *DataReaderP1);
-  JSONClient = new JSONMgr(config_data, *DataReaderP1);
 
   WatchDogsTimer = millis();
 
@@ -263,6 +275,7 @@ void doWatchDogs()
 
 void loop()
 {
+  //MainSendDebugPrintf("Free Memory : %u", ESP.getFreeHeap());
   WifiClient->DoMe();
   DataReaderP1->DoMe();
   HTTPClient->DoMe();
@@ -272,18 +285,8 @@ void loop()
     TelnetServer->DoMe();
   }
 
-  if (MQTTClient != nullptr && WifiClient->IsConnected())
-  {
-    MQTTClient->doMe();
-  }
-
   if (DataReaderP1->dataEnd && (DataReaderP1->state == DONE) && WifiClient->IsConnected())
   {
-    if (config_data.domo)
-    {
-      JSONClient->DoMe();
-    }
-
     if (TelnetServer != nullptr)
     {
       TelnetServer->SendDataGram(DataReaderP1->datagram);
@@ -305,7 +308,6 @@ void loop()
     config_data.BootFailed = 0;
     EEPROM.put(0, config_data);
     EEPROM.commit();
-    MainSendDebug("[Core] Reset boot failed");
   }
 }
 

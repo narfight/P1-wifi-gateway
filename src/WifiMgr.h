@@ -46,7 +46,6 @@ class WifiMgr
   std::function<void(bool, wl_status_t, wl_status_t)> DelegateWifiChange;
   wl_status_t LastStatusEvent;
   void SetAPMod();
-  char* genererSSID();
   bool FindThesSSID();
   float CalcuAdjustWiFiPower();
   unsigned long LastScanSSID = millis(); //Last time when the scan of SSID was do

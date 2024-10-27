@@ -32,7 +32,7 @@ class Language
 {
   public:
     const char* getLangValue(const char* key);
-    void FindAndTranslateAll(String& inputText);
+    char* FindAndTranslateAll(const char *atraduire);
 };
 
 #ifdef NEDERLANDS

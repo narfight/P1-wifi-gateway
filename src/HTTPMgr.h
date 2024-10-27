@@ -35,6 +35,7 @@
 #include "TelnetMgr.h"
 #include "MQTT.h"
 #include "P1Reader.h"
+#include "LogP1Mgr.h"
 
 class HTTPMgr
 {
@@ -49,12 +50,12 @@ private:
   MQTTMgr &MQTT;
   P1Reader &P1Captor;
   ESP8266WebServer server;
-
+  char HTMLBufferContent[4000];
   Language Trad;
   bool ChekifAsAdmin();
-  void TradAndSend(const char *content_type, String content, String header, bool refresh);
-  String nettoyerInputText(String inputText);
-  String GetAnimWait();
+  void TradAndSend(const char *content_type, char *content, const char *header, bool refresh);
+  char* nettoyerInputText(const char* inputText, size_t maxLen);
+  const char* GetAnimWait();
   void handleRoot();
   void handlePassword();
   void handleSetup();
@@ -70,13 +71,16 @@ private:
   void handleP1Js();
   void handleMainJS();
   void handleReboot();
+  void handleFile();
 
-  void RebootPage(String Message);
+  void handleGraph24();
+  void handleGraph24JS();
+
+  void RebootPage(const char *Message);
 
   bool ActifCache(bool);
   
-  void ReplyOTAOK();
-  void ReplyOTANOK(const String Error, u_int ref);
+  void ReplyOTA(bool success, const char* error, u_int ref);
 
   bool UpdateResultFailed = false; // true = erreur d'update
   String UpdateMsg; // Message d'erreur de la mise à jour

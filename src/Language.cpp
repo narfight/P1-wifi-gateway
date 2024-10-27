@@ -50,12 +50,14 @@ const char* Language::getLangValue(const char* key)
   return "";
 }
 
-
-void Language::FindAndTranslateAll(String& inputText)
+char* Language::FindAndTranslateAll(const char *atraduire)
 {
+  // Créer une copie de la chaîne source pour la manipulation
+  String inputText = atraduire;
   int startIndex = inputText.indexOf("{-");
   int endIndex = inputText.indexOf("-}");
 
+  // Remplacement des balises de type {-XYZ-}
   while (startIndex != -1 && endIndex != -1)
   {
     String textBetweenBraces = inputText.substring(startIndex + 2, endIndex);
@@ -65,5 +67,19 @@ void Language::FindAndTranslateAll(String& inputText)
     startIndex = inputText.indexOf("{-");
     endIndex = inputText.indexOf("-}");
   }
+
+  // Ajouter d'autres remplacements si nécessaire
   inputText.replace("{#HOSTNAME#}", GetClientName());
+
+  // Allouer dynamiquement un tableau de caractères pour le résultat
+  size_t resultSize = inputText.length() + 1; // +1 pour le caractère nul de fin
+  char* result = (char*)malloc(resultSize);
+  if (result != nullptr)
+  {
+    // Copier le texte traduit dans le tableau alloué
+    strcpy(result, inputText.c_str());
+  }
+
+  // Retourner le pointeur vers le tableau alloué
+  return result;
 }

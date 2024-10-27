@@ -34,7 +34,6 @@ class JSONMgr
 {
 public:
   explicit JSONMgr(settings &configuration, P1Reader &currentP1);
-  void DoMe();
 
 private:
   settings &conf;

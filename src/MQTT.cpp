@@ -26,27 +26,31 @@
 
 MQTTMgr::MQTTMgr(settings &currentConf, WifiMgr &currentLink, P1Reader &currentP1) : conf(currentConf), WifiClient(currentLink), DataReaderP1(currentP1)
 {
-  _state = DISCONNECTED;
+  mqtt_connect();
 
   WifiClient.OnWifiEvent([this](bool b, wl_status_t s1, wl_status_t s2)
   {
-      if (b)
-      {
-        nextMQTTreconnectAttempt = 0;
-      }
+    if (b)
+    {
+      nextMQTTreconnectAttempt = 0;
+      mqtt_connect();
+    }
+  });
+
+  DataReaderP1.OnNewDatagram([this]()
+  {
+    MQTT_reporter();
   });
 
   // Configuration des callbacks MQTT
-  mqtt_client.onConnect([this](bool sessionPresent) {
-      onMqttConnect(sessionPresent);
+  mqtt_client.onConnect([this](bool sessionPresent)
+  {
+    onMqttConnect(sessionPresent);
   });
   
-  mqtt_client.onDisconnect([this](AsyncMqttClientDisconnectReason reason) {
-      onMqttDisconnect(reason);
-  });
-  mqtt_client.onSubscribe([this](uint16_t packetId, uint8_t qos)
+  mqtt_client.onDisconnect([this](AsyncMqttClientDisconnectReason reason)
   {
-    MainSendDebug("[MQTT] Subrscribe event");
+    onMqttDisconnect(reason);
   });
 }
 
@@ -74,7 +78,7 @@ void MQTTMgr::onMqttConnect(bool sessionPresent)
   MainSendDebug("[MQTT] connected");
 
   // Once connected, publish an announcement...
-  send_char("State/status", "P1 gateway running");
+  send_char("State/status", "running");
   send_char("State/Version", VERSION);
   send_char("State/IP", WifiClient.CurrentIP().c_str());
 }
@@ -84,28 +88,16 @@ bool MQTTMgr::IsConnected()
   return mqtt_client.connected();
 }
 
-void MQTTMgr::doMe()
-{
-  if (mqtt_connect())
-  {
-    if (DataReaderP1.dataEnd && LastTimeofSendedDatagram < DataReaderP1.LastSample)
-    {
-      LastTimeofSendedDatagram = DataReaderP1.LastSample;
-      MQTT_reporter();
-    }
-  }
-}
-
 void MQTTMgr::stop()
 {
-  send_char("State/status", "P1 gateway stopping");
+  send_char("State/status", "stopping");
 }
 
 bool MQTTMgr::mqtt_connect()
 {
   if (!mqtt_client.connected() && _state != CONNECTING && millis() > nextMQTTreconnectAttempt)
   {
-    MainSendDebugPrintf("[MQTT] try to connect to %s:%u", conf.mqttIP, conf.mqttPort);
+    MainSendDebugPrintf("[MQTT] connect to %s:%u ...", conf.mqttIP, conf.mqttPort);
 
     //Setting connection
     if (strlen(conf.mqttUser) != 0 && strlen(conf.mqttPass) != 0)

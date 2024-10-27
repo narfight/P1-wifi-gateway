@@ -43,19 +43,18 @@ void P1Reader::RTS_on() // switch on Data Request
 
 void P1Reader::RTS_off() // switch off Data Request
 {
-  state = DISABLED;
-  MainSendDebugPrintf("[P1] Next request in %dms", (nextUpdateTime - millis()));
-  
+  state = DISABLED; 
   digitalWrite(DR, LOW); // turn off Data Request
   digitalWrite(OE, HIGH); // put buffer in Tristate mode
 }
 
 void P1Reader::ResetnextUpdateTime()
 {
-  RTS_off(); // switch off Data Request
+  nextUpdateTime = 0;
+  RTS_off();
 }
 
-int P1Reader::FindCharInArray(char array[], char c, int len)
+int P1Reader::FindCharInArray(const char array[], char c, int len)
 {
   for (int i = 0; i < len; i++)
   {
@@ -136,7 +135,7 @@ void P1Reader::decodeTelegram(int len)
   {
     if (endChar >= 0)
     { // we have found the endchar !
-      MainSendDebug("[P1] End of datagram found");
+      MainSendDebug("[P1] End found");
       dataEnd = true; // we're at the end of the data stream, so mark (for raw data output) We don't know if the data is valid, we will test this below.
      
       if (datagram.length() < 2048)
@@ -447,7 +446,7 @@ void P1Reader::readTelegram()
     {
       if (millis() > TimeOutRead)
       {
-        MainSendDebug("[P1] Error, timeout on serial");
+        MainSendDebug("[P1] Timeout");
         RTS_off();
         return;
       }
@@ -469,6 +468,7 @@ void P1Reader::readTelegram()
         break;
       case DONE:
         RTS_off();
+        TriggerCallbacks();
         break;
       case FAULT:
         MainSendDebug("[P1] Fault in reading data");

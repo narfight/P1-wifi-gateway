@@ -43,15 +43,16 @@ void P1Reader::RTS_on() // switch on Data Request
 
 void P1Reader::RTS_off() // switch off Data Request
 {
-  state = State::DISABLED; 
+  state = State::DISABLED;
+  nextUpdateTime = millis() + conf.interval * 1000;
   digitalWrite(DR, LOW); // turn off Data Request
   digitalWrite(OE, HIGH); // put buffer in Tristate mode
 }
 
 void P1Reader::ResetnextUpdateTime()
 {
-  nextUpdateTime = 0;
   RTS_off();
+  nextUpdateTime = 0;
 }
 
 int P1Reader::FindCharInArray(const char array[], char c, int len)
@@ -107,12 +108,13 @@ void P1Reader::decodeTelegram(int len)
       MainSendDebug("[P1] Start of datagram found");
       
       digitalWrite(DR, LOW); // turn off Data Request
+      digitalWrite(OE, HIGH); // put buffer in Tristate mode
+      
       // reset datagram
       datagram = "";
       dataEnd = false;
       state = State::READING;
 
-      nextUpdateTime = millis() + conf.interval * 1000;
       for (int cnt = startChar; cnt < len - startChar; cnt++)
       {
         datagram += telegram[cnt];
@@ -428,11 +430,13 @@ void P1Reader::DoMe()
 {
   if ((millis() > nextUpdateTime) && state == State::DISABLED)
   {
-    nextUpdateTime = millis() + conf.interval * 1000;
     RTS_on();
   }
 
-  readTelegram();
+  if (state == State::WAITING || state == State::READING)
+  {
+    readTelegram();
+  }
 }
 
 void P1Reader::readTelegram()
@@ -457,26 +461,11 @@ void P1Reader::readTelegram()
       
       decodeTelegram(len + 1);
 
-      switch (state)
+      if (state == State::DONE)
       {
-      case State::DISABLED:
-        break;
-      case State::WAITING:
-        break;
-      case State::READING:
-        break;
-      case State::DONE:
         blink(1, 400);
         RTS_off();
         TriggerCallbacks();
-        state = State::WAITING;
-        break;
-      case State::FAULT:
-        MainSendDebug("[P1] Fault in reading data");
-        state = State::WAITING;
-        break;
-      default:
-        break;
       }
     }
   }

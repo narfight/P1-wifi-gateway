@@ -25,7 +25,7 @@
 //#define DEBUG_SERIAL_P1
 
 #define MAXBOOTFAILURE 3 //reset setting if boot fail more than this
-#define WATCHDOGINTERVAL 20000;
+#define WATCHDOGINTERVAL 30000;
 
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -127,6 +127,10 @@ void Yield_Delay(unsigned long ms)
   }
 }
 
+
+/// @brief Permet de faire clignoter LED_BUILTIN via un toggle
+/// @param t Nombre de clignotement
+/// @param speed Vitesse de clignotement (onde carrée)
 void blink(int t, unsigned long speed)
 {
   t = t * 2;
@@ -162,6 +166,7 @@ void PrintConfigData()
 }
 #endif
 
+/// @brief Génération du nom unique se reposant sur HOSTNAME et les 4 octets finaux de l'adresse MAC
 void SetName()
 {
     const u_int8_t macLen = 17;
@@ -184,6 +189,13 @@ void SetName()
     lastBytes[4] = '\0';
     
     strcat(clientName, lastBytes);
+}
+
+/// @brief Obtenir le nom unique se reposant sur HOSTNAME et les 4 octets finaux de l'adresse MAC
+/// @return 
+char* GetClientName()
+{
+  return clientName;
 }
 
 void setup()
@@ -211,7 +223,7 @@ void setup()
   {    
     if (config_data.ConfigVersion != SETTINGVERSION)
     {
-      MainSendDebugPrintf("[Core] Reset settgins (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
+      MainSendDebugPrintf("[Core] Reset settings (wanted:%d actual:%d)", SETTINGVERSION, config_data.ConfigVersion);
     }
     else
     {
@@ -263,6 +275,7 @@ void setup()
   HTTPClient->start_webservices();
 }
 
+/// @brief Check la quantité de RAM disponible et reset si besoins le nombre d'erreur de boot
 void doWatchDogs()
 {
   if (ESP.getFreeHeap() < 2000) // watchdog, in case we still have a memery leak
@@ -278,11 +291,13 @@ void doWatchDogs()
     EEPROM.put(0, config_data);
     EEPROM.commit();
   }
+
+  //reset Watchdog
+  WatchDogsTimer = millis() + WATCHDOGINTERVAL;
 }
 
 void loop()
 {
-  //MainSendDebugPrintf("Free Memory : %u", ESP.getFreeHeap());
   WifiClient->DoMe();
   DataReaderP1->DoMe();
   HTTPClient->DoMe();
@@ -295,16 +310,11 @@ void loop()
   if (millis() > WatchDogsTimer)
   {
     doWatchDogs();
-    WatchDogsTimer = millis() + WATCHDOGINTERVAL;
   }
 }
 
-
-char* GetClientName()
-{
-  return clientName;
-}
-
+/// @brief Permet de demandé le redémarrage de l'ESP en prévenant les modules
+/// @param delay Durée avant le redémarrage en ms
 void RequestRestart(unsigned long delay)
 {
   MainSendDebug("[Core] Reboot requested !!!");

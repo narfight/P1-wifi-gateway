@@ -129,12 +129,12 @@ void Yield_Delay(unsigned long ms)
 
 void blink(int t, unsigned long speed)
 {
+  t = t * 2;
   for (int i = 0; i <= t; i++)
   {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     delay(speed);
   }
-  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 #ifdef DEBUG_SERIAL_P1
@@ -232,8 +232,6 @@ void setup()
   EEPROM.put(0, config_data);
   EEPROM.commit();
   
-  blink(2, 200UL);
-  
   #ifdef DEBUG_SERIAL_P1
   PrintConfigData();
   #endif
@@ -258,6 +256,8 @@ void setup()
   
   LogP1 = new LogP1Mgr(config_data, *DataReaderP1);
   HTTPClient = new HTTPMgr(config_data, *TelnetServer, *MQTTClient, *DataReaderP1, *LogP1);
+
+  blink(2, 500UL); // signale que le module est prêt !
 
   WifiClient->Connect();
   HTTPClient->start_webservices();

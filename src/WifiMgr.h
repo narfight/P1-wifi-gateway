@@ -25,7 +25,7 @@
 #define WIFIMGR
 
 #define SSID_SETUP "P1_setup_"
-#define INTERVAL_SCAN_SSID_MS 10000
+#define INTERVAL_SCAN_SSID_MS 180000
 #define HYSTERESIS_CORRECTION_POWER 2.0
 
 #include <Arduino.h>

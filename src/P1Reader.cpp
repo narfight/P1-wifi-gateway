@@ -456,7 +456,6 @@ void P1Reader::readTelegram()
       telegram[len + 1] = 0;
       
       decodeTelegram(len + 1);
-      //blink(1, 400);
 
       switch (state)
       {
@@ -467,8 +466,10 @@ void P1Reader::readTelegram()
       case State::READING:
         break;
       case State::DONE:
+        blink(1, 400);
         RTS_off();
         TriggerCallbacks();
+        state = State::WAITING;
         break;
       case State::FAULT:
         MainSendDebug("[P1] Fault in reading data");
@@ -477,8 +478,6 @@ void P1Reader::readTelegram()
       default:
         break;
       }
-      //yield();
     }
-    //digitalWrite(LED_BUILTIN, HIGH);
   }
 }

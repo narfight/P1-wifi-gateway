@@ -156,7 +156,7 @@ void WifiMgr::Connect()
       digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
       Yield_Delay(300);
 
-      if (tries++ > 30)
+      if (tries++ > 5)
       {
         SetAPMod();
         break;
@@ -173,7 +173,7 @@ void WifiMgr::Connect()
       WiFi.setAutoReconnect(true);
       MainSendDebugPrintf("[WIFI] Running, IP : %s", WiFi.localIP().toString());
       setRFPower();
-      digitalWrite(LED_BUILTIN, HIGH);
+      digitalWrite(LED_BUILTIN, LED_OFF);
     }
   }
   else
@@ -191,10 +191,10 @@ void WifiMgr::Reconnect()
   while (WiFi.status() != WL_CONNECTED)
   {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    Yield_Delay(500);
-    if (tries++ > 30)
+    Yield_Delay(300);
+    if (tries++ < 5)
     {
-      MainSendDebugPrintf("[WIFI] '%s' is down !", conf.ssid);
+      MainSendDebugPrintf("[WIFI] Can't connect to '%s' !", conf.ssid);
       SetAPMod();
       return;
     }
@@ -207,7 +207,7 @@ bool WifiMgr::IsConnected()
 }
 void WifiMgr::SetAPMod()
 {
-  digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(LED_BUILTIN, LED_ON);
 
   WiFi.mode(WIFI_AP);
   WiFi.softAP(GetClientName(), "");

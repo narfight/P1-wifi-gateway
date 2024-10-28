@@ -34,10 +34,19 @@ Flash: [=====     ]  53.2% (used 405489 bytes from 761840 bytes)
 
 #define VERSION "0.97"
 #define HOSTNAME "P1meter"
+#define LANGUAGE "French"
+
 #define CLIENTNAMESIZE 32
 
 #define OE 16 // IO16 OE on the 74AHCT1G125
 #define DR 4  // IO4 is Data Request
+
+#ifndef LED_ON
+#define LED_ON 0x1
+#endif
+#ifndef LED_OFF
+#define LED_OFF 0x0
+#endif
 
 #define SETTINGVERSIONNULL 0 //= no config
 #define SETTINGVERSION 1

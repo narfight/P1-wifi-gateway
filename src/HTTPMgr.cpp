@@ -774,7 +774,7 @@ void HTTPMgr::TradAndSend(const char *content_type, char *content, const char *h
   snprintf_P(buffer, sizeof(buffer), template_html_header,
     GetClientName(),
     header,
-    (refresh)? "<script>function chk() {fetch('http://' + window.location.hostname).then(response => {if (response.ok) {setTimeout(function () {window.location.href = '/';}, 6000);}}).catch(ex =>{});};setTimeout(setInterval(chk, 3000), 3000);</script>" : ""
+    (refresh)? "<script>function chk() {fetch('http://' + window.location.hostname).then(response => {if (response.ok) {setTimeout(function () {window.location.href = '/';}, 1000);}}).catch(ex =>{});};setTimeout(setInterval(chk, 1000), 3000);</script>" : ""
   );
   char* translatedText = Trad.FindAndTranslateAll(buffer);
   server.sendContent(translatedText);

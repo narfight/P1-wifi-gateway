@@ -1,10 +1,4 @@
 /*
-RAM:   [=====     ]  47.5% (used 38872 bytes from 81920 bytes)
-Flash: [=====     ]  54.5% (used 415429 bytes from 761840 bytes)
-RAM:   [====      ]  40.9% (used 33528 bytes from 81920 bytes)
-Flash: [=====     ]  53.3% (used 405745 bytes from 761840 bytes)
-RAM:   [====      ]  40.9% (used 33528 bytes from 81920 bytes)
-Flash: [=====     ]  53.2% (used 405489 bytes from 761840 bytes)
  * Copyright (c) 2023 Jean-Pierre sneyers
  *
  * This program is free software: you can redistribute it and/or modify
@@ -41,12 +35,8 @@ Flash: [=====     ]  53.2% (used 405489 bytes from 761840 bytes)
 #define OE 16 // IO16 OE on the 74AHCT1G125
 #define DR 4  // IO4 is Data Request
 
-#ifndef LED_ON
-#define LED_ON 0x1
-#endif
-#ifndef LED_OFF
-#define LED_OFF 0x0
-#endif
+#define LED_ON 0x0
+#define LED_OFF 0x1
 
 #define SETTINGVERSIONNULL 0 //= no config
 #define SETTINGVERSION 1

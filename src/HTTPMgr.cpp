@@ -278,7 +278,7 @@ void HTTPMgr::handleGraph24JS()
 {
   if (ActifCache(true)) return;
 
-  static char js[] PROGMEM = R"(google.charts.load("current",{packages:["corechart","bar"]}),google.charts.setOnLoadCallback(()=>{fetch("/file?name=/Last24H.json").then(l=>l.json()).then(l=>{var e=new google.visualization.DataTable;e.addColumn("string","DateTime"),e.addColumn("number","T1"),e.addColumn("number","T2"),e.addColumn("number","R1"),e.addColumn("number","R2");let a={T1:null,T2:null,R1:null,R2:null};l.forEach(l=>{let n={T1:null,T2:null,R1:null,R2:null};null!==a.T1&&(n.T1=l.T1-a.T1,n.T2=l.T2-a.T2,n.R1=l.R1-a.R1,n.R2=l.R2-a.R2),a={T1:l.T1,T2:l.T2,R1:l.R1,R2:l.R2},e.addRow([parseDateTime(l.DateTime),n.T1,n.T2,n.R1,n.R2])}),new google.visualization.LineChart(document.getElementById("chart_div")).draw(e,{hAxis:{title:"Date/Heure"},vAxis:{title:"kWh",format:"# kWh"},legend:"bottom", chartArea: {width:'90%'}})})});)";
+  static char js[] PROGMEM = R"(google.charts.load("current",{packages:["corechart","bar"]}),google.charts.setOnLoadCallback(()=>{fetch("/file?name=/Last24H.json").then(l=>l.json()).then(l=>{var e=new google.visualization.DataTable;e.addColumn("datetime","DateTime"),e.addColumn("number","T1"),e.addColumn("number","T2"),e.addColumn("number","R1"),e.addColumn("number","R2");let a={T1:null,T2:null,R1:null,R2:null};l.forEach(l=>{let n={T1:null,T2:null,R1:null,R2:null};null!==a.T1&&(n.T1=l.T1-a.T1,n.T2=l.T2-a.T2,n.R1=l.R1-a.R1,n.R2=l.R2-a.R2),a={T1:l.T1,T2:l.T2,R1:l.R1,R2:l.R2},e.addRow([parseDateTime(l.DateTime),n.T1,n.T2,n.R1,n.R2])}),new google.visualization.LineChart(document.getElementById("chart_div")).draw(e,{hAxis:{title:"Date/Heure"},vAxis:{title:"kWh",format:"# kWh"},legend:"bottom", chartArea: {width:'90%'}})})});)";
 
   server.send(200, "application/javascript", js);
 }
@@ -484,6 +484,10 @@ void HTTPMgr::handleSetup()
 
 static const char template_html[] PROGMEM = R"(
 <form action="/SetupSave" method="post">
+<fieldset><legend>{-ConfP1H2-}</legend>
+<label for="interval">{-ConfReadP1Intr-} :</label><input type="number" min="10" id="interval" name="interval" value="%u"><br />
+<label for="InvTarif">{-ConfPERMUTTARIF-} :</label><input type="checkbox" name="InvTarif" id="InvTarif" %s><br />
+</fieldset>
 <fieldset><legend>{-ConfWIFIH2-}</legend>
 <label for="ssid">{-ConfSSID-} :</label><input type="text" name="ssid" id="ssid" maxlength="32" value="%s"><br />
 <label for="password">{-ConfWIFIPWD-} :</label><input type="password" maxlength="64" name="password" id="password" value="%s"><br />
@@ -502,8 +506,6 @@ static const char template_html[] PROGMEM = R"(
 <label for="mqttUser">{-ConfMQTTUsr-} :</label><input type="text" id="mqttUser" name="mqttUser" maxlength="31" value="%s"><br />
 <label for="mqttPass">{-ConfMQTTPSW-} :</label><input type="password" id="mqttPass" name="mqttPass" maxlength="31" value="%s"><br />
 <label for="mqttTopic">{-ConfMQTTRoot-} :</label><input type="text" id="mqttTopic" name="mqttTopic" maxlength="49" value="%s"><br />
-<label for="interval">{-ConfMQTTIntr-} :</label><input type="number" min="10" id="interval" name="interval" value="%u"><br />
-<label for="InvTarif">{-ConfPERMUTTARIF-} :</label><input type="checkbox" name="InvTarif" id="InvTarif" %s><br />
 <label for="debugToMqtt">{-ConfMQTTDBG-} :</label><input type="checkbox" name="debugToMqtt" id="debugToMqtt" %s><br />
 </fieldset>
 <fieldset><legend>{-ConfTLNETH2-}</legend>
@@ -516,6 +518,8 @@ static const char template_html[] PROGMEM = R"(
 )";
 
   snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html,
+    conf.interval,
+    (conf.InverseHigh_1_2_Tarif)? "checked" : "",
     nettoyerInputText(conf.ssid, 33),
     nettoyerInputText(conf.password, 65),
     (conf.domo)? "checked" : "",
@@ -529,8 +533,6 @@ static const char template_html[] PROGMEM = R"(
     nettoyerInputText(conf.mqttUser, 32),
     nettoyerInputText(conf.mqttPass, 32),
     nettoyerInputText(conf.mqttTopic, 50),
-    conf.interval,
-    (conf.InverseHigh_1_2_Tarif)? "checked" : "",
     (conf.debugToMqtt)? "checked" : "",
     (conf.telnet)? "checked" : "",
     (conf.debugToTelnet)? "checked" : ""

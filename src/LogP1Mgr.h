@@ -101,8 +101,8 @@ private:
       }
     }
 
-    return false;
     MainSendDebugPrintf("[STKG] Error on load %s", FileName);
+    return false;
   }
 
   void prepareLogLast24H()
@@ -148,12 +148,10 @@ private:
 
   void WriteNewLineInLast24H()
   {
+    MainSendDebug("[STKG] Write log for 24H");
     JsonDocument Points;
 
-    if (!LoadFile(FILENAME_LAST24H, Points))
-    {
-      return;
-    }
+    LoadFile(FILENAME_LAST24H, Points);
 
     JsonObject ActualFile = Points.as<JsonObject>();
     if (Points.size() > 23)

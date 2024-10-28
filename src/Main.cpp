@@ -25,6 +25,7 @@
 //#define DEBUG_SERIAL_P1
 
 #define MAXBOOTFAILURE 3 //reset setting if boot fail more than this
+#define WATCHDOGINTERVAL 20000;
 
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -32,7 +33,7 @@
 #include "Language.h"
 
 char clientName[CLIENTNAMESIZE];
-unsigned long WatchDogsTimer = 0;
+unsigned long WatchDogsTimer = millis() + WATCHDOGINTERVAL;
 
 settings config_data;
 
@@ -256,9 +257,7 @@ void setup()
   }
   
   LogP1 = new LogP1Mgr(config_data, *DataReaderP1);
-  HTTPClient = new HTTPMgr(config_data, *TelnetServer, *MQTTClient, *DataReaderP1);
-
-  WatchDogsTimer = millis();
+  HTTPClient = new HTTPMgr(config_data, *TelnetServer, *MQTTClient, *DataReaderP1, *LogP1);
 
   WifiClient->Connect();
   HTTPClient->start_webservices();
@@ -270,6 +269,14 @@ void doWatchDogs()
   {
     MainSendDebug("[Core] FATAL : Memory leak !");
     ESP.reset();
+  }
+  
+  //reset boot-failed
+  if (config_data.BootFailed != 0)
+  {
+    config_data.BootFailed = 0;
+    EEPROM.put(0, config_data);
+    EEPROM.commit();
   }
 }
 
@@ -285,29 +292,10 @@ void loop()
     TelnetServer->DoMe();
   }
 
-  if (DataReaderP1->dataEnd && (DataReaderP1->state == DONE) && WifiClient->IsConnected())
-  {
-    if (TelnetServer != nullptr)
-    {
-      TelnetServer->SendDataGram(DataReaderP1->datagram);
-    }
-
-    DataReaderP1->dataEnd = false; // reset
-    DataReaderP1->state = WAITING;
-  }
-
   if (millis() > WatchDogsTimer)
   {
     doWatchDogs();
-    WatchDogsTimer = millis() + 22000;
-  }
-  
-  //reset boot-failed
-  if (config_data.BootFailed != 0)
-  {
-    config_data.BootFailed = 0;
-    EEPROM.put(0, config_data);
-    EEPROM.commit();
+    WatchDogsTimer = millis() + WATCHDOGINTERVAL;
   }
 }
 

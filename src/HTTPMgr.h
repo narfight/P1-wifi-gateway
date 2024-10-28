@@ -39,7 +39,7 @@
 class HTTPMgr
 {
 public:
-  explicit HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &currentMQTT, P1Reader &currentP1);
+  explicit HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &currentMQTT, P1Reader &currentP1, LogP1Mgr &currentLogP1);
   void DoMe();
   void start_webservices();
 
@@ -48,6 +48,7 @@ private:
   TelnetMgr &TelnetSrv;
   MQTTMgr &MQTT;
   P1Reader &P1Captor;
+  LogP1Mgr &LogP1;
   ESP8266WebServer server;
   char HTMLBufferContent[4000];
   Language Trad;

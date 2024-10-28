@@ -29,6 +29,10 @@ TelnetMgr::TelnetMgr(settings &currentConf, P1Reader &currentP1) : conf(currentC
     Yield_Delay(100);
     telnet.setNoDelay(true);
     telnet.begin();
+    P1Captor.OnNewDatagram([this]()
+    {
+        SendDataGram();
+    });
 }
 
 bool TelnetMgr::authenticateClient(WiFiClient &client, int clientId)
@@ -232,15 +236,8 @@ void TelnetMgr::checkInactiveClients()
     }
 }
 
-void TelnetMgr::SendDataGram(String Diagram)
+void TelnetMgr::SendDataGram()
 {
-    if (millis() < NextReportTime)
-    {
-        return;
-    }
-
-    NextReportTime = millis() + (TELNET_REPPORT_INTERVAL_SEC * 1000);
-
     int maxToTcp = 0;
     for (int i = 0; i < MAX_SRV_CLIENTS; i++)
     {
@@ -268,13 +265,13 @@ void TelnetMgr::SendDataGram(String Diagram)
         }
     }
 
-    int len = Diagram.length();
+    int len = P1Captor.datagram.length();
 
     for (int i = 0; i < MAX_SRV_CLIENTS; i++)
     {
         if (telnetClients[i].availableForWrite() >= 1)
         {
-            telnetClients[i].write(Diagram.c_str(), len);
+            telnetClients[i].write(P1Captor.datagram.c_str(), len);
         }
     }  
     yield();

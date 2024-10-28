@@ -54,12 +54,11 @@ class TelnetMgr
   void processCommand(int clientId, const String &command);
   void commandeHelp(int clientId);
   void closeConnection(int clientId);
-  unsigned long NextReportTime = millis();
   public:
   explicit TelnetMgr(settings& currentConf, P1Reader &currentP1);
   void DoMe();
   void stop();
-  void SendDataGram(String Diagram);
+  void SendDataGram();
   void SendDebug(String payload);
 };
 #endif

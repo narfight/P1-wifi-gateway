@@ -36,14 +36,14 @@ void P1Reader::RTS_on() // switch on Data Request
   Serial.flush(); //flush output buffer
   while(Serial.available() > 0 ) Serial.read(); //flush input buffer
   
-  state = WAITING; // signal that we are waiting for a valid start char (aka /)
+  state = State::WAITING; // signal that we are waiting for a valid start char (aka /)
   digitalWrite(OE, LOW); // enable buffer
   digitalWrite(DR, HIGH); // turn on Data Request
 }
 
 void P1Reader::RTS_off() // switch off Data Request
 {
-  state = DISABLED; 
+  state = State::DISABLED; 
   digitalWrite(DR, LOW); // turn off Data Request
   digitalWrite(OE, HIGH); // put buffer in Tristate mode
 }
@@ -100,7 +100,7 @@ void P1Reader::decodeTelegram(int len)
   int startChar = FindCharInArray(telegram, '/', len);
   int endChar = FindCharInArray(telegram, '!', len);
 
-  if (state == WAITING) // we're waiting for a valid start sequence, if this line is not it, just return
+  if (state == State::WAITING) // we're waiting for a valid start sequence, if this line is not it, just return
   {
     if (startChar >= 0)
     { // start found. Reset CRC calculation
@@ -110,7 +110,7 @@ void P1Reader::decodeTelegram(int len)
       // reset datagram
       datagram = "";
       dataEnd = false;
-      state = READING;
+      state = State::READING;
 
       nextUpdateTime = millis() + conf.interval * 1000;
       for (int cnt = startChar; cnt < len - startChar; cnt++)
@@ -131,7 +131,7 @@ void P1Reader::decodeTelegram(int len)
     }
   }
 
-  if (state == READING)
+  if (state == State::READING)
   {
     if (endChar >= 0)
     { // we have found the endchar !
@@ -149,11 +149,11 @@ void P1Reader::decodeTelegram(int len)
       else
       {
         MainSendDebug("[P1] Buffer overflow ?");
-        state = FAULT;
+        state = State::FAULT;
         return;
       }
 
-      state = DONE;
+      state = State::DONE;
       LastSample = millis();
       return;
     }
@@ -426,7 +426,7 @@ unsigned long P1Reader::GetnextUpdateTime()
 
 void P1Reader::DoMe()
 {
-  if ((millis() > nextUpdateTime) && state == DISABLED)
+  if ((millis() > nextUpdateTime) && state == State::DISABLED)
   {
     nextUpdateTime = millis() + conf.interval * 1000;
     RTS_on();
@@ -460,19 +460,19 @@ void P1Reader::readTelegram()
 
       switch (state)
       {
-      case DISABLED:
+      case State::DISABLED:
         break;
-      case WAITING:
+      case State::WAITING:
         break;
-      case READING:
+      case State::READING:
         break;
-      case DONE:
+      case State::DONE:
         RTS_off();
         TriggerCallbacks();
         break;
-      case FAULT:
+      case State::FAULT:
         MainSendDebug("[P1] Fault in reading data");
-        state = WAITING;
+        state = State::WAITING;
         break;
       default:
         break;

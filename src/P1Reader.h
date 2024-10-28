@@ -24,11 +24,13 @@
 #ifndef P1READER_H
 #define P1READER_H
 
-#define DISABLED 0
-#define WAITING 1
-#define READING 2
-#define DONE 5
-#define FAULT 4
+enum class State {
+  DISABLED,
+  WAITING,
+  READING,
+  DONE,
+  FAULT
+};
 
 #define MAXLINELENGTH 1037 // 0-0:96.13.0 has a maximum lenght of 1024 chars + 11 of its identifier + end line (2char)
 
@@ -41,7 +43,7 @@
 class P1Reader
 {
 public:
-  int state = DISABLED;
+  State state = State::DISABLED;
   unsigned long LastSample = 0;
   explicit P1Reader(settings &currentConf);
   unsigned long GetnextUpdateTime();

@@ -24,7 +24,7 @@
 
 #include "HTTPMgr.h"
 
-HTTPMgr::HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &currentMQTT, P1Reader &currentP1) : conf(currentConf), TelnetSrv(currentTelnet), MQTT(currentMQTT), P1Captor(currentP1), server(80)
+HTTPMgr::HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &currentMQTT, P1Reader &currentP1, LogP1Mgr &currentLogP1) : conf(currentConf), TelnetSrv(currentTelnet), MQTT(currentMQTT), P1Captor(currentP1), LogP1(currentLogP1), server(80)
 {
 }
 
@@ -414,7 +414,7 @@ void HTTPMgr::handleFactoryReset()
 
   RebootPage("RF_RESTTXT");
 
-  LittleFS.format();
+  LogP1.format();
 
   conf.ConfigVersion = SETTINGVERSIONNULL;
 

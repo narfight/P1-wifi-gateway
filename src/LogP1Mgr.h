@@ -34,12 +34,17 @@
 class LogP1Mgr
 {
 public:
+  void format()
+  {
+    LittleFS.format();
+    LittleFS.begin();
+  }
+
   explicit LogP1Mgr(settings &currentConf, P1Reader &currentP1) : DataReaderP1(currentP1)
   {
     if (!LittleFS.begin())
     {
-      LittleFS.format();
-      LittleFS.begin();
+      format();
     }
     MainSendDebug("[STRG] Ready");
 
@@ -81,8 +86,7 @@ private:
     uint8_t minute;
     uint8_t second;
   };
-//RAM:   [====      ]  40.1% (used 32844 bytes from 81920 bytes)
-//Flash: [===       ]  28.3% (used 296053 bytes from 1044464 bytes)
+
   bool LoadFile(const char *FileName, JsonDocument &doc)
   {
     File file = LittleFS.open(FileName, "r");

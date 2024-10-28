@@ -156,7 +156,7 @@ void WifiMgr::Connect()
       digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
       Yield_Delay(300);
 
-      if (tries++ > 5)
+      if (tries++ > 30)
       {
         SetAPMod();
         break;
@@ -192,7 +192,7 @@ void WifiMgr::Reconnect()
   {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     Yield_Delay(300);
-    if (tries++ < 5)
+    if (tries++ < 30)
     {
       MainSendDebugPrintf("[WIFI] Can't connect to '%s' !", conf.ssid);
       SetAPMod();

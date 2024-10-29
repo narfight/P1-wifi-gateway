@@ -24,6 +24,12 @@
 #ifndef P1READER_H
 #define P1READER_H
 
+#include <Arduino.h>
+#include "GlobalVar.h"
+#include "Debug.h"
+
+#define MAXLINELENGTH 1037 // 0-0:96.13.0 has a maximum lenght of 1024 chars + 11 of its identifier + end line (2char)
+
 enum class State {
   DISABLED,
   WAITING,
@@ -31,14 +37,6 @@ enum class State {
   DONE,
   FAULT
 };
-
-#define MAXLINELENGTH 1037 // 0-0:96.13.0 has a maximum lenght of 1024 chars + 11 of its identifier + end line (2char)
-
-#include <Arduino.h>
-#include <TimeLib.h>
-#include <vector>
-#include "GlobalVar.h"
-#include "Debug.h"
 
 class P1Reader
 {

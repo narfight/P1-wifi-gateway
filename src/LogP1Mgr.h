@@ -34,6 +34,8 @@
 class LogP1Mgr
 {
 public:
+
+  /// @brief Formatage et initiation de LittleFS
   void format()
   {
     LittleFS.format();
@@ -51,13 +53,15 @@ public:
     //Ecoute de nouveau datagram
     DataReaderP1.OnNewDatagram([this]()
     {
-      NewDataGram();
+      newDataGram();
     });
 
     //LittleFS.remove(FILENAME_LAST24H); // for debug
   }
 
-  // Conversion d'une chaîne hex en uint8_t
+  /// @brief Conversion d'une chaîne hex en uint8_t
+  /// @param chaine Valeur à convertir
+  /// @return une valeur numérique non signé
   static uint8_t hexStringToUint8(const char* chaine)
   {
     uint8_t resultat = 0;
@@ -87,7 +91,12 @@ private:
     uint8_t second;
   };
 
-  bool LoadFile(const char *FileName, JsonDocument &doc)
+
+  /// @brief 
+  /// @param FileName Permet de charger un fichier JSON
+  /// @param doc Le pointeur de l'élément où seront charger les données
+  /// @return True si le fichier est chargé, sinon, False
+  bool loadJSON(const char *FileName, JsonDocument &doc)
   {
     File file = LittleFS.open(FileName, "r");
     if(file)
@@ -105,53 +114,59 @@ private:
     return false;
   }
 
+  /// @brief Ouvre le fichier JSON et charge l'heure de la dernière mesure 
   void prepareLogLast24H()
   {
     JsonDocument doc;
-    if (!LoadFile(FILENAME_LAST24H, doc))
+    char datetime[13];
+    
+    FileInitied = true;
+    if (!loadJSON(FILENAME_LAST24H, doc))
     {
       return;
     }
 
-    char datetime[13];
-    // Parcourir les objets du JSON
-    for (JsonObject item : doc.as<JsonArray>())
+    JsonArray array = doc.as<JsonArray>();
+    if (array.isNull())
     {
-      strcpy(datetime, item["DateTime"]);
+      return;
     }
 
+    JsonObject lastItem = array[array.size()-1];
+    strcpy(datetime, lastItem["DateTime"]);
     char charhour[2] = { datetime[6], datetime[7] };
     LastHourInLast24H = hexStringToUint8(charhour);
-    
-    FileInitied = true;
   }
 
-  void NewDataGram()
+
+  /// @brief Traitement d'une nouvelle mesure reçue
+  void newDataGram()
   {
     char charhour[2] = { DataReaderP1.DataReaded.P1timestamp[6], DataReaderP1.DataReaded.P1timestamp[7] };
     uint8_t hour = hexStringToUint8(charhour);
-
-    MainSendDebugPrintf("[STKG] P1 H=%u, Last H=%u", hour, LastHourInLast24H);
     
     if (!FileInitied)
     {
       prepareLogLast24H();
     }
 
+    MainSendDebugPrintf("[STKG] P1 H=%u, Last H=%u", hour, LastHourInLast24H);
+
     if (LastHourInLast24H == hour)
     {
       return; // on attend l'heure prochaine !
     }
 
-    WriteNewLineInLast24H();
+    writeNewLineInLast24H();
   }
 
-  void WriteNewLineInLast24H()
+  /// @brief Traitement du nouveau point et vérifie qu'il n'a pas trop de point dans le fichier JSON
+  void writeNewLineInLast24H()
   {
     MainSendDebug("[STKG] Write log for 24H");
     JsonDocument Points;
 
-    LoadFile(FILENAME_LAST24H, Points);
+    loadJSON(FILENAME_LAST24H, Points);
 
     JsonObject ActualFile = Points.as<JsonObject>();
     if (Points.size() > 23)
@@ -169,14 +184,17 @@ private:
         i++;
       }
 
-      AddPointAndSave(newDoc);
+      addPointAndSave(newDoc);
       return;
     }
 
-    AddPointAndSave(Points);
+    addPointAndSave(Points);
   }
 
-  void AddPointAndSave(JsonDocument Points)
+
+  /// @brief Ajoute et sauvegarde le fichier de mesure
+  /// @param Points Les points de mesure actuel
+  void addPointAndSave(JsonDocument Points)
   {
     JsonObject point = Points.add<JsonObject>();
     point["DateTime"] = DataReaderP1.DataReaded.P1timestamp;

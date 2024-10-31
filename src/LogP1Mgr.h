@@ -174,14 +174,9 @@ private:
       u_int8_t NbrToRemove = Points.size() - 23;
 
       JsonDocument newDoc;
-      int i = 0;
-      for (JsonObject::iterator it = ActualFile.begin(); it != ActualFile.end(); ++it)
+      for (int i = NbrToRemove; i < Points.size(); i++)
       {
-        if (i >= NbrToRemove)
-        {
-          newDoc[it->key()] = it->value();
-        }
-        i++;
+        newDoc.add(Points[i]);
       }
 
       addPointAndSave(newDoc);
@@ -190,7 +185,6 @@ private:
 
     addPointAndSave(Points);
   }
-
 
   /// @brief Ajoute et sauvegarde le fichier de mesure
   /// @param Points Les points de mesure actuel

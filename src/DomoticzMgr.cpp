@@ -37,7 +37,6 @@ void DomoticzMgr::UpdateGas()
   SendToDomoticz(conf.domoticzGasIdx, 0, P1Captor.DataReaded.gasDomoticz);
 }
 
-/// @brief sends the electricity usage to server
 void DomoticzMgr::UpdateElectricity()
 {
   char sValue[300];
@@ -45,37 +44,30 @@ void DomoticzMgr::UpdateElectricity()
   SendToDomoticz(conf.domoticzEnergyIdx, 0, sValue);
 }
 
-/// @brief Send to Domoticz data
-/// @param idx 
-/// @param nValue 
-/// @param sValue 
 void DomoticzMgr::SendToDomoticz(unsigned int idx, int nValue, char* sValue)
 {
   WiFiClient client;
   HTTPClient http;
   
-  if (conf.domo)
-  {
-    char url[255];
-    sprintf(url, "http://%s:%u/json.htm?type=command&param=udevice&idx=%u&nvalue=%d&svalue=%s", conf.domoticzIP, conf.domoticzPort, idx, nValue, sValue);
-    MainSendDebugPrintf("[HTTP] Send GET : %s", url);
-    
-    http.begin(client, url);
-    int httpCode = http.GET();
-    
-    // httpCode will be negative on error
-    if (httpCode > 0)
-    { // HTTP header has been sent and Server response header has been handled
+  char url[255];
+  sprintf(url, "http://%s:%u/json.htm?type=command&param=udevice&idx=%u&nvalue=%d&svalue=%s", conf.domoticzIP, conf.domoticzPort, idx, nValue, sValue);
+  MainSendDebugPrintf("[HTTP] Send GET : %s", url);
+  
+  http.begin(client, url);
+  int httpCode = http.GET();
+  
+  // httpCode will be negative on error
+  if (httpCode > 0)
+  { // HTTP header has been sent and Server response header has been handled
 
-      if (httpCode == HTTP_CODE_OK)
-      {
-        String payload = http.getString();
-      }
-    }
-    else
+    if (httpCode == HTTP_CODE_OK)
     {
-      MainSendDebugPrintf("[HTTP] GET failed, error: %s", http.errorToString(httpCode).c_str());
+      String payload = http.getString();
     }
-    http.end();
   }
+  else
+  {
+    MainSendDebugPrintf("[HTTP] GET failed, error: %s", http.errorToString(httpCode).c_str());
+  }
+  http.end();
 }

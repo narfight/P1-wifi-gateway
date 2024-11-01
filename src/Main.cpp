@@ -53,7 +53,7 @@ LogP1Mgr *LogP1;
 P1Reader *DataReaderP1;
 
 #include "DomoticzMgr.h"
-DomoticzMgr *JSONClient;
+DomoticzMgr *DomoClient;
 
 #include "HTTPMgr.h"
 HTTPMgr *HTTPClient;
@@ -263,7 +263,7 @@ void setup()
 
   if (config_data.domo)
   {
-    JSONClient = new DomoticzMgr(config_data, *DataReaderP1);
+    DomoClient = new DomoticzMgr(config_data, *DataReaderP1);
   }
   
   LogP1 = new LogP1Mgr(config_data, *DataReaderP1);

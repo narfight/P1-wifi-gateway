@@ -2,7 +2,7 @@
 
 Firmware pour le module P1 Reader, conçu pour capturer et transmettre des informations de comptage via Wi-Fi. Ce projet facilite l'intégration de données P1 dans des systèmes domotiques tels que Home Assistant et Domoticz.
 
-N'oubliez pas de consulter le Wiki très complet : [Le Wiki](../wiki)
+N'oubliez pas de consulter le Wiki très complet : [Le Wiki](https://github.com/narfight/P1-wifi-gateway/wiki)
 
 ## Table des matières
 - [Fonctionnalités](#fonctionnalités)

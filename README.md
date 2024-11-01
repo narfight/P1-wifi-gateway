@@ -1,33 +1,97 @@
+# P1 Wi-Fi Gateway
 
-# P1 wifi gateway
+Firmware pour le module P1 Reader, conçu pour capturer et transmettre des informations de comptage via Wi-Fi. Ce projet facilite l'intégration de données P1 dans des systèmes domotiques tels que Home Assistant et Domoticz.
 
-Firmware de remontée d'information pour le module P1 Reader (voir https://github.com/romix123/P1-wifi-gateway)
+N'oubliez pas de consulter le Wiki très complet : [Le Wiki](/wiki)
 
+## Table des matières
+- [Fonctionnalités](#fonctionnalités)
+  - [Catpures d'écran](#catpures-d%C3%A9cran)
+- [Achat du module](#Achat-du-module)
+- [Prérequis](#prérequis)
+- [Installation](#installation)
+- [Configuration du Module](#configuration-du-module)
+- [Utilisation](#utilisation)
+- [Roadmap](#roadmap)
+- [Contribution](#contribution)
+- [Related](#related)
+- [License](#license)
+
+## Fonctionnalités
+
+- **Transmission MQTT** : Envoie les données P1 aux serveurs domotiques via MQTT, compatible avec des plateformes comme Home Assistant et Domoticz.
+- **Configuration via Wi-Fi** : Crée un point d'accès Wi-Fi (SSID : `P1_setup_XXXX`) pour configurer le module, accessible à l’adresse [http://192.168.4.1](http://192.168.4.1).
+- **Support multilingue** : Interface multilingue avec possibilité d'ajouter des langues.
+- **Mise à jour du firmware** : Mise à jour du firmware possible via l’interface web.
+- **Compatibilité internationale** : Initialement conçu pour la Belgique, mais extensible pour d'autres pays sur demande
+- **Intégration** : Compatible avec Home Assistant et Domoticz
+### Catpures d'écran
+<img src="https://github.com/user-attachments/assets/ae05256c-f895-4f6a-bbab-7d369eba7c81" width="400"/>
+<img src="https://github.com/user-attachments/assets/3048b403-0873-40e3-9426-1f866c38b29c" width="50%"/>
+<img src="https://github.com/user-attachments/assets/bbeff2c2-e0a4-48f6-986a-942417444dd0" width="400"/>
+<img src="https://github.com/user-attachments/assets/0c39660f-1bcf-4faf-8f9e-087691f3a860" width="50%"/>
+
+## Achat du module
+
+Le module est développé par Ronald Leenes (ronaldleenes@icloud.com) et vous pouvez commander via son email le module de 22€ tout frais compris (en date de 2024).
+Pour plus de détails sur la source du projet : http://www.esp8266thingies.nl/
+
+## Prérequis
+
+Pour compiler et déployer ce projet, vous aurez besoin des éléments suivants :
+- [Visual Studio Code](https://code.visualstudio.com/) avec l’extension PlatformIO.
+- Python 3.x (pour les scripts de compilation avancée).
+- Une connexion au port P1 de votre compteur (souvent pour les compteurs intelligents).
+- [Home Assistant](https://www.home-assistant.io/) ou [Domoticz](https://www.domoticz.com/) pour l’intégration domotique.
 
 ## Installation
 
-Télécharger la dernière version du firmware dans les builds et utilisé l'interface web du module pour envoyer le nouveau firmware.
+1. **Téléchargement du Firmware** : Téléchargez la dernière version du firmware depuis la section des builds.
+2. **Mise à jour du module** : Utilisez l’interface web du module pour télécharger et flasher le firmware.
+3. **Connexion initiale** : Le module crée un réseau Wi-Fi `P1_setup_XXXX`. Connectez-vous à ce réseau.
+4. **Accès à l'interface** : Accédez à l’interface de configuration via [http://192.168.4.1](http://192.168.4.1).
 
-Le module va créer un WiFi "P1_setup_XXXX" pour le configurer. Il aura l'IP 192.168.4.1. Vous pouvez donc aller sur http://192.168.4.1 pour configurer le module.
+## Configuration du Module
 
-A la première connexion, le module va vous demander un login et un mot de passe. Si vous laisser les champs de mot de passe vide, le module ne sera pas protégé.
+1. **Authentification** : Lors de la première connexion, un login et un mot de passe sont demandés. Si les champs sont laissés vides, le module n’aura pas de protection par mot de passe.
+2. **Paramètres réseau** : Configurez les informations du réseau Wi-Fi pour permettre au module de se connecter à Internet.
+3. **Paramètres MQTT** :
+   - **Serveur MQTT** : Indiquez l'adresse de votre serveur MQTT.
+   - **Port** : Par défaut, le port est 1883.
+   - **Identifiants** : Renseignez les identifiants si votre serveur MQTT est protégé.
+4. **Intégration dans Home Assistant ou Domoticz** : Utilisez le fichier de configuration MQTT (`mqtt-P1Meter.yaml`) pour configurer facilement Home Assistant.
+
+## Utilisation
+
+Une fois configuré, le module commencera à envoyer des données de comptage via MQTT. Ces données peuvent inclure :
+- **Consommation électrique en temps réel**.
+- **Historique de consommation** : Le module peut enregistrer des données de consommation pour analyse.
+- **Alertes personnalisées** : Configurez des alertes dans Home Assistant ou Domoticz pour surveiller des seuils de consommation.
+
+### Surveillance et Diagnostics
+
+Le module propose des outils de diagnostic accessibles via l’interface web, où vous pouvez consulter :
+- **Journal des événements** : Suivi des connexions et erreurs.
+- **Informations réseau** : Vérifiez la force du signal Wi-Fi et l’état de la connexion.
+- **Logs MQTT** : Consulter les messages envoyés et reçus via MQTT.
 
 ## Roadmap
 
-- Ajouter des langues de traduction
-- Update via l'interface web depuis Github
-- Compatible avec d'autre pays que la Belgique
+- **Support multilingue étendu** : Un firmware par langue
+- **Compatibilité internationale** : Adaptation pour une compatibilité plus large en dehors de la Belgique.
 
+## Contribution
 
-## Comment compiler votre version
-Il faut :
-* Visual Code
-* PlatformIO
+Les contributions sont les bienvenues ! Veuillez suivre les étapes ci-dessous :
+1. Forkez le projet et clonez-le en local.
+2. Créez une branche pour votre fonctionnalité (`git checkout -b nouvelle-fonctionnalité`).
+3. Effectuez vos modifications et testez-les.
+4. Envoyez une Pull Request pour examen.
 
 ## Related
 
-Voici le projet source pour le hardware et le software :
-[romix123](https://github.com/romix123/P1-wifi-gateway)
+Pour plus d'informations sur le projet matériel et logiciel original : [romix123 sur GitHub](https://github.com/romix123/P1-wifi-gateway)
 
 ## License
-see <http://www.gnu.org/licenses/>.
+
+Ce projet est distribué sous la licence GNU General Public License. Voir [GNU General Public License](http://www.gnu.org/licenses/) pour plus de détails.

@@ -33,6 +33,7 @@
 
 #define MAX_SRV_CLIENTS 5
 #define TELNETPORT 23
+#define INACTIVITY_TIMEOUT 300000 // 5 minutes
 
 class TelnetMgr
 {

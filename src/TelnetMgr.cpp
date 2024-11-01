@@ -223,7 +223,6 @@ int TelnetMgr::findFreeClientSlot()
 
 void TelnetMgr::checkInactiveClients()
 {
-    const unsigned long INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
     unsigned long currentTime = millis();
 
     for (int i = 0; i < MAX_SRV_CLIENTS; i++)

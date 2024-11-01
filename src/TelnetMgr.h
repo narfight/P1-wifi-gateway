@@ -32,9 +32,7 @@
 #include "P1Reader.h"
 
 #define MAX_SRV_CLIENTS 5
-#define STACK_PROTECTOR 1512  // bytes
 #define TELNETPORT 23
-#define TELNET_REPPORT_INTERVAL_SEC 10
 
 class TelnetMgr
 {

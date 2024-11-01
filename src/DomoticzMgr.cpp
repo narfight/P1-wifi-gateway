@@ -21,9 +21,9 @@
  * Ronald Leenes (https://github.com/romix123/P1-wifi-gateway and http://esp8266thingies.nl)
  */
 
-#include "JSONMgr.h"
+#include "DomoticzMgr.h"
 
-JSONMgr::JSONMgr(settings &configuration, P1Reader &currentP1) : conf(configuration), P1Captor(currentP1)
+DomoticzMgr::DomoticzMgr(settings &configuration, P1Reader &currentP1) : conf(configuration), P1Captor(currentP1)
 {
   P1Captor.OnNewDatagram([this]()
   {
@@ -32,24 +32,24 @@ JSONMgr::JSONMgr(settings &configuration, P1Reader &currentP1) : conf(configurat
   });
 }
 
-void JSONMgr::UpdateGas()
+void DomoticzMgr::UpdateGas()
 {
-  DomoticzJson(conf.domoticzGasIdx, 0, P1Captor.DataReaded.gasDomoticz);
+  SendToDomoticz(conf.domoticzGasIdx, 0, P1Captor.DataReaded.gasDomoticz);
 }
 
 /// @brief sends the electricity usage to server
-void JSONMgr::UpdateElectricity()
+void DomoticzMgr::UpdateElectricity()
 {
   char sValue[300];
   sprintf(sValue, "%f;%f;%f;%f;%f;%f", P1Captor.DataReaded.electricityUsedTariff1.val(), P1Captor.DataReaded.electricityUsedTariff2.val(), P1Captor.DataReaded.electricityReturnedTariff1.val(), P1Captor.DataReaded.electricityReturnedTariff2.val(), P1Captor.DataReaded.actualElectricityPowerDeli.val(), P1Captor.DataReaded.actualElectricityPowerRet.val());
-  DomoticzJson(conf.domoticzEnergyIdx, 0, sValue);
+  SendToDomoticz(conf.domoticzEnergyIdx, 0, sValue);
 }
 
 /// @brief Send to Domoticz data
 /// @param idx 
 /// @param nValue 
 /// @param sValue 
-void JSONMgr::DomoticzJson(unsigned int idx, int nValue, char* sValue)
+void DomoticzMgr::SendToDomoticz(unsigned int idx, int nValue, char* sValue)
 {
   WiFiClient client;
   HTTPClient http;

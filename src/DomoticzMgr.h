@@ -21,19 +21,19 @@
  * Ronald Leenes (https://github.com/romix123/P1-wifi-gateway and http://esp8266thingies.nl)
  */
 
-#ifndef JSONMGR_H
-#define JSONMGR_H
+#ifndef DOMOMGR_H
+#define DOMOMGR_H
 
 #include <Arduino.h>
-#include "GlobalVar.h"
 #include <ESP8266HTTPClient.h>
+#include "GlobalVar.h"
 #include "P1Reader.h"
 #include "Debug.h"
 
-class JSONMgr
+class DomoticzMgr
 {
 public:
-  explicit JSONMgr(settings &configuration, P1Reader &currentP1);
+  explicit DomoticzMgr(settings &configuration, P1Reader &currentP1);
 
 private:
   settings &conf;
@@ -47,6 +47,6 @@ private:
   /// @param idx
   /// @param nValue
   /// @param sValue
-  void DomoticzJson(unsigned int idx, int nValue, char *sValue);
+  void SendToDomoticz(unsigned int idx, int nValue, char *sValue);
 };
 #endif

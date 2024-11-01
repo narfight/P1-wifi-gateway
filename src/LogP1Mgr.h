@@ -168,13 +168,12 @@ private:
 
     loadJSON(FILENAME_LAST24H, Points);
 
-    JsonObject ActualFile = Points.as<JsonObject>();
     if (Points.size() > 23)
     {
       u_int8_t NbrToRemove = Points.size() - 23;
 
       JsonDocument newDoc;
-      for (int i = NbrToRemove; i < Points.size(); i++)
+      for (size_t i = NbrToRemove; i < Points.size(); i++)
       {
         newDoc.add(Points[i]);
       }

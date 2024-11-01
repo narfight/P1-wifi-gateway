@@ -26,7 +26,7 @@
 
 #include <Arduino.h>
 
-#define VERSION "0.97"
+#define VERSION "0.99"
 #define HOSTNAME "P1meter"
 #define LANGUAGE "French"
 

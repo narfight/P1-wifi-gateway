@@ -57,7 +57,6 @@ void HTTPMgr::start_webservices()
   server.on("/reboot", std::bind(&HTTPMgr::handleReboot, this));
   server.on("/P1", std::bind(&HTTPMgr::handleP1, this));
   server.on("/raw", std::bind(&HTTPMgr::handleRAW, this));
-  server.on("/Help", std::bind(&HTTPMgr::handleHelp, this));
   server.on("/update", HTTP_GET, std::bind(&HTTPMgr::handleUploadForm, this));
   server.on("/update", HTTP_POST, [this]()
   {
@@ -632,21 +631,6 @@ void HTTPMgr::handleP1()
   TradAndSend("text/html", template_html, "<script type=\"text/javascript\" src=\"P1.js\"></script>", false);
 }
 
-void HTTPMgr::handleHelp()
-{
-  static char template_html[] PROGMEM = R"(
-<fieldset><legend>{-HLPH1-}</legend>
-<p>{-HLPTXT1-}</p>
-<p>{-HLPTXT2-}</p>
-<p>{-HLPTXT3-}</p>
-<p>{-HLPTXT4-}</p>
-<p>{-HLPTXT5-}</p>
-<p>{-HLPTXT6-}</p>
-<p>{-HLPTXT7-}</p>
-  )";
-  TradAndSend("text/html", template_html, "", false);
-}
-
 void HTTPMgr::handleJSONStatus()
 {
   char out[90];
@@ -764,7 +748,7 @@ void HTTPMgr::TradAndSend(const char *content_type, char *content, const char *h
 %s
 </head>
 <body><div class="container"><h2>P1 wifi-gateway</h2>
-<p class="help"><a href="/Help" target="_blank">{-HLPH1-}</a></p>)";
+<p class="help"><a href="https://github.com/narfight/P1-wifi-gateway/wiki" target="_blank">{-HLPH1-}</a></p>)";
 
   static const char template_html_footer[] PROGMEM = R"(
 <div class="status-bar">

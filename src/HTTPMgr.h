@@ -87,6 +87,5 @@ private:
   uint UpdateErrorCode = 0; //code d'erreur
 
   void handleP1();
-  void handleHelp();
 };
 #endif

@@ -150,8 +150,6 @@ private:
       prepareLogLast24H();
     }
 
-    MainSendDebugPrintf("[STKG] P1 H=%u, Last H=%u", hour, LastHourInLast24H);
-
     if (LastHourInLast24H == hour)
     {
       return; // on attend l'heure prochaine !

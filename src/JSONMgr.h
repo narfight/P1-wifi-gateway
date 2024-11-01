@@ -39,7 +39,6 @@ private:
   settings &conf;
   P1Reader &P1Captor;
 
-  char prevGAS[12] = {}; // not an P1 protocol var, but holds gas value
   /// @brief sends the gas usage to server
   void UpdateGas();
   /// @brief sends the electricity usage to server

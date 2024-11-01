@@ -34,12 +34,7 @@ JSONMgr::JSONMgr(settings &configuration, P1Reader &currentP1) : conf(configurat
 
 void JSONMgr::UpdateGas()
 {
-  // if we have a new value, report
-  if(strncmp(P1Captor.DataReaded.gasReceived5min, prevGAS, sizeof(P1Captor.DataReaded.gasReceived5min)) != 0)
-  {
-    DomoticzJson(conf.domoticzGasIdx, 0, P1Captor.DataReaded.gasDomoticz); // gasReceived5min);
-    strcpy(prevGAS, P1Captor.DataReaded.gasReceived5min); // retain current value for future reference
-  }
+  DomoticzJson(conf.domoticzGasIdx, 0, P1Captor.DataReaded.gasDomoticz);
 }
 
 /// @brief sends the electricity usage to server
@@ -71,7 +66,6 @@ void JSONMgr::DomoticzJson(unsigned int idx, int nValue, char* sValue)
     // httpCode will be negative on error
     if (httpCode > 0)
     { // HTTP header has been sent and Server response header has been handled
-      MainSendDebugPrintf("[HTTP] Send GET return : %d", httpCode);
 
       if (httpCode == HTTP_CODE_OK)
       {

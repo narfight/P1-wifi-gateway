@@ -30,7 +30,6 @@ HTTPMgr::HTTPMgr(settings &currentConf, TelnetMgr &currentTelnet, MQTTMgr &curre
 
 void HTTPMgr::start_webservices()
 {
-  //MDNS.begin(GetClientName());
   //header files
   server.on("/style.css", std::bind(&HTTPMgr::handleStyleCSS, this));
   server.on("/favicon.svg", std::bind(&HTTPMgr::handleFavicon, this));
@@ -73,12 +72,11 @@ void HTTPMgr::start_webservices()
     }
     else
     {
-      ReplyOTA(true, "Reboot", 0);
+      ReplyOTA(true, LANG_OTASTATUSOK, 0);
     }
   }, std::bind(&HTTPMgr::handleUploadFlash, this));
 
   server.begin();
-  //MDNS.addService("http", "tcp", WWW_PORT_HTTP);
 }
 
 bool HTTPMgr::ActifCache(bool enabled)

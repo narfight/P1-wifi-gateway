@@ -30,7 +30,6 @@
 #include <EEPROM.h>
 #include <ArduinoJson.h>
 #include "GlobalVar.h"
-#include "Language.h"
 #include "TelnetMgr.h"
 #include "MQTT.h"
 #include "P1Reader.h"
@@ -51,9 +50,8 @@ private:
   LogP1Mgr &LogP1;
   ESP8266WebServer server;
   char HTMLBufferContent[4000];
-  Language Trad;
   bool ChekifAsAdmin();
-  void TradAndSend(const char *content_type, char *content, const char *header, bool refresh);
+  void SendWithHeaderFooter(const char *content_type, char *content, const char *header, bool refresh);
   char* nettoyerInputText(const char* inputText, size_t maxLen);
   const char* GetAnimWait();
   void handleRoot();

@@ -19,12 +19,11 @@ def extract_define_value(file_path, define_name):
 source_file = "src/GlobalVar.h"  # Ajustez le chemin selon votre structure
 
 Src_Name = "HOSTNAME"
-Src_Lang = "LANGUAGE"
 Src_Version = "VERSION"
 
 # Extraction de la valeur
 Name = extract_define_value(source_file, Src_Name)
-Language = extract_define_value(source_file, Src_Lang)
+Language = env.GetProjectOption("custom_language")
 Version = extract_define_value(source_file, Src_Version)
 
 # Modification du nom du programme

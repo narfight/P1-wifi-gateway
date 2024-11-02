@@ -26,9 +26,8 @@
 
 #include <Arduino.h>
 
-#define VERSION "0.99"
+#define VERSION "1.00"
 #define HOSTNAME "P1meter"
-#define LANGUAGE "French"
 
 #define CLIENTNAMESIZE 32
 
@@ -67,4 +66,15 @@ struct settings
   char adminPassword[33];
   char adminUser[33];
 };
+#ifndef LANGUAGE
+  #error "LANGUAGE n'est pas défini. Veuillez définir LANGUAGE dans GlobalVar.h"
+#endif
+
+#include "Langues/1-French.h"
+#include "Langues/2-English.h"
+#include "Langues/3-Dutch.h"
+
+#ifndef LANG_LOADED
+  #error "LANGUAGE n'a pas une valeur valide"
+#endif
 #endif

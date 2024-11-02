@@ -125,21 +125,20 @@ void HTTPMgr::handleRoot()
     return;
   }
 
-  // Utiliser directement une chaîne PROGMEM complète plutôt que de multiples concaténations
   static char template_html[] PROGMEM = R"(
-    <fieldset><legend>{-H1DATA-}</legend>
-    <a href="/P1" class="bt">{-MENUP1-}</a>
-    <a href="/Log24H" class="bt">{-MENUGraph24-}</a>
+    <fieldset><legend>)" LANG_H1DATA R"(</legend>
+    <a href="/P1" class="bt">)" LANG_MENUP1 R"(</a>
+    <a href="/Log24H" class="bt">)" LANG_MENUGraph24 R"(</a>
     </fieldset>
-    <fieldset><legend>{-ConfH1-}</legend>
-    <a href="/Setup" class="bt">{-MENUConf-}</a>
-    <a href="/setPassword" class="bt">{-MENUPASSWORD-}</a>
-    <a href="/update" class="bt">{-MENUOTA-}</a>
-    <a href="/reboot" class="bt bwarning">{-MENUREBOOT-}</a>
-    <a href="/reset" class="bt bwarning">{-MENURESET-}</a>
+    <fieldset><legend>)" LANG_ConfH1 R"(</legend>
+    <a href="/Setup" class="bt">)" LANG_MENUConf R"(</a>
+    <a href="/setPassword" class="bt">)" LANG_MENUPASSWORD R"(</a>
+    <a href="/update" class="bt">)" LANG_MENUOTA R"(</a>
+    <a href="/reboot" class="bt bwarning">)" LANG_MENUREBOOT R"(</a>
+    <a href="/reset" class="bt bwarning">)" LANG_MENURESET R"(</a>
     </fieldset>)";
 
-  TradAndSend("text/html", template_html, "", false);
+  SendWithHeaderFooter("text/html", template_html, "", false);
 }
 
 void HTTPMgr::handleFile()
@@ -203,17 +202,17 @@ void HTTPMgr::ReplyOTA(bool success, const char* error, u_int ref)
   }
 
   static const char template_html[] PROGMEM = R"(
-<fieldset><p>{-OTANSUCCESS%sOK-} : <strong>%s (%u)</strong></p>
-<p>{-OTASUCCESS1-}</p>
-<p>{-OTASUCCESS2-}</p>
-<p>{-OTASUCCESS3-}</p>
-<p>{-OTASUCCESS4-}</p>
+<fieldset><p>%s : <strong>%s (%u)</strong></p>
+<p>)" LANG_OTASUCCESS1 R"(</p>
+<p>)" LANG_OTASUCCESS2 R"(</p>
+<p>)" LANG_OTASUCCESS3 R"(</p>
+<p>)" LANG_OTASUCCESS4 R"(</p>
 %s</fieldset>)";
 
   const char* animation = GetAnimWait();  // Supposons que GetAnimWait retourne un char*
-  snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html, (success)? "" : "N", error, ref, animation);
+  snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html, (success)? LANG_OTANSUCCESSOK : LANG_OTANSUCCESSNOK, error, ref, animation);
 
-  TradAndSend("text/html", HTMLBufferContent, "", true);
+  SendWithHeaderFooter("text/html", HTMLBufferContent, "", true);
   RequestRestart(1000);
 }
 
@@ -266,11 +265,9 @@ void HTTPMgr::handleMainJS()
 {
   if (ActifCache(true)) return;
 
-  static char js[] PROGMEM = R"(function parseDateTime(t){return new Date("20"+t.substring(0,2),t.substring(2,4)-1,t.substring(4,6),t.substring(6,8),t.substring(8,10),t.substring(10,12))}async function updateStatus(){try{let e=await fetch("status.json"),s=await e.json();const r=document.getElementById("MQTT-indicator");null!=r&&(1==s.MQTT?r.classList.remove("error"):r.classList.add("error"));const n=document.getElementById("P1-indicator");if(""!=s.P1.LastSample){var t=parseDateTime(s.P1.LastSample);Date.now().set;t.setSeconds(t.getSeconds()+3*s.P1.Interval),t<Date.now()?n.classList.add("error"):n.classList.remove("error")}else n.classList.add("error")}catch(t){console.error("Error on update status:",t)}}window.onload=function(){updateStatus();document.querySelectorAll(".bwarning").forEach((t=>{t.addEventListener("click",(function(t){confirm("{-ASKCONFIRM-}")||t.preventDefault()}))})),setInterval(updateStatus,1e4)};)";
+  static char js[] PROGMEM = R"(function parseDateTime(t){return new Date("20"+t.substring(0,2),t.substring(2,4)-1,t.substring(4,6),t.substring(6,8),t.substring(8,10),t.substring(10,12))}async function updateStatus(){try{let e=await fetch("status.json"),s=await e.json();const r=document.getElementById("MQTT-indicator");null!=r&&(1==s.MQTT?r.classList.remove("error"):r.classList.add("error"));const n=document.getElementById("P1-indicator");if(""!=s.P1.LastSample){var t=parseDateTime(s.P1.LastSample);Date.now().set;t.setSeconds(t.getSeconds()+3*s.P1.Interval),t<Date.now()?n.classList.add("error"):n.classList.remove("error")}else n.classList.add("error")}catch(t){console.error("Error on update status:",t)}}window.onload=function(){updateStatus();document.querySelectorAll(".bwarning").forEach((t=>{t.addEventListener("click",(function(t){confirm(")" LANG_ASKCONFIRM R"(")||t.preventDefault()}))})),setInterval(updateStatus,1e4)};)";
 
-  char* translatedText = Trad.FindAndTranslateAll(js);
-  server.send(200, "application/javascript", translatedText);
-  free(translatedText);
+  server.send(200, "application/javascript", js);
 }
 
 void HTTPMgr::handleGraph24JS()
@@ -289,10 +286,10 @@ void HTTPMgr::handleGraph24()
     return;
   }
 
- static char html[] PROGMEM = R"(<fieldset><legend>{-MENUGraph24-}</legend></h1>
-    <div id="chart_div" style="width: 100%"></div></fieldset><a href="/" class="bt">{-MENU-}</a>)";
+ static char html[] PROGMEM = R"(<fieldset><legend>)" LANG_MENUGraph24 R"(</legend></h1>
+    <div id="chart_div" style="width: 100%"></div></fieldset><a href="/" class="bt">)" LANG_MENU R"(</a>)";
 
-  TradAndSend("text/html", html, "<script type=\"text/javascript\" src=\"https://www.gstatic.com/charts/loader.js\"></script><script type=\"text/javascript\" src=\"Log24H.js\"></script>", false);
+  SendWithHeaderFooter("text/html", html, "<script type=\"text/javascript\" src=\"https://www.gstatic.com/charts/loader.js\"></script><script type=\"text/javascript\" src=\"Log24H.js\"></script>", false);
 }
 
 void HTTPMgr::handleFavicon()
@@ -324,12 +321,12 @@ void HTTPMgr::handleUploadForm()
 
  static char html[] PROGMEM = R"(
 <form method='post' action='' enctype='multipart/form-data'>
-  <fieldset><legend>{-OTAH1-}</legend>
-  <p><label for="firmware">{-OTAFIRMWARE-} :</label><input type='file' accept='.bin,.bin.gz' id='firmware' name='firmware' required></p>
-  </fieldset><button class="bt bwarning" type='submit'>{-OTABTUPDATE-}</button></form>
-  <a href="/" class="bt">{-MENU-}</a>)";
+  <fieldset><legend>)" LANG_OTAH1 R"(</legend>
+  <p><label for="firmware">)" LANG_OTAFIRMWARE R"( :</label><input type='file' accept='.bin,.bin.gz' id='firmware' name='firmware' required></p>
+  </fieldset><button class="bt bwarning" type='submit'>)" LANG_OTABTUPDATE R"(</button></form>
+  <a href="/" class="bt">)" LANG_MENU R"(</a>)";
 
-  TradAndSend("text/html", html, "", false);
+  SendWithHeaderFooter("text/html", html, "", false);
 }
 
 void HTTPMgr::handleUploadFlash()
@@ -458,20 +455,20 @@ void HTTPMgr::handlePassword()
   
 static const char template_html[] PROGMEM = R"(
 <form action="/setPassword" method="post" onsubmit='return Check()'>
-<fieldset><legend>{-H1Welcome-}</legend>
-<label for="adminUser">{-PSWDLOGIN-} :</label><input type="text" name="adminUser" id="adminUser" maxlength="32" value="%s" /><br />
-<label for="psd1">{-PSWD1-} :</label><input type="password" name="psd1" id="psd1" maxlength="32"><br />
-<label for="psd2">{-PSWD2-} :</label><input type="password" name="psd2" id="psd2" maxlength="32"><br />
+<fieldset><legend>)" LANG_H1Welcome R"(</legend>
+<label for="adminUser">)" LANG_PSWDLOGIN R"( :</label><input type="text" name="adminUser" id="adminUser" maxlength="32" value="%s" /><br />
+<label for="psd1">)" LANG_PSWD1 R"( :</label><input type="password" name="psd1" id="psd1" maxlength="32"><br />
+<label for="psd2">)" LANG_PSWD2 R"( :</label><input type="password" name="psd2" id="psd2" maxlength="32"><br />
 <span id="passwordError" class="error"></span>
-</fieldset><button type="submit">{-ConfSave-}</button></form>
-<a href="/" class="bt">{-MENU-}</a>
+</fieldset><button type="submit">)" LANG_ConfSave R"(</button></form>
+<a href="/" class="bt">)" LANG_MENU R"(</a>
 )";
 
   snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html,
     nettoyerInputText(conf.adminUser, 33)
   );
   //
-  TradAndSend("text/html", HTMLBufferContent, "", false);
+  SendWithHeaderFooter("text/html", HTMLBufferContent, "", false);
 }
 
 void HTTPMgr::handleSetup()
@@ -483,37 +480,37 @@ void HTTPMgr::handleSetup()
 
 static const char template_html[] PROGMEM = R"(
 <form action="/SetupSave" method="post">
-<fieldset><legend>{-ConfP1H2-}</legend>
-<label for="interval">{-ConfReadP1Intr-} :</label><input type="number" min="10" id="interval" name="interval" value="%u"><br />
-<label for="InvTarif">{-ConfPERMUTTARIF-} :</label><input type="checkbox" name="InvTarif" id="InvTarif" %s><br />
+<fieldset><legend>)" LANG_ConfP1H2 R"(</legend>
+<label for="interval">)" LANG_ConfReadP1Intr R"( :</label><input type="number" min="10" id="interval" name="interval" value="%u"><br />
+<label for="InvTarif">)" LANG_ConfPERMUTTARIF R"( :</label><input type="checkbox" name="InvTarif" id="InvTarif" %s><br />
 </fieldset>
-<fieldset><legend>{-ConfWIFIH2-}</legend>
-<label for="ssid">{-ConfSSID-} :</label><input type="text" name="ssid" id="ssid" maxlength="32" value="%s"><br />
-<label for="password">{-ConfWIFIPWD-} :</label><input type="password" maxlength="64" name="password" id="password" value="%s"><br />
+<fieldset><legend>)" LANG_ConfWIFIH2 R"(</legend>
+<label for="ssid">)" LANG_ConfSSID R"( :</label><input type="text" name="ssid" id="ssid" maxlength="32" value="%s"><br />
+<label for="password">)" LANG_ConfWIFIPWD R"( :</label><input type="password" maxlength="64" name="password" id="password" value="%s"><br />
 </fieldset>
-<fieldset><legend>{-ConfDMTZH2-}</legend>
-<label for="domo">{-ConfDMTZBool-} :</label><input type="checkbox" name="domo" id="domo" %s><br />
-<label for="domoticzIP">{-ConfDMTZIP-} :</label><input type="text" name="domoticzIP" id="domoticzIP" maxlength="29" value="%s"><br />
-<label for="domoticzPort">{-ConfDMTZPORT-} :</label><input type="number" min="1" max="65535" id="domoticzPort" name="domoticzPort" value="%u"><br />
-<label for="domoticzGasIdx">{-ConfDMTZGIdx-} :</label><input type="number" min="1" id="domoticzGasIdx" name="domoticzGasIdx" value="%u"><br />
-<label for="domoticzEnergyIdx">{-ConfDMTZEIdx-} :</label><input type="number" min="1" id="domoticzEnergyIdx" name="domoticzEnergyIdx" value="%u">
+<fieldset><legend>)" LANG_ConfDMTZH2 R"(</legend>
+<label for="domo">)" LANG_ConfDMTZBool R"( :</label><input type="checkbox" name="domo" id="domo" %s><br />
+<label for="domoticzIP">)" LANG_ConfDMTZIP R"( :</label><input type="text" name="domoticzIP" id="domoticzIP" maxlength="29" value="%s"><br />
+<label for="domoticzPort">)" LANG_ConfDMTZPORT R"( :</label><input type="number" min="1" max="65535" id="domoticzPort" name="domoticzPort" value="%u"><br />
+<label for="domoticzGasIdx">)" LANG_ConfDMTZGIdx R"( :</label><input type="number" min="1" id="domoticzGasIdx" name="domoticzGasIdx" value="%u"><br />
+<label for="domoticzEnergyIdx">)" LANG_ConfDMTZEIdx R"( :</label><input type="number" min="1" id="domoticzEnergyIdx" name="domoticzEnergyIdx" value="%u">
 </fieldset>
-<fieldset><legend>{-ConfMQTTH2-}</legend>
-<label for="mqtt">{-ConfMQTTBool-} :</label><input type="checkbox" name="mqtt" id="mqtt" %s><br />
-<label for="mqttIP">{-ConfMQTTIP-} :</label><input type="text" id="mqttIP" name="mqttIP" maxlength="29" value="%s"><br />
-<label for="mqttPort">{-ConfMQTTPORT-} :</label><input type="number" min="1" max="65535" id="mqttPort" name="mqttPort" value="%u"><br />
-<label for="mqttUser">{-ConfMQTTUsr-} :</label><input type="text" id="mqttUser" name="mqttUser" maxlength="31" value="%s"><br />
-<label for="mqttPass">{-ConfMQTTPSW-} :</label><input type="password" id="mqttPass" name="mqttPass" maxlength="31" value="%s"><br />
-<label for="mqttTopic">{-ConfMQTTRoot-} :</label><input type="text" id="mqttTopic" name="mqttTopic" maxlength="49" value="%s"><br />
-<label for="debugToMqtt">{-ConfMQTTDBG-} :</label><input type="checkbox" name="debugToMqtt" id="debugToMqtt" %s><br />
+<fieldset><legend>)" LANG_ConfMQTTH2 R"(</legend>
+<label for="mqtt">)" LANG_ConfMQTTBool R"( :</label><input type="checkbox" name="mqtt" id="mqtt" %s><br />
+<label for="mqttIP">)" LANG_ConfMQTTIP R"( :</label><input type="text" id="mqttIP" name="mqttIP" maxlength="29" value="%s"><br />
+<label for="mqttPort">)" LANG_ConfMQTTPORT R"( :</label><input type="number" min="1" max="65535" id="mqttPort" name="mqttPort" value="%u"><br />
+<label for="mqttUser">)" LANG_ConfMQTTUsr R"( :</label><input type="text" id="mqttUser" name="mqttUser" maxlength="31" value="%s"><br />
+<label for="mqttPass">)" LANG_ConfMQTTPSW R"( :</label><input type="password" id="mqttPass" name="mqttPass" maxlength="31" value="%s"><br />
+<label for="mqttTopic">)" LANG_ConfMQTTRoot R"( :</label><input type="text" id="mqttTopic" name="mqttTopic" maxlength="49" value="%s"><br />
+<label for="debugToMqtt">)" LANG_ConfMQTTDBG R"( :</label><input type="checkbox" name="debugToMqtt" id="debugToMqtt" %s><br />
 </fieldset>
-<fieldset><legend>{-ConfTLNETH2-}</legend>
-<label for="telnet">{-ConfTLNETBool-} :</label><input type="checkbox" name="telnet" id="telnet" %s><br />
-<label for="debugToTelnet">{-ConfTLNETDBG-} :</label><input type="checkbox" name="debugToTelnet" id="debugToTelnet" %s><br />
+<fieldset><legend>)" LANG_ConfTLNETH2 R"(</legend>
+<label for="telnet">)" LANG_ConfTLNETBool R"( :</label><input type="checkbox" name="telnet" id="telnet" %s><br />
+<label for="debugToTelnet">)" LANG_ConfTLNETDBG R"( :</label><input type="checkbox" name="debugToTelnet" id="debugToTelnet" %s><br />
 </fieldset>
 <span id="passwordError" class="error"></span>
-<button type="submit">{-ACTIONSAVE-}</button></form>
-<a href="/" class="bt">{-MENU-}</a>
+<button type="submit">)" LANG_ACTIONSAVE R"(</button></form>
+<a href="/" class="bt">)" LANG_MENU R"(</a>
 )";
 
   snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html,
@@ -537,7 +534,7 @@ static const char template_html[] PROGMEM = R"(
     (conf.debugToTelnet)? "checked" : ""
   );
 
-  TradAndSend("text/html", HTMLBufferContent, "", false);
+  SendWithHeaderFooter("text/html", HTMLBufferContent, "", false);
 }
 
 void HTTPMgr::handleSetupSave()
@@ -578,7 +575,7 @@ void HTTPMgr::handleSetupSave()
 
     NewConf.ConfigVersion = SETTINGVERSION;
 
-    RebootPage("Conf-Saved");
+    RebootPage(LANG_Conf_Saved);
 
     EEPROM.begin(sizeof(struct settings));
     EEPROM.put(0, NewConf);
@@ -591,44 +588,44 @@ void HTTPMgr::handleSetupSave()
 void HTTPMgr::RebootPage(const char *Message)
 {
   static const char template_html[] PROGMEM = R"(
-<fieldset><legend>{-ConfH1-}</legend>
-<p>{-%s-}</p>
-<p>{-ConfReboot-}</p>
+<fieldset><legend>)" LANG_ConfH1 R"(</legend>
+<p>%s</p>
+<p>)" LANG_ConfReboot R"(</p>
 <p></p>
-<p>{-ConfLedStart-}</p>
-<p>{-ConfLedError-}</p>
+<p>)" LANG_ConfLedStart R"(</p>
+<p>)" LANG_ConfLedError R"(</p>
 %s
 </fieldset>
 )";
   
   snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html, Message, GetAnimWait());
-  TradAndSend("text/html", HTMLBufferContent, "", true);
+  SendWithHeaderFooter("text/html", HTMLBufferContent, "", true);
 }
 
 void HTTPMgr::handleP1()
 {
   static char template_html[] PROGMEM = R"(
-<fieldset><legend>{-DATAH1-}</legend>
-<div class="row"><label for="LastSample">{-DATALastGet-}</label><input type="text" class="c6" id="LastSample"/></div>
-<div class="row"><label for="T1">{-DATAFullL-}</label><input type="text" class="c6" id="T1"/></div>
-<div class="row"><label for="T2">{-DATAFullH-}</label><input type="text" class="c6" id="T2"/></div>
-<div class="row"><label for="RT1">{-DATAFullProdL-}</label><input type="text" class="c6" id="RT1"/></div>
-<div class="row"><label for="RT2">{-DATAFullProdH-}</label><input type="text" class="c6" id="RT2"/></div>
-<div class="row"><label for="TA">{-DATACurAmp-}</label><input type="text" class="c6" id="TA"/></div>
-<div class="row"><label for="RTA">{-DATACurProdAmp-}</label><input type="text" class="c6" id="RTA"/></div>
-<div class="row"><label for="VL1">{-DATAUL1-}</label><input type="text" class="c6" id="VL1"/></div>
-<div class="row"><label for="VL2">{-DATAUL2-}</label><input type="text" class="c6" id="VL2"/></div>
-<div class="row"><label for="VL3">{-DATAUL3-}</label><input type="text" class="c6" id="VL3"/></div>
-<div class="row"><label for="AL1">{-DATAAL1-}</label><input type="text" class="c6" id="AL1"/></div>
-<div class="row"><label for="AL2">{-DATAAL2-}</label><input type="text" class="c6" id="AL2"/></div>
-<div class="row"><label for="AL3">{-DATAAL3-}</label><input type="text" class="c6" id="AL3"/></div>
-<div class="row"><label for="gasReceived5min">{-DATAGFull-}</label><input type="text" class="c6" id="gasReceived5min"/></div>
+<fieldset><legend>)" LANG_DATAH1 R"(</legend>
+<div class="row"><label for="LastSample">)" LANG_DATALastGet R"(</label><input type="text" class="c6" id="LastSample"/></div>
+<div class="row"><label for="T1">)" LANG_DATAFullL R"(</label><input type="text" class="c6" id="T1"/></div>
+<div class="row"><label for="T2">)" LANG_DATAFullH R"(</label><input type="text" class="c6" id="T2"/></div>
+<div class="row"><label for="RT1">)" LANG_DATAFullProdL R"(</label><input type="text" class="c6" id="RT1"/></div>
+<div class="row"><label for="RT2">)" LANG_DATAFullProdH R"(</label><input type="text" class="c6" id="RT2"/></div>
+<div class="row"><label for="TA">)" LANG_DATACurAmp R"(</label><input type="text" class="c6" id="TA"/></div>
+<div class="row"><label for="RTA">)" LANG_DATACurProdAmp R"(</label><input type="text" class="c6" id="RTA"/></div>
+<div class="row"><label for="VL1">)" LANG_DATAUL1 R"(</label><input type="text" class="c6" id="VL1"/></div>
+<div class="row"><label for="VL2">)" LANG_DATAUL2 R"(</label><input type="text" class="c6" id="VL2"/></div>
+<div class="row"><label for="VL3">)" LANG_DATAUL3 R"(</label><input type="text" class="c6" id="VL3"/></div>
+<div class="row"><label for="AL1">)" LANG_DATAAL1 R"(</label><input type="text" class="c6" id="AL1"/></div>
+<div class="row"><label for="AL2">)" LANG_DATAAL2 R"(</label><input type="text" class="c6" id="AL2"/></div>
+<div class="row"><label for="AL3">)" LANG_DATAAL3 R"(</label><input type="text" class="c6" id="AL3"/></div>
+<div class="row"><label for="gasReceived5min">)" LANG_DATAGFull R"(</label><input type="text" class="c6" id="gasReceived5min"/></div>
 </fieldset>
-<a href="/P1.json" class="bt">{-SHOWJSON-}</a>
-<a href="/raw" class="bt">{-SHOWRAW-}</a>
-<a href="/" class="bt">{-MENU-}</a>
+<a href="/P1.json" class="bt">)" LANG_SHOWJSON R"(</a>
+<a href="/raw" class="bt">)" LANG_SHOWRAW R"(</a>
+<a href="/" class="bt">)" LANG_MENU R"(</a>
 )";
-  TradAndSend("text/html", template_html, "<script type=\"text/javascript\" src=\"P1.js\"></script>", false);
+  SendWithHeaderFooter("text/html", template_html, "<script type=\"text/javascript\" src=\"P1.js\"></script>", false);
 }
 
 void HTTPMgr::handleJSONStatus()
@@ -729,14 +726,14 @@ const char* HTTPMgr::GetAnimWait()
     return anim_wait;
 }
 
-void HTTPMgr::TradAndSend(const char *content_type, char *content, const char *header, bool refresh)
+void HTTPMgr::SendWithHeaderFooter(const char *content_type, char *content, const char *header, bool refresh)
 {
   char buffer[1500];  // Buffer pour header et footer
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "text/html","");
   static const char template_html_header[] PROGMEM = R"(
 <!DOCTYPE html>
-<html lang="{-HEADERLG-}">
+<html lang=")" LANG_HEADERLG R"(">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
@@ -748,36 +745,30 @@ void HTTPMgr::TradAndSend(const char *content_type, char *content, const char *h
 %s
 </head>
 <body><div class="container"><h2>P1 wifi-gateway</h2>
-<p class="help"><a href="https://github.com/narfight/P1-wifi-gateway/wiki" target="_blank">{-HLPH1-}</a></p>)";
+<p class="help"><a href="https://github.com/narfight/P1-wifi-gateway/wiki" target="_blank">)" LANG_HLPH1 R"(</a></p>)";
 
   static const char template_html_footer[] PROGMEM = R"(
 <div class="status-bar">
 <div class="item"><span class="indicator" id="MQTT-indicator"></span><span class="text">MQTT</span></div>
 <div class="item"><span class="indicator" id="P1-indicator"></span><span class="text">P1</span></div>
 </div></div>
-{-OTAFIRMWARE-} : v%s.%d  | <a href="https://github.com/narfight/P1-wifi-gateway" target="_blank">Github</a></body></html>
+)" LANG_OTAFIRMWARE R"( : v%s.%d  | <a href="https://github.com/narfight/P1-wifi-gateway" target="_blank">Github</a></body></html>
 )";
   snprintf_P(buffer, sizeof(buffer), template_html_header,
     GetClientName(),
     header,
     (refresh)? "<script>function chk() {fetch('http://' + window.location.hostname).then(response => {if (response.ok) {setTimeout(function () {window.location.href = '/';}, 1000);}}).catch(ex =>{});};setTimeout(setInterval(chk, 1000), 3000);</script>" : ""
   );
-  char* translatedText = Trad.FindAndTranslateAll(buffer);
-  server.sendContent(translatedText);
-  free(translatedText);
+  server.sendContent(buffer);
 
   //content
-  translatedText = Trad.FindAndTranslateAll(content);
-  server.sendContent(translatedText);
-  free(translatedText);
+  server.sendContent(content);
 
   snprintf_P(buffer, sizeof(buffer), template_html_footer,
     VERSION,
     BUILD_DATE
   );
 
-  translatedText = Trad.FindAndTranslateAll(buffer);
-  server.sendContent(translatedText);
+  server.sendContent(buffer);
   server.sendContent("");
-  free(translatedText);
 }

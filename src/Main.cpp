@@ -30,7 +30,6 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include "GlobalVar.h"
-#include "Language.h"
 
 char clientName[CLIENTNAMESIZE];
 unsigned long WatchDogsTimer = millis() + WATCHDOGINTERVAL;

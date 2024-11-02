@@ -26,7 +26,7 @@
 
 #include <Arduino.h>
 
-#define VERSION "1.00"
+#define VERSION "1.01"
 #define HOSTNAME "P1meter"
 
 #define CLIENTNAMESIZE 32

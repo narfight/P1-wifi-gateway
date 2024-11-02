@@ -73,7 +73,7 @@ void HTTPMgr::start_webservices()
     }
     else
     {
-      ReplyOTA(true, "", 0);
+      ReplyOTA(true, "Reboot", 0);
     }
   }, std::bind(&HTTPMgr::handleUploadFlash, this));
 
@@ -210,7 +210,7 @@ void HTTPMgr::ReplyOTA(bool success, const char* error, u_int ref)
 %s</fieldset>)";
 
   const char* animation = GetAnimWait();  // Supposons que GetAnimWait retourne un char*
-  snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html, (success)? LANG_OTANSUCCESSOK : LANG_OTANSUCCESSNOK, error, ref, animation);
+  snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html, (success)? LANG_OTANSUCCESSOK : LANG_OTANSUCCESSNOK, error, ref, GetClientName(), animation);
 
   SendWithHeaderFooter("text/html", HTMLBufferContent, "", true);
   RequestRestart(1000);
@@ -308,7 +308,7 @@ void HTTPMgr::handleReboot()
     return;
   }
 
-  RebootPage("TXTREBOOTPAGE");
+  RebootPage(LANG_TXTREBOOTPAGE);
   RequestRestart(1000);  
 }
 
@@ -408,7 +408,7 @@ void HTTPMgr::handleFactoryReset()
     return;
   }
 
-  RebootPage("RF_RESTTXT");
+  RebootPage(LANG_RF_RESTTXT);
 
   LogP1.format();
 
@@ -598,7 +598,7 @@ void HTTPMgr::RebootPage(const char *Message)
 </fieldset>
 )";
   
-  snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html, Message, GetAnimWait());
+  snprintf_P(HTMLBufferContent, sizeof(HTMLBufferContent), template_html, Message, GetClientName(), GetAnimWait());
   SendWithHeaderFooter("text/html", HTMLBufferContent, "", true);
 }
 

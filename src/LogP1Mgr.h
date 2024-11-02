@@ -171,7 +171,7 @@ private:
       u_int8_t NbrToRemove = Points.size() - 23;
 
       JsonDocument newDoc;
-      for (size_t i = NbrToRemove; i < Points.size(); i++)
+      for (size_t i = NbrToRemove; i <= Points.size(); i++)
       {
         newDoc.add(Points[i]);
       }

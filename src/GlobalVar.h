@@ -26,7 +26,7 @@
 
 #include <Arduino.h>
 
-#define VERSION "1.01"
+#define VERSION "1.02"
 #define HOSTNAME "P1meter"
 
 #define CLIENTNAMESIZE 32
@@ -38,7 +38,7 @@
 #define LED_OFF 0x1
 
 #define SETTINGVERSIONNULL 0 //= no config
-#define SETTINGVERSION 1
+#define SETTINGVERSION 2
 
 struct settings
 {
@@ -65,7 +65,9 @@ struct settings
   bool debugToTelnet = false;
   char adminPassword[33];
   char adminUser[33];
+  bool Repport2Telnet;
 };
+
 #ifndef LANGUAGE
   #error "LANGUAGE n'est pas défini. Veuillez définir LANGUAGE dans GlobalVar.h"
 #endif

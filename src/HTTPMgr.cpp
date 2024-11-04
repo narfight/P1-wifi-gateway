@@ -504,6 +504,7 @@ static const char template_html[] PROGMEM = R"(
 </fieldset>
 <fieldset><legend>)" LANG_ConfTLNETH2 R"(</legend>
 <label for="telnet">)" LANG_ConfTLNETBool R"( :</label><input type="checkbox" name="telnet" id="telnet" %s><br />
+<label for="reportToTelnet">)" LANG_ConfTLNETREPPORT R"( :</label><input type="checkbox" name="reportToTelnet" id="reportToTelnet" %s><br />
 <label for="debugToTelnet">)" LANG_ConfTLNETDBG R"( :</label><input type="checkbox" name="debugToTelnet" id="debugToTelnet" %s><br />
 </fieldset>
 <span id="passwordError" class="error"></span>
@@ -529,6 +530,7 @@ static const char template_html[] PROGMEM = R"(
     nettoyerInputText(conf.mqttTopic, 50),
     (conf.debugToMqtt)? "checked" : "",
     (conf.telnet)? "checked" : "",
+    (conf.Repport2Telnet)? "checked" : "",
     (conf.debugToTelnet)? "checked" : ""
   );
 
@@ -569,6 +571,7 @@ void HTTPMgr::handleSetupSave()
     NewConf.InverseHigh_1_2_Tarif = (server.arg("InvTarif") == "on");
     NewConf.telnet = (server.arg("telnet") == "on");
     NewConf.debugToTelnet = (server.arg("debugToTelnet") == "on");
+    NewConf.Repport2Telnet = (server.arg("reportToTelnet") == "on");
     NewConf.debugToMqtt = (server.arg("debugToMqtt") == "on");
 
     NewConf.ConfigVersion = SETTINGVERSION;

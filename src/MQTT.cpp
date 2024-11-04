@@ -95,7 +95,12 @@ void MQTTMgr::stop()
 
 bool MQTTMgr::mqtt_connect()
 {
-  if (!mqtt_client.connected() && _state != CONNECTING && millis() > nextMQTTreconnectAttempt)
+  if (mqtt_client.connected())
+  {
+    return true;
+  }
+
+  if (_state != CONNECTING && millis() > nextMQTTreconnectAttempt)
   {
     MainSendDebugPrintf("[MQTT] connect to %s:%u ...", conf.mqttIP, conf.mqttPort);
 
@@ -146,6 +151,11 @@ void MQTTMgr::send_uint32_t(String name, uint32_t metric)
 /// @param payload 
 void MQTTMgr::send_msg(const char *topic, const char *payload)
 {
+    if (!mqtt_client.connected())
+    {
+      mqtt_connect();
+    }
+
     if (payload[0] == 0)
     {
       return; //nothing to report

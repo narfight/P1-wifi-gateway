@@ -29,10 +29,14 @@ TelnetMgr::TelnetMgr(settings &currentConf, P1Reader &currentP1) : conf(currentC
     Yield_Delay(100);
     telnet.setNoDelay(true);
     telnet.begin();
-    P1Captor.OnNewDatagram([this]()
+
+    if (conf.Repport2Telnet)
     {
-        SendDataGram();
-    });
+        P1Captor.OnNewDatagram([this]()
+        {
+            SendDataGram();
+        });
+    }
 }
 
 bool TelnetMgr::authenticateClient(WiFiClient &client, int clientId)

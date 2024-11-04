@@ -66,6 +66,7 @@
 #define LANG_ConfTLNETH2 "Telnet settings"
 #define LANG_ConfTLNETBool "Enable Telnet port (23)"
 #define LANG_ConfTLNETDBG "Debug via Telnet?"
+#define LANG_ConfTLNETREPPORT "Send the Datagram over Telnet"
 #define LANG_ConfMQTTDBG "Debug via MQTT?"
 #define LANG_ConfSave "Save"
 #define LANG_OTAH1 "Update firmware"

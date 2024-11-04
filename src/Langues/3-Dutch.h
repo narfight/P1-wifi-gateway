@@ -66,6 +66,7 @@
 #define LANG_ConfTLNETH2 "Telnet-instellingen"
 #define LANG_ConfTLNETBool "Telnet-poort activeren (23)"
 #define LANG_ConfTLNETDBG "Debug via Telnet?"
+#define LANG_ConfTLNETREPPORT "Stuur het Datagram via Telnet"
 #define LANG_ConfMQTTDBG "Debug via MQTT?"
 #define LANG_ConfSave "Opslaan"
 #define LANG_OTAH1 "Firmware bijwerken"

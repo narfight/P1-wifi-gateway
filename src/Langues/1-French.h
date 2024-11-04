@@ -66,6 +66,7 @@
 #define LANG_ConfTLNETH2 "Paramètres Telnet"
 #define LANG_ConfTLNETBool "Activer le port Telnet (23)"
 #define LANG_ConfTLNETDBG "Debug via Telnet ?"
+#define LANG_ConfTLNETREPPORT "Envoie le Datagram sur Telnet"
 #define LANG_ConfMQTTDBG "Debug via MQTT ?"
 #define LANG_ConfSave "Sauvegarder"
 #define LANG_OTAH1 "Mettre à jour le micrologiciel"

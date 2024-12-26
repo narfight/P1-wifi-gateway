@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022 Ronald Leenes
+ * Copyright (c) 2025 Jean-Pierre Sneyers
+ * Source : https://github.com/narfight/P1-wifi-gateway
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

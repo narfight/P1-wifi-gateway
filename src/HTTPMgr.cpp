@@ -490,8 +490,8 @@ static const char template_html[] PROGMEM = R"(
 <label for="domo">)" LANG_ConfDMTZBool R"( :</label><input type="checkbox" name="domo" id="domo" %s><br />
 <label for="domoticzIP">)" LANG_ConfDMTZIP R"( :</label><input type="text" name="domoticzIP" id="domoticzIP" maxlength="29" value="%s"><br />
 <label for="domoticzPort">)" LANG_ConfDMTZPORT R"( :</label><input type="number" min="1" max="65535" id="domoticzPort" name="domoticzPort" value="%u"><br />
-<label for="domoticzGasIdx">)" LANG_ConfDMTZGIdx R"( :</label><input type="number" min="1" id="domoticzGasIdx" name="domoticzGasIdx" value="%u"><br />
-<label for="domoticzEnergyIdx">)" LANG_ConfDMTZEIdx R"( :</label><input type="number" min="1" id="domoticzEnergyIdx" name="domoticzEnergyIdx" value="%u">
+<label for="domoticzGasIdx">)" LANG_ConfDMTZGIdx R"( :</label><input type="number" min="0" id="domoticzGasIdx" name="domoticzGasIdx" value="%u"><br />
+<label for="domoticzEnergyIdx">)" LANG_ConfDMTZEIdx R"( :</label><input type="number" min="0" id="domoticzEnergyIdx" name="domoticzEnergyIdx" value="%u">
 </fieldset>
 <fieldset><legend>)" LANG_ConfMQTTH2 R"(</legend>
 <label for="mqtt">)" LANG_ConfMQTTBool R"( :</label><input type="checkbox" name="mqtt" id="mqtt" %s><br />

@@ -232,7 +232,7 @@ void setup()
     //Show to user is reseted !
     blink(20, 50UL);
 
-    config_data = (settings){SETTINGVERSION, 0, true, "", "", "10.0.0.3", 8080, 1234, 1235, "dsmr", "10.0.0.3", 1883, "", "", 60, false, false, false, false, false, false, "", "", false};
+    config_data = (settings){SETTINGVERSION, 0, true, "", "", "10.0.0.3", 8084, 0, 0, "dsmr", "10.0.0.3", 1883, "", "", 60, false, false, false, false, false, false, "", "", false};
   }
   else
   {

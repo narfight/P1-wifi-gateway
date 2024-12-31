@@ -288,8 +288,14 @@ void TelnetMgr::SendDebug(String payload)
         return;
     }
 
-    char result[100];
-    snprintf(result, sizeof(result), "%s %s", "[DEBUG]", payload.c_str());
+    // Calculer la taille nécessaire pour le buffer
+    // +3 pour : 2 espaces et le caractère nul '\0'
+    size_t totalLength = strlen("[DEBUG]") + payload.length() + 3;
+    
+    char* result = new char[totalLength];
+    
+    // Formater la chaîne
+    snprintf(result, totalLength, "%s %s", "[DEBUG]", payload.c_str());
 
     for (int i = 0; i < MAX_SRV_CLIENTS; i++)
     {

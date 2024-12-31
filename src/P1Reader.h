@@ -30,6 +30,7 @@
 #include "Debug.h"
 
 #define MAXLINELENGTH 1037 // 0-0:96.13.0 has a maximum lenght of 1024 chars + 11 of its identifier + end line (2char)
+#define P1TIMEOUTREAD 10000
 
 enum class State {
   DISABLED,
@@ -126,6 +127,7 @@ private:
   std::vector<std::function<void()>> delegates;
   settings &conf;
   unsigned long nextUpdateTime = millis() + 5000; //wait 5s before read datagram
+  unsigned long TimeOutRead;
   void RTS_on();
   void RTS_off();
   void OBISparser(int len);
@@ -135,5 +137,6 @@ private:
   void decodeTelegram(int len);
   String identifyMeter(String Name);
   String readUntilStar(int start, int end);
+  bool CheckTimeout();
 };
 #endif

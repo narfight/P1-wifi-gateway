@@ -40,6 +40,7 @@ void P1Reader::RTS_on() // switch on Data Request
   state = State::WAITING; // signal that we are waiting for a valid start char (aka /)
   digitalWrite(OE, LOW); // enable buffer
   digitalWrite(DR, HIGH); // turn on Data Request
+  TimeOutRead = millis() + P1TIMEOUTREAD; //max read time
 }
 
 void P1Reader::RTS_off() // switch off Data Request
@@ -440,19 +441,38 @@ void P1Reader::DoMe()
   }
 }
 
+/// @brief Check if timeout for reading P1 data
+/// @return true if on timeout
+bool P1Reader::CheckTimeout()
+{
+  if (millis() > TimeOutRead)
+  {
+    MainSendDebug("[P1] Timeout");
+    RTS_off();
+    return true;
+  }
+  return false;
+}
+
 void P1Reader::readTelegram()
 {
+  if (state != State::WAITING && state != State::READING)
+  {
+    return;
+  }
+
+  if (CheckTimeout())
+  {
+    return;
+  }
+
   if (Serial.available())
   {
-    unsigned long TimeOutRead = millis() + 5000; //max read time : 5s
-
     memset(telegram, 0, sizeof(telegram));
     while (Serial.available())
     {
-      if (millis() > TimeOutRead)
+      if (CheckTimeout())
       {
-        MainSendDebug("[P1] Timeout");
-        RTS_off();
         return;
       }
 

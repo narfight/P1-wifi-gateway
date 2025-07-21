@@ -35,6 +35,7 @@ class DomoticzMgr
 {
 public:
   explicit DomoticzMgr(settings &configuration, P1Reader &currentP1);
+  void SendDebug(const char *payload);
 
 private:
   settings &conf;
@@ -48,6 +49,7 @@ private:
   /// @param idx
   /// @param nValue
   /// @param sValue
-  void SendToDomoticz(unsigned int idx, int nValue, char *sValue);
+  /// @return negatif = error
+  int SendToDomoticz(unsigned int idx, const char *sValue, bool DisableDebug);
 };
 #endif

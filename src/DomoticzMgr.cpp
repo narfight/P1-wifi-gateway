@@ -40,7 +40,8 @@ void DomoticzMgr::UpdateGas()
     return;
   }
 
-  SendToDomoticz(conf.domoticzGasIdx, 0, P1Captor.DataReaded.gasDomoticz);
+  MainSendDebugPrintf("[DMTCZ] Send Gas");
+  SendToDomoticz(conf.domoticzGasIdx, P1Captor.DataReaded.gasDomoticz, false);
 }
 
 void DomoticzMgr::UpdateElectricity()
@@ -49,34 +50,38 @@ void DomoticzMgr::UpdateElectricity()
   {
     return;
   }
+
+  MainSendDebugPrintf("[DMTCZ] Send Gas");
   char sValue[300];
   sprintf(sValue, "%f;%f;%f;%f;%f;%f", P1Captor.DataReaded.electricityUsedTariff1.val(), P1Captor.DataReaded.electricityUsedTariff2.val(), P1Captor.DataReaded.electricityReturnedTariff1.val(), P1Captor.DataReaded.electricityReturnedTariff2.val(), P1Captor.DataReaded.actualElectricityPowerDeli.val(), P1Captor.DataReaded.actualElectricityPowerRet.val());
-  SendToDomoticz(conf.domoticzEnergyIdx, 0, sValue);
+  SendToDomoticz(conf.domoticzEnergyIdx, sValue, false);
 }
 
-void DomoticzMgr::SendToDomoticz(unsigned int idx, int nValue, char* sValue)
+void DomoticzMgr::SendDebug(const char *payload)
+{
+  if (conf.domo && conf.debugToDomo)
+  {
+    SendToDomoticz(conf.domoticzDebugIdx, payload, true);
+  }
+}
+
+int DomoticzMgr::SendToDomoticz(unsigned int idx, const char* sValue, bool DisableDebug)
 {
   WiFiClient client;
   HTTPClient http;
   
   char url[255];
-  sprintf(url, "http://%s:%u/json.htm?type=command&param=udevice&idx=%u&nvalue=%d&svalue=%s", conf.domoticzIP, conf.domoticzPort, idx, nValue, sValue);
+  sprintf(url, "http://%s:%u/json.htm?type=command&param=udevice&idx=%u&svalue=%s", conf.domoticzIP, conf.domoticzPort, idx, sValue);
   MainSendDebugPrintf("[DMTCZ] Send data : %s", url);
   
   http.begin(client, url);
   int httpCode = http.GET();
   
   // httpCode will be negative on error
-  if (httpCode > 0)
-  { // HTTP header has been sent and Server response header has been handled
-    if (httpCode == HTTP_CODE_OK)
-    {
-      String payload = http.getString();
-    }
-  }
-  else
+  if (httpCode < 0 && !DisableDebug)
   {
     MainSendDebugPrintf("[DMTCZ] GET failed, error: %s", http.errorToString(httpCode).c_str());
   }
   http.end();
+  return httpCode;
 }

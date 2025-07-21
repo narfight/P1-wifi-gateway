@@ -55,6 +55,8 @@
 #define LANG_ConfDMTZPORT "Domoticz port"
 #define LANG_ConfDMTZGIdx "Domoticz Gas Idx"
 #define LANG_ConfDMTZEIdx "Domoticz Energy Idx"
+#define LANG_ConfDMTZDIdx "Domoticz Debug Idx"
+#define LANG_ConfDOMODBG "Debug via Domoticz ?"
 #define LANG_ConfMQTTH2 "MQTT settings"
 #define LANG_ConfMQTTBool "Enable MQTT protocol?"
 #define LANG_ConfMQTTIP "MQTT server IP address"

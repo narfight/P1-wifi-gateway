@@ -26,7 +26,7 @@
 
 P1Reader::P1Reader(settings &currentConf) : conf(currentConf)
 {
-  Serial.setRxBufferSize(MAXLINELENGTH-2);
+  //Serial.setRxBufferSize(MAXLINELENGTH-2);
   Serial.begin(SERIALSPEED);
   datagram.reserve(1500);
 }
@@ -35,11 +35,15 @@ void P1Reader::RTS_on() // switch on Data Request
 {
   MainSendDebug("[P1] Data requested");
   Serial.flush(); //flush output buffer
-  while(Serial.available() > 0 ) Serial.read(); //flush input buffer
+  while(Serial.available() > 0 )
+  {
+    Serial.read(); //flush input buffer
+    delay(2);
+  }
   
   state = State::WAITING; // signal that we are waiting for a valid start char (aka /)
-  digitalWrite(OE, LOW); // enable buffer
   digitalWrite(DR, HIGH); // turn on Data Request
+  digitalWrite(OE, LOW); // enable buffer
   TimeOutRead = millis() + P1TIMEOUTREAD; //max read time
 }
 
@@ -108,9 +112,6 @@ void P1Reader::decodeTelegram(int len)
     if (startChar >= 0)
     { // start found. Reset CRC calculation
       MainSendDebug("[P1] Start of datagram found");
-      
-      digitalWrite(DR, LOW); // turn off Data Request
-      digitalWrite(OE, HIGH); // put buffer in Tristate mode
       
       // reset datagram
       datagram = "";

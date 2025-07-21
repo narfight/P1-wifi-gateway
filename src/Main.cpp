@@ -23,7 +23,7 @@
  */
 
 #define FRENCH // NEDERLANDS,SWEDISH,GERMAN,FRENCH
-//#define DEBUG_SERIAL_P1
+#define DEBUG_SERIAL_P1
 
 #define MAXBOOTFAILURE 3 //reset setting if boot fail more than this
 #define WATCHDOGINTERVAL 30000;
@@ -73,6 +73,10 @@ void MainSendDebug(const char *payload)
   if (TelnetServer != nullptr)
   {
     TelnetServer->SendDebug(payload);
+  }
+  if (DomoClient != nullptr)
+  {
+    DomoClient->SendDebug(payload);
   }
 }
 
@@ -233,7 +237,7 @@ void setup()
     //Show to user is reseted !
     blink(20, 50UL);
 
-    config_data = (settings){SETTINGVERSION, 0, true, "", "", "10.0.0.3", 8084, 0, 0, "dsmr", "10.0.0.3", 1883, "", "", 60, false, false, false, false, false, false, "", "", false};
+    config_data = (settings){SETTINGVERSION, 0, true, "", "", "10.0.0.3", 8084, 0, 0, "dsmr", "10.0.0.3", 1883, "", "", 60, false, false, false, false, false, false, "", "", false, false, 0};
   }
   else
   {
@@ -318,10 +322,12 @@ void loop()
 void RequestRestart(unsigned long delay)
 {
   MainSendDebug("[Core] Reboot requested !!!");
+
   if (TelnetServer != nullptr)
   {
     TelnetServer->stop();
   }
+  
   if (MQTTClient != nullptr )
   {
     MQTTClient->stop();

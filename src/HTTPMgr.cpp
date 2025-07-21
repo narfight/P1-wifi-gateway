@@ -493,6 +493,8 @@ static const char template_html[] PROGMEM = R"(
 <label for="domoticzPort">)" LANG_ConfDMTZPORT R"( :</label><input type="number" min="1" max="65535" id="domoticzPort" name="domoticzPort" value="%u"><br />
 <label for="domoticzGasIdx">)" LANG_ConfDMTZGIdx R"( :</label><input type="number" min="0" id="domoticzGasIdx" name="domoticzGasIdx" value="%u"><br />
 <label for="domoticzEnergyIdx">)" LANG_ConfDMTZEIdx R"( :</label><input type="number" min="0" id="domoticzEnergyIdx" name="domoticzEnergyIdx" value="%u">
+<label for="domoticzDebugIdx">)" LANG_ConfDMTZDIdx R"( :</label><input type="number" min="0" id="domoticzDebugIdx" name="domoticzDebugIdx" value="%u">
+<label for="debugToDomo">)" LANG_ConfDOMODBG R"( :</label><input type="checkbox" name="debugToDomo" id="debugToDomo" %s><br />
 </fieldset>
 <fieldset><legend>)" LANG_ConfMQTTH2 R"(</legend>
 <label for="mqtt">)" LANG_ConfMQTTBool R"( :</label><input type="checkbox" name="mqtt" id="mqtt" %s><br />
@@ -523,6 +525,8 @@ static const char template_html[] PROGMEM = R"(
     conf.domoticzPort,
     conf.domoticzGasIdx,
     conf.domoticzEnergyIdx,
+    conf.domoticzDebugIdx,
+    (conf.debugToDomo)? "checked" : "",
     (conf.mqtt)? "checked" : "",
     nettoyerInputText(conf.mqttIP, 30),
     conf.mqttPort,
@@ -554,26 +558,28 @@ void HTTPMgr::handleSetupSave()
 
     server.arg("ssid").toCharArray(NewConf.ssid, sizeof(NewConf.ssid));
     server.arg("password").toCharArray(NewConf.password, sizeof(NewConf.password));
+    
+    NewConf.domo = (server.arg("domo") == "on");
     server.arg("domoticzIP").toCharArray(NewConf.domoticzIP, sizeof(NewConf.domoticzIP));
     NewConf.domoticzPort = server.arg("domoticzPort").toInt();
     NewConf.domoticzEnergyIdx = server.arg("domoticzEnergyIdx").toInt();
     NewConf.domoticzGasIdx = server.arg("domoticzGasIdx").toInt();
+    NewConf.domoticzDebugIdx = server.arg("domoticzDebugIdx").toInt();
+    NewConf.debugToDomo = (server.arg("debugToDomo") == "on");
+    
     NewConf.mqtt = (server.arg("mqtt") == "on");
-    NewConf.domo = (server.arg("domo") == "on");
-
     server.arg("mqttIP").toCharArray(NewConf.mqttIP, sizeof(NewConf.mqttIP));
     NewConf.mqttPort = server.arg("mqttPort").toInt();
-
     server.arg("mqttUser").toCharArray(NewConf.mqttUser, sizeof(NewConf.mqttUser));
     server.arg("mqttPass").toCharArray(NewConf.mqttPass, sizeof(NewConf.mqttPass));
     server.arg("mqttTopic").toCharArray(NewConf.mqttTopic, sizeof(NewConf.mqttTopic));
-
+    NewConf.debugToMqtt = (server.arg("debugToMqtt") == "on");
+    
     NewConf.interval = server.arg("interval").toInt();
     NewConf.InverseHigh_1_2_Tarif = (server.arg("InvTarif") == "on");
     NewConf.telnet = (server.arg("telnet") == "on");
     NewConf.debugToTelnet = (server.arg("debugToTelnet") == "on");
     NewConf.Repport2Telnet = (server.arg("reportToTelnet") == "on");
-    NewConf.debugToMqtt = (server.arg("debugToMqtt") == "on");
 
     NewConf.ConfigVersion = SETTINGVERSION;
 

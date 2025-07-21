@@ -39,7 +39,7 @@
 #define LED_OFF 0x1
 
 #define SETTINGVERSIONNULL 0 //= no config
-#define SETTINGVERSION 2
+#define SETTINGVERSION 3
 
 struct settings
 {
@@ -67,6 +67,8 @@ struct settings
   char adminPassword[33];
   char adminUser[33];
   bool Repport2Telnet;
+  bool debugToDomo = true;
+  unsigned int domoticzDebugIdx;
 };
 
 #ifndef LANGUAGE

@@ -34,6 +34,7 @@ MQTTMgr::MQTTMgr(settings &currentConf, WifiMgr &currentLink, P1Reader &currentP
     if (b)
     {
       nextMQTTreconnectAttempt = 0;
+      _state = DISCONNECTED;
       mqtt_connect();
     }
   });

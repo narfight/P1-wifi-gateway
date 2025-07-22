@@ -230,33 +230,31 @@ void HTTPMgr::handleP1Js()
 void HTTPMgr::handleStyleCSS()
 {
   if (ActifCache(true)) return;
-
   static const char css[] PROGMEM = R"(
-body {font-family: Verdana, sans-serif;background-color: #f9f9f9;margin: 0;padding: 20px;text-align: center;}
-.container {max-width: 600px;margin: 0 auto;background: #ffffff;border-radius: 8px;box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);padding: 20px 20px 0px 20px;}
-h2 {text-align:center;color:#000000;}
-fieldset {border: 1px solid #ddd;border-radius: 8px;padding: 10px;margin-bottom: 20px;}
-fieldset input {width: 30%;padding: 5px;border: 1px solid #ddd;border-radius: 4px;font-size: 1em;box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1)}
-legend {font-weight: bold;padding: 0 10px;font-size: 1.2em}
-label {display: inline-block;text-align: right;width: 60%;text-align: right;margin-right: 10px;margin-bottom: 12px;font-weight: normal}
-.help, .footer {text-align:right;font-size:11px;color:#aaa}
-p {margin: 0.5em 0;}
-button, .bt {display: inline-block;text-align: center;text-decoration: none;border: 0;border-radius: 0.3rem;background: #97C1A9;color: #ffffff;line-height: 2.4rem;font-size: 1.2rem;width: 100%;-webkit-transition-duration: 0.4s;transition-duration: 0.4s;cursor: pointer;margin-top: 5px;}
-button:hover, .bt:hover {background: #0e70a4;}
-.bt[href="/"], .bt[href="/P1"]{background: #55CBCD;}
-.bt[href="/"]:hover, .bt[href="/P1"]:hover {background: #A2E1DB;}
-.bwarning {background: #E74C3C;}
-.bwarning:hover {background: #C0392B;}
-a {color: #1fa3ec;text-decoration: none;}
-.row:after {content: "";display: table; clear: both;}
-svg {display: block;margin: auto;}
-.status-bar {display: flex;justify-content: flex-end;margin-top: 10px;padding: 10px;border-top: 1px solid #ddd;}
-.status-bar .indicator {width: 10px;height: 10px;border-radius: 50%;background-color: green;margin-right: 5px;display: inline-block;}
-.error {background-color: red !important;}
-.status-bar .text {margin-left: 5px;}
-.status-bar .item {display: flex;align-items: center;margin-bottom: 5px;padding-left: 10px}
+body{font-family:Verdana,sans-serif;background:#f9f9f9;margin:0;padding:20px;text-align:center}
+.container{max-width:600px;margin:0 auto;background:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1);padding:20px 20px 0}
+h2{text-align:center;color:#000}
+fieldset{border:1px solid #ddd;border-radius:8px;padding:10px;margin-bottom:20px}
+fieldset input{width:30%;padding:5px;border:1px solid #ddd;border-radius:4px;font-size:1em;box-shadow:inset 0 1px 3px rgba(0,0,0,.1)}
+legend{font-weight:bold;padding:0 10px;font-size:1.2em}
+label{display:inline-block;width:60%;text-align:right;margin-right:10px;margin-bottom:12px}
+.help,.footer{text-align:right;font-size:11px;color:#aaa}
+p{margin:.5em 0}
+button,.bt{display:inline-block;text-align:center;text-decoration:none;border:0;border-radius:.3rem;background:#97C1A9;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;transition-duration:.4s;cursor:pointer;margin-top:5px}
+button:hover,.bt:hover{background:#0e70a4}
+.bt[href="/"],.bt[href="/P1"]{background:#55CBCD}
+.bt[href="/"]:hover,.bt[href="/P1"]:hover{background:#A2E1DB}
+.bwarning{background:#E74C3C}
+.bwarning:hover{background:#C0392B}
+a{color:#1fa3ec;text-decoration:none}
+.row:after{content:"";display:table;clear:both}
+svg{display:block;margin:auto}
+.status-bar{display:flex;justify-content:flex-end;margin-top:10px;padding:10px;border-top:1px solid #ddd}
+.status-bar .indicator{width:10px;height:10px;border-radius:50%;background:green;margin-right:5px;display:inline-block}
+.error{background:red!important}
+.status-bar .text{margin-left:5px}
+.status-bar .item{display:flex;align-items:center;margin-bottom:5px;padding-left:10px}
 )";
-
   server.send(200, "text/css", css);
 }
 
